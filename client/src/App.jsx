@@ -2,6 +2,7 @@ import React, { Suspense, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { getAdminDetails } from "./features/auth/authSlice";
+import { verifyCustomerToken } from "./features/public/customerAuthSlice";
 import Cookies from "js-cookie";
 
 // Layouts
@@ -35,10 +36,14 @@ const AdminRoute = ({ children }) => {
 const App = () => {
   const dispatch = useDispatch();
 
-  // Restore admin session on page reload
   useEffect(() => {
+    // Restore admin session on page reload
     if (Cookies.get("shopease_admin_token")) {
       dispatch(getAdminDetails());
+    }
+    // Verify customer token on app load — clears stale/expired cookie automatically
+    if (Cookies.get("shopease_customer_token")) {
+      dispatch(verifyCustomerToken());
     }
   }, [dispatch]);
 

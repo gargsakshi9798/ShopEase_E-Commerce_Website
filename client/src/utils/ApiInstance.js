@@ -6,23 +6,22 @@ const axiosClient = axios.create({
   headers: { Accept: "application/json" },
 });
 
+// Store reference — injected after Redux store is created to avoid circular deps.
+// Call injectStore(store) from main.jsx once the store is ready.
+let _store = null;
+export const injectStore = (store) => { _store = store; };
+
 // Request interceptor - attach the correct token based on the URL
 axiosClient.interceptors.request.use(
   (config) => {
     const url = config.url || "";
 
-    // Customer routes need the customer token
     if (url.includes("/customer/")) {
       const customerToken = Cookies.get("shopease_customer_token");
-      if (customerToken) {
-        config.headers["Authorization"] = `Bearer ${customerToken}`;
-      }
+      if (customerToken) config.headers["Authorization"] = `Bearer ${customerToken}`;
     } else {
-      // Admin / common routes use the admin token
       const adminToken = Cookies.get("shopease_admin_token");
-      if (adminToken) {
-        config.headers["Authorization"] = `Bearer ${adminToken}`;
-      }
+      if (adminToken) config.headers["Authorization"] = `Bearer ${adminToken}`;
     }
 
     return config;
@@ -38,13 +37,26 @@ axiosClient.interceptors.response.use(
       const url = error.config?.url || "";
 
       if (url.includes("/customer/")) {
-        // Customer session expired → clear customer token only
+        // Clear cookie
         Cookies.remove("shopease_customer_token");
-        window.location.href = "/login";
+
+        // Reset Redux state if store is available
+        if (_store) {
+          _store.dispatch({ type: "customerAuth/logout/fulfilled" });
+          _store.dispatch({ type: "publicCart/clearUserCart" });
+          _store.dispatch({ type: "publicWishlist/clearUserWishlist" });
+        }
+
+        // Redirect to login (skip if already there)
+        if (!window.location.pathname.startsWith("/login") &&
+            !window.location.pathname.startsWith("/register")) {
+          window.location.href = "/login";
+        }
       } else {
-        // Admin session expired → clear admin token only
         Cookies.remove("shopease_admin_token");
-        window.location.href = "/login";
+        if (!window.location.pathname.startsWith("/login")) {
+          window.location.href = "/login";
+        }
       }
     }
     return Promise.reject(error);

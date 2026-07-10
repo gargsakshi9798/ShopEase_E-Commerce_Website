@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation, Navigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   MdLocationOn, MdPayment, MdCheckCircle, MdArrowBack,
@@ -781,6 +781,7 @@ const ConfirmedStep = ({ result }) => {
 const Checkout = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { items }    = useSelector((s) => s.publicCart);
   const { isLogin }  = useSelector((s) => s.customerAuth);
   const { checkoutSummary } = useSelector((s) => s.publicPayment);
@@ -793,20 +794,17 @@ const Checkout = () => {
     dispatch(resetPayment());
   }, [dispatch]);
 
-  // Auth guard
-  useEffect(() => {
-    if (!isLogin) {
-      toast.error("Please login to checkout");
-      navigate("/login");
-    }
-  }, [isLogin, navigate]);
-
   // Cart guard
   useEffect(() => {
     if (isLogin && items.length === 0 && step < 4) {
       navigate("/cart");
     }
   }, [items, isLogin, step, navigate]);
+
+  // ── Synchronous auth guard — render nothing and redirect immediately ──
+  if (!isLogin) {
+    return <Navigate to="/login" state={{ from: "/checkout" }} replace />;
+  }
 
   const handleAddressDone = (addrId) => {
     setAddressId(addrId);
@@ -825,8 +823,6 @@ const Checkout = () => {
     setStep(4);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  if (!isLogin) return null;
 
   return (
     <div className="bg-gray-50 min-h-screen">

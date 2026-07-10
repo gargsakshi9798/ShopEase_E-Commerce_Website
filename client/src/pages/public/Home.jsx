@@ -16,7 +16,7 @@ const heroBanners = [
     bg: "from-[#eef2ff] to-[#e0e7ff]",
     img: "🛒",
     cta: "Shop Now",
-    ctaLink: "/products",
+    ctaLink: "/fashion",
   },
   {
     id: 2,
@@ -28,23 +28,23 @@ const heroBanners = [
     bg: "from-[#fff7ed] to-[#ffedd5]",
     img: "📱",
     cta: "Explore Now",
-    ctaLink: "/products?category=Electronics",
+    ctaLink: "/electronics",
   },
 ];
 
 const shopCategories = [
-  { icon: "👕", label: "Fashion",        link: "/fashion" },
-  { icon: "📱", label: "Mobiles",        link: "/products?category=Mobiles" },
-  { icon: "💻", label: "Electronics",    link: "/products?category=Electronics" },
-  { icon: "🏠", label: "Home & Kitchen", link: "/products?category=Home" },
-  { icon: "🔌", label: "Appliances",     link: "/products?category=Appliances" },
-  { icon: "💄", label: "Beauty",         link: "/products?category=Beauty" },
-  { icon: "🏋️", label: "Sports & Fitness", link: "/products?category=Sports" },
-  { icon: "🛒", label: "Grocery",        link: "/products?category=Grocery" },
-  { icon: "📚", label: "Books",          link: "/products?category=Books" },
-  { icon: "🧸", label: "Toys",           link: "/products?category=Toys" },
-  { icon: "🚗", label: "Automotive",     link: "/products?category=Automotive" },
-  { icon: "⊞",  label: "More",           link: "/products" },
+  { icon: "👕", label: "Fashion",          link: "/fashion" },
+  { icon: "📱", label: "Mobiles",          link: "/mobiles" },
+  { icon: "💻", label: "Electronics",      link: "/electronics" },
+  { icon: "🏠", label: "Home & Kitchen",   link: "/home-kitchen" },
+  { icon: "🔌", label: "Appliances",       link: "/appliances" },
+  { icon: "💄", label: "Beauty",           link: "/beauty" },
+  { icon: "🏋️", label: "Sports & Fitness", link: "/sports" },
+  { icon: "🛒", label: "Grocery",          link: "/grocery" },
+  { icon: "📚", label: "Books",            link: "/books" },
+  { icon: "🧸", label: "Toys",             link: "/toys" },
+  { icon: "🚗", label: "Automotive",       link: "/automotive" },
+  { icon: "⊞",  label: "More",             link: "/more" },
 ];
 
 const featureStrip = [
@@ -56,12 +56,12 @@ const featureStrip = [
 ];
 
 const dealCategories = [
-  { label: "Smartphones", sub: "From top brands", badge: "Up to 40% OFF", bg: "#f1f5ff", img: "📱" },
-  { label: "Laptops", sub: "Best Performance", badge: "Up to 35% OFF", bg: "#f0fff4", img: "💻" },
-  { label: "Men's Fashion", sub: "Trendy Collection", badge: "Up to 60% OFF", bg: "#fdf4ff", img: "👔" },
-  { label: "Home Appliances", sub: "Make life easier", badge: "Up to 45% OFF", bg: "#fff7ed", img: "🏠" },
-  { label: "Beauty & Personal Care", sub: "Top Brands", badge: "Up to 50% OFF", bg: "#fff1f2", img: "💄" },
-  { label: "Sports & Fitness", sub: "Stay Fit, Stay Healthy", badge: "Up to 40% OFF", bg: "#f0fdfa", img: "🏋️" },
+  { label: "Smartphones",            sub: "From top brands",       badge: "Up to 40% OFF", bg: "#f1f5ff", img: "📱", link: "/mobiles" },
+  { label: "Laptops",                sub: "Best Performance",       badge: "Up to 35% OFF", bg: "#f0fff4", img: "💻", link: "/electronics" },
+  { label: "Men's Fashion",          sub: "Trendy Collection",      badge: "Up to 60% OFF", bg: "#fdf4ff", img: "👔", link: "/fashion" },
+  { label: "Home Appliances",        sub: "Make life easier",       badge: "Up to 45% OFF", bg: "#fff7ed", img: "🏠", link: "/appliances" },
+  { label: "Beauty & Personal Care", sub: "Top Brands",             badge: "Up to 50% OFF", bg: "#fff1f2", img: "💄", link: "/beauty" },
+  { label: "Sports & Fitness",       sub: "Stay Fit, Stay Healthy", badge: "Up to 40% OFF", bg: "#f0fdfa", img: "🏋️", link: "/sports" },
 ];
 
 const bottomFeatures = [
@@ -257,7 +257,7 @@ const Home = () => {
           {dealCategories.map((d) => (
             <Link
               key={d.label}
-              to={`/products?category=${encodeURIComponent(d.label)}`}
+              to={d.link}
               className="rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-shadow group"
               style={{ backgroundColor: d.bg }}
             >

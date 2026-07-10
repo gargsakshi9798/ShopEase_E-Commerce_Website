@@ -18,9 +18,10 @@ const PublicLayout = () => {
           <Routes>
             {publicRoutes.map((route, idx) => {
               if (!route.element) return null;
+              const Component = route.element;
               const element = route.protected
-                ? <ProtectedCustomerRoute><route.element /></ProtectedCustomerRoute>
-                : <route.element />;
+                ? <ProtectedCustomerRoute><Component /></ProtectedCustomerRoute>
+                : <Component />;
               return <Route key={idx} path={route.path} element={element} />;
             })}
           </Routes>

@@ -5,7 +5,11 @@ import { Provider } from "react-redux";
 import { Toaster } from "react-hot-toast";
 import App from "./App";
 import { store } from "./redux/store";
+import { injectStore } from "./utils/ApiInstance";
 import "./index.css";
+
+// Inject Redux store into axios interceptor (avoids circular dependency)
+injectStore(store);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

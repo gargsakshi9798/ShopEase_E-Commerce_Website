@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import {
   MdStar, MdStarHalf, MdStarBorder, MdFavoriteBorder, MdFavorite,
@@ -117,6 +118,11 @@ const AutomotiveProductDetail = () => {
     toast.success(`${product.name} added to cart!`);
   };
   const handleBuyNow = () => {
+    if (!Cookies.get("shopease_customer_token")) {
+      toast.error("Please login to place an order");
+      navigate("/login", { state: { from: "/checkout" } });
+      return;
+    }
     dispatch(addToCart({ product: { ...product, selectedColor, selectedSize }, qty }));
     navigate("/checkout");
   };

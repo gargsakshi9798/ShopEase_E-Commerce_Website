@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { adminLogin } from "../../features/auth/authSlice";
 import { customerLogin } from "../../features/public/customerAuthSlice";
 import toast from "react-hot-toast";
@@ -23,6 +23,10 @@ const features = [
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // After login, go back to where user came from (e.g. /checkout), else go home
+  const from = location.state?.from || "/";
 
   const [showPass,    setShowPass]    = useState(false);
   const [rememberMe,  setRememberMe]  = useState(true);
@@ -40,7 +44,7 @@ const Login = () => {
         const role = adminPayload.data?.role_slug;
         toast.success("Welcome back!");
         navigate(
-          ["super_admin", "admin", "employee"].includes(role) ? "/admin/dashboard" : "/",
+          ["super_admin", "admin", "employee"].includes(role) ? "/admin/dashboard" : from,
           { replace: true }
         );
         return;
@@ -49,7 +53,7 @@ const Login = () => {
       const custPayload = (await dispatch(customerLogin(data))).payload;
       if (custPayload?.success) {
         toast.success("Welcome back!");
-        navigate("/", { replace: true });
+        navigate(from, { replace: true });
         return;
       }
 

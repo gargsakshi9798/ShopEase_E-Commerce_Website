@@ -229,6 +229,11 @@ const ProductDetail = () => {
   };
 
   const handleBuyNow = () => {
+    if (!Cookies.get("shopease_customer_token")) {
+      toast.error("Please login to place an order");
+      navigate("/login", { state: { from: "/checkout" } });
+      return;
+    }
     handleAddToCart();
     navigate("/checkout");
   };

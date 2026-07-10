@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import {
   MdStar, MdStarHalf, MdStarBorder, MdFavoriteBorder, MdFavorite,
@@ -100,7 +101,15 @@ const BooksProductDetail = () => {
   const topPicks = booksProducts.filter((p) => p._id !== product._id && p.rating >= 4.4).slice(0, 6);
 
   const handleAddToCart = () => { dispatch(addToCart({ product: { ...product, selectedColor, selectedSize }, qty })); toast.success(`${product.name} added to cart!`); };
-  const handleBuyNow    = () => { dispatch(addToCart({ product: { ...product, selectedColor, selectedSize }, qty })); navigate("/checkout"); };
+  const handleBuyNow    = () => {
+    if (!Cookies.get("shopease_customer_token")) {
+      toast.error("Please login to place an order");
+      navigate("/login", { state: { from: "/checkout" } });
+      return;
+    }
+    dispatch(addToCart({ product: { ...product, selectedColor, selectedSize }, qty }));
+    navigate("/checkout");
+  };
   const applyCoupon     = () => {
     const found = product.coupons.find((c) => c.code.toLowerCase() === couponInput.trim().toLowerCase());
     if (found) { setAppliedCoupon(found); toast.success(`Coupon "${found.code}" applied!`); } else { toast.error("Invalid coupon code"); }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import {
   MdStar, MdStarHalf, MdStarBorder,
@@ -143,6 +144,11 @@ const FashionProductDetail = () => {
   };
 
   const handleBuyNow = () => {
+    if (!Cookies.get("shopease_customer_token")) {
+      toast.error("Please login to place an order");
+      navigate("/login", { state: { from: "/checkout" } });
+      return;
+    }
     if (product.sizes[0] !== "One Size" && !selectedSize) {
       toast.error("Please select a size"); return;
     }

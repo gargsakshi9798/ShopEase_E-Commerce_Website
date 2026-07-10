@@ -177,7 +177,8 @@ const Cart = () => {
   const handlePlaceOrder = () => {
     if (!customer) {
       toast.error("Please login to place an order");
-      navigate("/login"); return;
+      navigate("/login", { state: { from: "/checkout" } });
+      return;
     }
     navigate("/checkout");
   };

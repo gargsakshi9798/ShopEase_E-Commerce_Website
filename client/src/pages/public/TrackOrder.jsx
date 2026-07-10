@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import {
   MdSearch, MdLocalShipping, MdCheck, MdLocationOn,
   MdHome, MdArrowForward, MdHeadset, MdRefresh,
@@ -213,6 +213,7 @@ const TrackResult = ({ order }) => {
 // ─── Main TrackOrder Page ─────────────────────────────────────────────────────
 const TrackOrder = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { tracked, trackStatus, error } = useSelector((s) => s.publicOrder);
   const { isLogin } = useSelector((s) => s.customerAuth);
@@ -232,7 +233,7 @@ const TrackOrder = () => {
     const val = input.trim().toUpperCase();
     if (!val) return;
     if (!isLogin) {
-      window.location.href = "/login";
+      navigate("/login", { state: { from: "/track-order" } });
       return;
     }
     dispatch(trackOrder(val));
