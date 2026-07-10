@@ -15,10 +15,15 @@ import settingsReducer from "../features/settings/settingsSlice";
 import bannerReducer from "../features/cms/bannerSlice";
 import supportReducer from "../features/support/supportSlice";
 import notificationReducer from "../features/notifications/notificationSlice";
-// Public
+// Public / Customer
 import publicCartReducer from "../features/public/publicCartSlice";
 import publicWishlistReducer from "../features/public/publicWishlistSlice";
 import customerAuthReducer from "../features/public/customerAuthSlice";
+import publicProductReducer from "../features/public/publicProductSlice";
+import publicOrderReducer from "../features/public/publicOrderSlice";
+import publicAddressReducer from "../features/public/publicAddressSlice";
+import publicProfileReducer from "../features/public/publicProfileSlice";
+import publicNotificationReducer from "../features/public/publicNotificationSlice";
 
 export const store = configureStore({
   reducer: {
@@ -40,8 +45,13 @@ export const store = configureStore({
     support: supportReducer,
     notifications: notificationReducer,
     // Public / Customer
-    publicCart: publicCartReducer,
-    publicWishlist: publicWishlistReducer,
-    customerAuth: customerAuthReducer,
+    publicCart:          publicCartReducer,
+    publicWishlist:      publicWishlistReducer,
+    customerAuth:        customerAuthReducer,
+    publicProduct:       publicProductReducer,
+    publicOrder:         publicOrderReducer,
+    publicAddress:       publicAddressReducer,
+    publicProfile:       publicProfileReducer,
+    publicNotification:  publicNotificationReducer,
   },
 });

@@ -84,11 +84,22 @@ export const APIS = {
     MessageArchive:   (id) => `/admin/support/messages/${id}/archive`,
   },
 
-  // Public
+  // Public (unauthenticated storefront)
   Public: {
-    Home: "/public/home",
-    Products: "/public/products",
+    Home:       "/public/home",
+    Products:   "/public/products",
+    ProductDetail: (slug) => `/public/products/${slug}`,
     Categories: "/public/categories",
-    FAQs: "/public/faqs",
+    FAQs:       "/public/faqs",
+  },
+
+  // Customer (authenticated — requires shopease_customer_token)
+  Customer: {
+    Profile:       "/customer/profile",
+    Address:       "/customer/address",
+    Cart:          "/customer/cart",
+    Orders:        "/customer/orders",
+    Reviews:       "/customer/reviews",
+    Notifications: "/customer/notifications",
   },
 };

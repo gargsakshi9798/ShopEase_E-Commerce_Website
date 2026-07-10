@@ -4,7 +4,9 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   MdSearch, MdShoppingCart, MdFavoriteBorder, MdFavorite,
   MdPerson, MdKeyboardArrowDown, MdMenu, MdClose,
-  MdLogout, MdShoppingBag, MdAccountCircle,
+  MdLogout, MdShoppingBag, MdAccountCircle, MdLocationOn,
+  MdLocalOffer, MdStar, MdNotifications, MdSettings,
+  MdCardGiftcard, MdSecurity, MdDashboard,
 } from "react-icons/md";
 import { FaShoppingBag } from "react-icons/fa";
 import { customerLogout } from "../../../features/public/customerAuthSlice";
@@ -162,27 +164,84 @@ const PublicHeader = () => {
                 </button>
 
                 {accountDropdown && (
-                  <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-50">
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-bold text-gray-900 truncate">{customer.name}</p>
-                      <p className="text-xs text-gray-400 truncate">{customer.email}</p>
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                    {/* User info header */}
+                    <div className="bg-gradient-to-br from-primary-600 to-indigo-700 px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-white/20 border-2 border-white/40 rounded-xl flex items-center justify-center text-white text-lg font-extrabold flex-shrink-0">
+                          {customer.name?.[0]?.toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-extrabold text-white truncate">{customer.name}</p>
+                          <p className="text-xs text-white/70 truncate">{customer.email}</p>
+                          <span className="inline-flex items-center gap-1 bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full mt-1">🏆 Gold Member</span>
+                        </div>
+                      </div>
                     </div>
-                    <Link to="/account" onClick={() => setAccountDropdown(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                      <MdAccountCircle size={16} className="text-gray-400" /> My Profile
-                    </Link>
-                    <Link to="/orders" onClick={() => setAccountDropdown(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                      <MdShoppingBag size={16} className="text-gray-400" /> My Orders
-                    </Link>
-                    <Link to="/wishlist" onClick={() => setAccountDropdown(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                      <MdFavoriteBorder size={16} className="text-gray-400" /> My Wishlist
-                    </Link>
-                    <div className="border-t border-gray-100 mt-1 pt-1">
+
+                    {/* Primary links */}
+                    <div className="py-1">
+                      <Link to="/account" onClick={() => setAccountDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
+                        <MdDashboard size={17} className="text-gray-400 group-hover:text-primary-600"/> My Account Dashboard
+                      </Link>
+                      <Link to="/my-profile" onClick={() => setAccountDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
+                        <MdAccountCircle size={17} className="text-gray-400 group-hover:text-primary-600"/> My Profile
+                      </Link>
+                      <Link to="/my-orders" onClick={() => setAccountDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
+                        <MdShoppingBag size={17} className="text-gray-400 group-hover:text-primary-600"/> My Orders
+                      </Link>
+                      <Link to="/wishlist" onClick={() => setAccountDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
+                        <MdFavoriteBorder size={17} className="text-gray-400 group-hover:text-primary-600"/> My Wishlist
+                      </Link>
+                    </div>
+
+                    {/* Secondary links */}
+                    <div className="border-t border-gray-100 py-1">
+                      <Link to="/my-addresses" onClick={() => setAccountDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
+                        <MdLocationOn size={17} className="text-gray-400 group-hover:text-primary-600"/> My Addresses
+                      </Link>
+                      <Link to="/my-coupons" onClick={() => setAccountDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
+                        <MdLocalOffer size={17} className="text-gray-400 group-hover:text-primary-600"/> My Coupons
+                        <span className="ml-auto bg-orange-100 text-orange-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">7</span>
+                      </Link>
+                      <Link to="/my-reviews" onClick={() => setAccountDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
+                        <MdStar size={17} className="text-gray-400 group-hover:text-primary-600"/> My Reviews
+                      </Link>
+                      <Link to="/notifications" onClick={() => setAccountDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
+                        <MdNotifications size={17} className="text-gray-400 group-hover:text-primary-600"/> Notifications
+                        <span className="ml-auto bg-primary-100 text-primary-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">3</span>
+                      </Link>
+                      <Link to="/gift-cards" onClick={() => setAccountDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
+                        <MdCardGiftcard size={17} className="text-gray-400 group-hover:text-primary-600"/> Gift Cards
+                      </Link>
+                      <Link to="/track-order" onClick={() => setAccountDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
+                        <MdShoppingCart size={17} className="text-gray-400 group-hover:text-primary-600"/> Track Order
+                      </Link>
+                    </div>
+
+                    {/* Settings & Logout */}
+                    <div className="border-t border-gray-100 py-1">
+                      <Link to="/my-settings" onClick={() => setAccountDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
+                        <MdSettings size={17} className="text-gray-400 group-hover:text-primary-600"/> Account Settings
+                      </Link>
+                      <Link to="/help-center" onClick={() => setAccountDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
+                        <MdSecurity size={17} className="text-gray-400 group-hover:text-primary-600"/> Help &amp; Support
+                      </Link>
                       <button onClick={handleLogout}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
-                        <MdLogout size={16} /> Logout
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
+                        <MdLogout size={17}/> Sign Out
                       </button>
                     </div>
                   </div>
@@ -211,7 +270,7 @@ const PublicHeader = () => {
         <div className="max-w-[1280px] mx-auto px-4">
           <nav className="flex items-center overflow-x-auto">
             <Link
-              to="/products"
+              to="/categories"
               className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 whitespace-nowrap border-r border-gray-100 transition-colors flex-shrink-0"
             >
               <MdMenu size={18} />
@@ -219,12 +278,32 @@ const PublicHeader = () => {
             </Link>
             {categories.map((cat) => {
               const catPath =
-                cat === "Fashion"     ? "/fashion"     :
-                cat === "Electronics" ? "/electronics" :
+                cat === "Fashion"        ? "/fashion"        :
+                cat === "Electronics"    ? "/electronics"    :
+                cat === "Mobiles"        ? "/mobiles"        :
+                cat === "Home & Kitchen" ? "/home-kitchen"   :
+                cat === "Appliances"     ? "/appliances"     :
+                cat === "Beauty"         ? "/beauty"         :
+                cat === "Sports"         ? "/sports"         :
+                cat === "Books"          ? "/books"          :
+                cat === "Toys"           ? "/toys"           :
+                cat === "Grocery"        ? "/grocery"        :
+                cat === "Automotive"     ? "/automotive"     :
+                cat === "More"           ? "/more"           :
                 `/products?category=${encodeURIComponent(cat)}`;
               const isActive =
-                (cat === "Fashion"     && location.pathname === "/fashion") ||
-                (cat === "Electronics" && location.pathname.startsWith("/electronics"));
+                (cat === "Fashion"        && location.pathname === "/fashion") ||
+                (cat === "Electronics"    && location.pathname.startsWith("/electronics")) ||
+                (cat === "Mobiles"        && location.pathname.startsWith("/mobiles")) ||
+                (cat === "Home & Kitchen" && location.pathname.startsWith("/home-kitchen")) ||
+                (cat === "Appliances"     && location.pathname.startsWith("/appliances")) ||
+                (cat === "Beauty"         && location.pathname.startsWith("/beauty")) ||
+                (cat === "Sports"         && location.pathname.startsWith("/sports")) ||
+                (cat === "Books"          && location.pathname.startsWith("/books")) ||
+                (cat === "Toys"           && location.pathname.startsWith("/toys")) ||
+                (cat === "Grocery"        && location.pathname.startsWith("/grocery")) ||
+                (cat === "Automotive"     && location.pathname.startsWith("/automotive")) ||
+                (cat === "More"           && location.pathname.startsWith("/more"));
               return (
                 <Link
                   key={cat}
@@ -263,8 +342,18 @@ const PublicHeader = () => {
           <nav className="px-4 py-2">
             {categories.map((cat) => {
               const catPath =
-                cat === "Fashion"     ? "/fashion"     :
-                cat === "Electronics" ? "/electronics" :
+                cat === "Fashion"        ? "/fashion"        :
+                cat === "Electronics"    ? "/electronics"    :
+                cat === "Mobiles"        ? "/mobiles"        :
+                cat === "Home & Kitchen" ? "/home-kitchen"   :
+                cat === "Appliances"     ? "/appliances"     :
+                cat === "Beauty"         ? "/beauty"         :
+                cat === "Sports"         ? "/sports"         :
+                cat === "Books"          ? "/books"          :
+                cat === "Toys"           ? "/toys"           :
+                cat === "Grocery"        ? "/grocery"        :
+                cat === "Automotive"     ? "/automotive"     :
+                cat === "More"           ? "/more"           :
                 `/products?category=${encodeURIComponent(cat)}`;
               return (
                 <Link
@@ -279,14 +368,39 @@ const PublicHeader = () => {
           </nav>
 
           {/* Mobile account actions */}
-          <div className="border-t border-gray-100 px-4 py-3 flex gap-3">
+          <div className="border-t border-gray-100 px-4 py-3">
             {customer ? (
-              <button onClick={handleLogout}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition-colors">
-                <MdLogout size={16} /> Logout
-              </button>
+              <div className="space-y-1">
+                <div className="flex items-center gap-3 px-1 py-2 mb-2">
+                  <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center text-white text-sm font-extrabold flex-shrink-0">
+                    {customer.name?.[0]?.toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-extrabold text-gray-900 truncate">{customer.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{customer.email}</p>
+                  </div>
+                </div>
+                {[
+                  { to:"/account",      label:"My Account"      },
+                  { to:"/my-orders",    label:"My Orders"       },
+                  { to:"/my-addresses", label:"My Addresses"    },
+                  { to:"/my-coupons",   label:"My Coupons"      },
+                  { to:"/notifications",label:"Notifications"   },
+                  { to:"/my-settings",  label:"Account Settings"},
+                  { to:"/help-center",  label:"Help & Support"  },
+                ].map((l) => (
+                  <Link key={l.to} to={l.to}
+                    className="block px-3 py-2 text-sm text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-colors">
+                    {l.label}
+                  </Link>
+                ))}
+                <button onClick={handleLogout}
+                  className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition-colors">
+                  <MdLogout size={16}/> Sign Out
+                </button>
+              </div>
             ) : (
-              <>
+              <div className="flex gap-3">
                 <Link to="/login"
                   className="flex-1 text-center py-2.5 text-sm font-semibold text-primary-600 border border-primary-200 rounded-xl hover:bg-primary-50 transition-colors">
                   Sign In
@@ -295,7 +409,7 @@ const PublicHeader = () => {
                   className="flex-1 text-center py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors">
                   Register
                 </Link>
-              </>
+              </div>
             )}
           </div>
         </div>
