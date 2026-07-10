@@ -1,0 +1,50 @@
+# ============================================================
+#  ShopEase Server – .gitignore  (Node.js + Express + MongoDB)
+# ============================================================
+
+# ----- Environment files -----
+.env
+.env.*
+!.env.example
+
+# ----- Dependencies -----
+node_modules/
+
+# ----- Logs -----
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ----- File uploads (local storage, if any) -----
+uploads/
+tmp/
+temp/
+
+# ----- Puppeteer / Chromium download cache -----
+.local-chromium/
+.cache/puppeteer/
+
+# ----- Build / compiled output -----
+dist/
+build/
+
+# ----- OS generated files -----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----- Editor / IDE -----
+.vscode/
+.idea/
+*.suo
+*.sw?
+
+# ----- Test coverage -----
+coverage/
+
+# ----- PM2 process files -----
+.pm2/
+ecosystem.config.js.bak

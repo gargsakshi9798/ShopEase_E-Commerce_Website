@@ -1,0 +1,46 @@
+# ============================================================
+#  ShopEase Client – .gitignore  (React + Vite + Tailwind)
+# ============================================================
+
+# ----- Environment files -----
+.env
+.env.*
+!.env.example
+
+# ----- Dependencies -----
+node_modules/
+
+# ----- Vite build output -----
+dist/
+dist-ssr/
+
+# ----- Vite cache -----
+.vite/
+.cache/
+
+# ----- TypeScript -----
+*.tsbuildinfo
+
+# ----- ESLint cache -----
+.eslintcache
+
+# ----- OS generated files -----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----- Editor / IDE -----
+.vscode/
+.idea/
+*.suo
+*.sw?
+
+# ----- Logs -----
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ----- Test coverage -----
+coverage/

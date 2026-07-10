@@ -1,0 +1,260 @@
+// ─── Shared Fashion product data ─────────────────────────────────────────────
+// Both Fashion.jsx (list) and FashionProductDetail.jsx (detail) import from here.
+// _id must be a string so it works with publicCartSlice / publicWishlistSlice.
+
+export const fashionProducts = [
+  {
+    _id: "f1", id: 1, name: "Men's Slim Fit Casual Shirt", brand: "Allen Solly",
+    price: 799,  mrp: 1599, rating: 4.3, reviews: 1240, badge: "Best Seller",
+    color: "Blue", img: "👔", tag: "mens",
+    sizes: ["S","M","L","XL","XXL"],
+    colors: [
+      { name:"Navy Blue", hex:"#1e3a5f" }, { name:"White", hex:"#f5f5f5" },
+      { name:"Sky Blue", hex:"#7dd3fc" }, { name:"Grey", hex:"#9ca3af" },
+    ],
+    images: ["👔","🔵👔","👔✨","👔🏷️"],
+    description: "A stylish slim-fit casual shirt crafted from premium breathable cotton. Perfect for office, casual outings and weekend wear. Features a spread collar, single chest pocket and front button placket.",
+    highlights: ["100% Premium Cotton","Machine Washable","Slim Fit Cut","Spread Collar","Available in Multiple Colors"],
+    seller: "Allen Solly Official", deliveryDays: 3,
+    stock: 85,
+    coupons: [
+      { code:"ALLEN10", desc:"10% off on Allen Solly", discount:10, type:"percent" },
+      { code:"FIRST50", desc:"₹50 off on first order",   discount:50, type:"flat" },
+    ],
+    bankOffers: ["10% off on SBI Credit Cards","5% Cashback on Paytm Wallet","No Cost EMI on HDFC Cards"],
+    specifications: { Fabric:"100% Cotton", Fit:"Slim Fit", Collar:"Spread", Sleeve:"Full Sleeve", Occasion:"Casual/Office", "Wash Care":"Machine Wash Cold" },
+  },
+  {
+    _id: "f2", id: 2, name: "Women's Floral Maxi Dress", brand: "H&M",
+    price: 1299, mrp: 2499, rating: 4.5, reviews: 890, badge: "Trending",
+    color: "Pink", img: "👗", tag: "womens",
+    sizes: ["XS","S","M","L","XL"],
+    colors: [
+      { name:"Pink Floral", hex:"#ec4899" }, { name:"Blue Floral", hex:"#3b82f6" },
+      { name:"Yellow", hex:"#eab308" }, { name:"Green", hex:"#22c55e" },
+    ],
+    images: ["👗","🌸👗","👗💫","👗🎀","🌷👗"],
+    description: "An elegant floral maxi dress with a flowing silhouette. Made from soft chiffon fabric, this dress features a V-neckline, adjustable spaghetti straps and a beautiful all-over floral print.",
+    highlights: ["Soft Chiffon Fabric","Flowy Maxi Length","V-Neckline","Adjustable Straps","Perfect for Parties & Outings"],
+    seller: "H&M India Store", deliveryDays: 2,
+    stock: 42,
+    coupons: [
+      { code:"HNM15", desc:"15% off on H&M", discount:15, type:"percent" },
+      { code:"SAVE100", desc:"₹100 off above ₹999",  discount:100, type:"flat" },
+    ],
+    bankOffers: ["15% off on ICICI Credit Cards","Buy 2 Get 10% Extra"],
+    specifications: { Fabric:"Chiffon", Length:"Maxi", Neckline:"V-Neck", Pattern:"Floral Print", Occasion:"Party/Casual", "Wash Care":"Dry Clean Only" },
+  },
+  {
+    _id: "f3", id: 3, name: "Kids' Denim Jacket", brand: "Zara",
+    price: 999,  mrp: 1999, rating: 4.2, reviews: 430, badge: "New",
+    color: "Blue", img: "🧥", tag: "kids",
+    sizes: ["2-3Y","3-4Y","4-5Y","5-6Y","6-7Y"],
+    colors: [
+      { name:"Classic Blue", hex:"#3b82f6" }, { name:"Dark Blue", hex:"#1e3a5f" },
+      { name:"Light Blue", hex:"#bfdbfe" },
+    ],
+    images: ["🧥","👦🧥","🧥⭐","🧥🏷️"],
+    description: "A trendy denim jacket for kids with a classic collar, button front and chest pockets. Made from soft washed denim that's comfortable for everyday wear.",
+    highlights: ["Soft Washed Denim","Classic Button Front","Chest Pockets","Easy to Wear","Machine Washable"],
+    seller: "Zara Kids Official", deliveryDays: 4,
+    stock: 30,
+    coupons: [
+      { code:"KIDS20", desc:"20% off on Kids Wear", discount:20, type:"percent" },
+    ],
+    bankOffers: ["5% off on Axis Bank Cards"],
+    specifications: { Fabric:"Denim", Type:"Jacket", Closure:"Button", Occasion:"Casual", "Age Group":"2-7 Years", "Wash Care":"Machine Wash" },
+  },
+  {
+    _id: "f4", id: 4, name: "Men's Leather Sneakers", brand: "Nike",
+    price: 2499, mrp: 4999, rating: 4.6, reviews: 2100, badge: "Top Rated",
+    color: "White", img: "👟", tag: "footwear",
+    sizes: ["6","7","8","9","10","11"],
+    colors: [
+      { name:"White", hex:"#f5f5f5" }, { name:"Black", hex:"#1a1a1a" },
+      { name:"Navy", hex:"#1e3a5f" }, { name:"Red", hex:"#ef4444" },
+    ],
+    images: ["👟","⚡👟","👟🔥","👟💯","🏃👟","✨👟"],
+    description: "Premium leather sneakers from Nike with superior cushioning and iconic design. Features a genuine leather upper, padded collar and Nike's famous Air cushioning sole for all-day comfort.",
+    highlights: ["Genuine Leather Upper","Nike Air Cushioning","Padded Collar & Tongue","Durable Rubber Outsole","Iconic Nike Design"],
+    seller: "Nike India Official", deliveryDays: 2,
+    stock: 120,
+    coupons: [
+      { code:"NIKE10", desc:"10% off on Nike",       discount:10, type:"percent" },
+      { code:"SPORT5", desc:"₹5% off on Footwear",   discount:5,  type:"percent" },
+    ],
+    bankOffers: ["10% off on Kotak Bank","No Cost EMI on all orders above ₹2000"],
+    specifications: { Material:"Genuine Leather", Sole:"Rubber Air", Closure:"Lace-Up", Occasion:"Casual/Sports", "Toe Shape":"Round Toe", "Wash Care":"Wipe with Dry Cloth" },
+  },
+  {
+    _id: "f5", id: 5, name: "Women's Tote Bag", brand: "Mango",
+    price: 1499, mrp: 2999, rating: 4.4, reviews: 670, badge: "Sale",
+    color: "Black", img: "👜", tag: "bags",
+    sizes: ["One Size"],
+    colors: [
+      { name:"Black", hex:"#1a1a1a" }, { name:"Tan", hex:"#d97706" },
+      { name:"Navy", hex:"#1e3a5f" }, { name:"White", hex:"#f5f5f5" },
+    ],
+    images: ["👜","💼👜","👜✨","👜🛍️","💎👜"],
+    description: "A spacious and stylish tote bag from Mango. Made from premium vegan leather with a magnetic snap closure. Features an interior zip pocket and card slots for easy organization.",
+    highlights: ["Premium Vegan Leather","Magnetic Snap Closure","Interior Zip Pocket","Card Slots","Comfortable Shoulder Strap"],
+    seller: "Mango India", deliveryDays: 3,
+    stock: 55,
+    coupons: [
+      { code:"MANGO20", desc:"20% off on Mango bags", discount:20, type:"percent" },
+    ],
+    bankOffers: ["15% off on HDFC Credit Cards"],
+    specifications: { Material:"Vegan Leather", Closure:"Magnetic Snap", Compartments:"3", Style:"Tote", Occasion:"Office/Casual", "Strap Type":"Shoulder" },
+  },
+  {
+    _id: "f6", id: 6, name: "Men's Chino Trousers", brand: "Levis",
+    price: 1199, mrp: 2299, rating: 4.1, reviews: 540, badge: "",
+    color: "Beige", img: "👖", tag: "mens",
+    sizes: ["28","30","32","34","36","38"],
+    colors: [
+      { name:"Beige", hex:"#d4b896" }, { name:"Olive", hex:"#6b7c3d" },
+      { name:"Navy", hex:"#1e3a5f" }, { name:"Black", hex:"#1a1a1a" },
+    ],
+    images: ["👖","👖✨","🧵👖","👖🏷️"],
+    description: "Classic chino trousers from Levi's made from comfortable stretch twill. Features a straight fit, mid-rise waist and five-pocket styling. Versatile enough for both casual and semi-formal occasions.",
+    highlights: ["Stretch Twill Fabric","Straight Fit","Mid-Rise Waist","Five-Pocket Styling","Versatile for All Occasions"],
+    seller: "Levi's India Official", deliveryDays: 3,
+    stock: 70,
+    coupons: [
+      { code:"LEVIS15", desc:"15% off on Levi's",    discount:15, type:"percent" },
+    ],
+    bankOffers: ["10% off on SBI Cards"],
+    specifications: { Fabric:"Stretch Twill", Fit:"Straight", Rise:"Mid-Rise", Pockets:"5", Occasion:"Casual/Semi-Formal", "Wash Care":"Machine Wash" },
+  },
+  {
+    _id: "f7", id: 7, name: "Women's Kurta Set", brand: "FabIndia",
+    price: 1799, mrp: 3499, rating: 4.7, reviews: 1560, badge: "Best Seller",
+    color: "Orange", img: "👘", tag: "womens",
+    sizes: ["XS","S","M","L","XL","XXL"],
+    colors: [
+      { name:"Orange", hex:"#f97316" }, { name:"Teal", hex:"#0d9488" },
+      { name:"Maroon", hex:"#9f1239" }, { name:"Indigo", hex:"#4338ca" },
+      { name:"Green", hex:"#15803d" },
+    ],
+    images: ["👘","🌸👘","👘✨","👘🎀","🪷👘","👘💫","🌟👘"],
+    description: "An exquisite handcrafted kurta set from FabIndia. Features a beautifully embroidered kurta with matching palazzo pants. Made from breathable cotton fabric with traditional block print patterns.",
+    highlights: ["Handcrafted Cotton","Traditional Block Print","Matching Palazzo Set","Embroidered Detailing","Breathable Fabric"],
+    seller: "FabIndia Official", deliveryDays: 4,
+    stock: 35,
+    coupons: [
+      { code:"FABINDIA10", desc:"10% off on FabIndia", discount:10, type:"percent" },
+      { code:"ETHNIC15",   desc:"₹15% off on Ethnic Wear", discount:15, type:"percent" },
+    ],
+    bankOffers: ["10% off on Axis Bank Cards","5% Cashback on PhonePe"],
+    specifications: { Fabric:"Cotton", Type:"Kurta Set", Pattern:"Block Print", Includes:"Kurta + Palazzo", Occasion:"Festive/Casual", "Wash Care":"Hand Wash" },
+  },
+  {
+    _id: "f8", id: 8, name: "Sports Running Shoes", brand: "Adidas",
+    price: 3499, mrp: 5999, rating: 4.5, reviews: 3200, badge: "Trending",
+    color: "Black", img: "🏃", tag: "footwear",
+    sizes: ["6","7","8","9","10","11","12"],
+    colors: [
+      { name:"Black/White", hex:"#1a1a1a" }, { name:"Blue/White", hex:"#3b82f6" },
+      { name:"Red/Black", hex:"#ef4444" }, { name:"Grey", hex:"#9ca3af" },
+    ],
+    images: ["🏃","⚡🏃","🏃💪","👟🏃","🏃✨","💫🏃"],
+    description: "High-performance running shoes from Adidas featuring Boost technology for maximum energy return. Ultra-lightweight mesh upper keeps your feet cool during intense runs. Ideal for daily training and marathons.",
+    highlights: ["Boost Energy Return Technology","Ultra-Lightweight Mesh","Continental Rubber Outsole","OrthoLite Insole","Ideal for Marathon Training"],
+    seller: "Adidas India Official", deliveryDays: 2,
+    stock: 95,
+    coupons: [
+      { code:"ADIDAS15", desc:"15% off on Adidas",     discount:15, type:"percent" },
+      { code:"RUN10",    desc:"Extra 10% off on Running Shoes", discount:10, type:"percent" },
+    ],
+    bankOffers: ["No Cost EMI on orders above ₹3000","10% off on HDFC Debit Cards"],
+    specifications: { Material:"Knit Mesh", Technology:"Boost", Sole:"Continental Rubber", Closure:"Lace-Up", Activity:"Running/Training", "Wash Care":"Spot Clean" },
+  },
+  {
+    _id: "f9", id: 9, name: "Girls' Party Frock", brand: "Zara",
+    price: 899,  mrp: 1799, rating: 4.3, reviews: 280, badge: "New",
+    color: "Pink", img: "👗", tag: "kids",
+    sizes: ["2-3Y","3-4Y","4-5Y","5-6Y"],
+    colors: [
+      { name:"Pink", hex:"#ec4899" }, { name:"Lavender", hex:"#c4b5fd" },
+      { name:"White", hex:"#f5f5f5" },
+    ],
+    images: ["👗","🌸👗","👗⭐","🎀👗"],
+    description: "An adorable party frock for little girls made from soft tulle and satin. Features a tutu skirt with layers of tulle, velvet bodice and bow detail on the back.",
+    highlights: ["Soft Tulle & Satin","Tutu Skirt Style","Velvet Bodice","Bow Detail","Perfect for Parties & Events"],
+    seller: "Zara Kids Official", deliveryDays: 4,
+    stock: 25,
+    coupons: [{ code:"KIDS20", desc:"20% off on Kids Wear", discount:20, type:"percent" }],
+    bankOffers: ["5% off on RuPay Cards"],
+    specifications: { Fabric:"Tulle/Satin", Type:"Frock", Style:"Party Wear", Occasion:"Party/Events", "Age Group":"2-6 Years", "Wash Care":"Hand Wash Cold" },
+  },
+  {
+    _id: "f10", id: 10, name: "Men's Formal Blazer", brand: "Allen Solly",
+    price: 2999, mrp: 5499, rating: 4.4, reviews: 760, badge: "Top Rated",
+    color: "Navy", img: "🧥", tag: "mens",
+    sizes: ["38","40","42","44","46"],
+    colors: [
+      { name:"Navy Blue", hex:"#1e3a5f" }, { name:"Charcoal", hex:"#374151" },
+      { name:"Black", hex:"#1a1a1a" }, { name:"Grey", hex:"#9ca3af" },
+    ],
+    images: ["🧥","💼🧥","🧥✨","👔🧥","🎩🧥","🧥🏷️","💎🧥"],
+    description: "A sophisticated formal blazer from Allen Solly crafted from premium poly-viscose blend. Single-breasted design with notch lapel, welt pockets and a fully lined interior. Perfect for business meetings and formal events.",
+    highlights: ["Premium Poly-Viscose Blend","Fully Lined Interior","Notch Lapel Design","Welt Pockets","Perfect for Business"],
+    seller: "Allen Solly Official", deliveryDays: 3,
+    stock: 40,
+    coupons: [
+      { code:"ALLEN10",  desc:"10% off on Allen Solly",   discount:10, type:"percent" },
+      { code:"FORMAL20", desc:"20% off on Formal Wear",   discount:20, type:"percent" },
+    ],
+    bankOffers: ["10% off on Citibank Credit Cards","No Cost EMI on HDFC Cards"],
+    specifications: { Fabric:"Poly-Viscose", Type:"Blazer", Fit:"Regular Fit", Lapel:"Notch", Buttons:"Single-Breasted", Occasion:"Formal/Business" },
+  },
+  {
+    _id: "f11", id: 11, name: "Women's Sunglasses", brand: "Mango",
+    price: 699,  mrp: 1299, rating: 4.2, reviews: 430, badge: "Sale",
+    color: "Black", img: "🕶️", tag: "accessories",
+    sizes: ["One Size"],
+    colors: [
+      { name:"Black", hex:"#1a1a1a" }, { name:"Brown", hex:"#92400e" },
+      { name:"Gold", hex:"#d97706" },
+    ],
+    images: ["🕶️","😎🕶️","🕶️✨","💄🕶️","🌞🕶️"],
+    description: "Stylish cat-eye sunglasses with UV400 protection. Lightweight acetate frame with polarized lenses that reduce glare. Perfect for beach, driving and everyday outdoor wear.",
+    highlights: ["UV400 Protection","Polarized Lenses","Lightweight Acetate Frame","Reduces Glare","100% UV Blocking"],
+    seller: "Mango India", deliveryDays: 2,
+    stock: 80,
+    coupons: [{ code:"MANGO20", desc:"20% off on Mango", discount:20, type:"percent" }],
+    bankOffers: ["10% off on Axis Cards"],
+    specifications: { "Frame Material":"Acetate", "Lens Type":"Polarized", "UV Protection":"UV400", Shape:"Cat-Eye", Gender:"Women", "Lens Color":"Grey" },
+  },
+  {
+    _id: "f12", id: 12, name: "Men's Analog Watch", brand: "Titan",
+    price: 2199, mrp: 3999, rating: 4.6, reviews: 980, badge: "",
+    color: "Silver", img: "⌚", tag: "accessories",
+    sizes: ["One Size"],
+    colors: [
+      { name:"Silver/White", hex:"#e5e7eb" }, { name:"Gold/Black", hex:"#d97706" },
+      { name:"Black/Black", hex:"#1a1a1a" },
+    ],
+    images: ["⌚","💎⌚","⌚✨","👔⌚","⌚🎁","⌚💯"],
+    description: "A classic analog watch from Titan featuring a stainless steel case and genuine leather strap. Water resistant up to 30 meters with a sapphire crystal glass for scratch resistance.",
+    highlights: ["Sapphire Crystal Glass","Genuine Leather Strap","Water Resistant 30M","Stainless Steel Case","2 Year Warranty"],
+    seller: "Titan India Official", deliveryDays: 3,
+    stock: 60,
+    coupons: [
+      { code:"TITAN10", desc:"10% off on Titan Watches", discount:10, type:"percent" },
+    ],
+    bankOffers: ["5% off on IDFC Cards","No Cost EMI Available"],
+    specifications: { "Case Material":"Stainless Steel", Strap:"Genuine Leather", Movement:"Quartz Analog", "Water Resistance":"30 Meters", Glass:"Sapphire Crystal", Warranty:"2 Years" },
+  },
+];
+
+export const discount = (p, m) => Math.round(((m - p) / m) * 100);
+
+export const badgeColor = (b) => {
+  if (b === "Best Seller") return "bg-amber-500 text-white";
+  if (b === "Trending")    return "bg-rose-500 text-white";
+  if (b === "New")         return "bg-emerald-500 text-white";
+  if (b === "Top Rated")   return "bg-blue-600 text-white";
+  if (b === "Sale")        return "bg-orange-500 text-white";
+  return "";
+};
