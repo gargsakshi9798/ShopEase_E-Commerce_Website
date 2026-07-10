@@ -99,7 +99,17 @@ export const APIS = {
     Address:       "/customer/address",
     Cart:          "/customer/cart",
     Orders:        "/customer/orders",
+    TrackOrder:    (orderNumber) => `/customer/orders/track/${orderNumber}`,
+    Coupons:       "/customer/coupons",
     Reviews:       "/customer/reviews",
     Notifications: "/customer/notifications",
+    // Payment & Checkout
+    Payment: {
+      ValidateCheckout:    "/customer/payment/validate-checkout",
+      RazorpayCreateOrder: "/customer/payment/razorpay/create-order",
+      RazorpayVerify:      "/customer/payment/razorpay/verify",
+      CODPlaceOrder:       "/customer/payment/cod/place-order",
+      Invoice:             (orderId) => `/customer/payment/invoice/${orderId}`,
+    },
   },
 };

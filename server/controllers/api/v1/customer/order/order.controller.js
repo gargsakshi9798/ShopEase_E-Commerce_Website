@@ -156,11 +156,25 @@ class CustomerOrderController {
         {
           filter,
           sort: { createdAt: -1 },
-          populate: [{ path: "items.product_id", select: "name thumbnail" }],
+          populate: [],   // items already embedded; no ref populate needed for list
         },
         req,
         res
       );
+    } catch (error) {
+      return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async trackByOrderNumber(req, res) {
+    try {
+      const order = await Order.findOne({
+        order_number: req.params.order_number,
+        user_id: req.user.user,
+      }).select("order_number order_status payment_status payment_method total_amount estimated_delivery tracking_id courier_name createdAt delivered_at address items invoice_no status_history");
+
+      if (!order) return Base.sendError(res, HTTPS.NOT_FOUND, "Order not found");
+      return Base.sendResponse(res, HTTPS.OK, order);
     } catch (error) {
       return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
     }
@@ -171,7 +185,7 @@ class CustomerOrderController {
       const order = await Order.findOne({
         _id: req.params.id,
         user_id: req.user.user,
-      }).populate("items.product_id", "name thumbnail");
+      });
 
       if (!order) return Base.sendError(res, HTTPS.NOT_FOUND, "Order not found");
       return Base.sendResponse(res, HTTPS.OK, order);
@@ -182,7 +196,7 @@ class CustomerOrderController {
 
   async cancelOrder(req, res) {
     try {
-      const { cancel_reason } = req.body;
+      const cancel_reason = req.body.cancel_reason || req.body.reason || "";
       const order = await Order.findOne({
         _id: req.params.id,
         user_id: req.user.user,

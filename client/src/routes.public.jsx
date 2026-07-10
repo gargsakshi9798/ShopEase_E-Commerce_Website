@@ -46,6 +46,7 @@ const MyCoupons                  = React.lazy(() => import("./pages/public/MyCou
 const Notifications              = React.lazy(() => import("./pages/public/Notifications"));
 const MySettings                 = React.lazy(() => import("./pages/public/MySettings"));
 const MyReviews                  = React.lazy(() => import("./pages/public/MyReviews"));
+const OrderSuccess               = React.lazy(() => import("./pages/public/OrderSuccess"));
 
 // ── Customer Service / Info Pages (public, no login) ─────────────────────────
 const HelpCenter                 = React.lazy(() => import("./pages/public/HelpCenter"));
@@ -146,6 +147,7 @@ const publicRoutes = [
   { path: "/account/notifications",          element: Notifications,   protected: true },
   { path: "/my-settings",                    element: MySettings,      protected: true },
   { path: "/my-reviews",                     element: MyReviews,       protected: true },
+  { path: "/order-success/:id",              element: OrderSuccess,    protected: true },
 
   // ── Customer Service / Info ──
   { path: "/help-center",                    element: HelpCenter },

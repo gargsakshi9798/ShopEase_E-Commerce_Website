@@ -3,18 +3,21 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   MdPerson, MdShoppingBag, MdLocationOn,
   MdNotifications, MdLogout, MdFavoriteBorder,
-  MdChevronRight,
+  MdChevronRight, MdLocalOffer, MdStar, MdSettings,
 } from "react-icons/md";
 import { customerLogout } from "../../../features/public/customerAuthSlice";
 import toast from "react-hot-toast";
 
 const navItems = [
-  { to: "/account",         icon: MdPerson,        label: "My Account",   exact: true },
+  { to: "/account",         icon: MdPerson,        label: "My Account",       exact: true },
   { to: "/my-profile",      icon: MdPerson,        label: "My Profile" },
   { to: "/my-orders",       icon: MdShoppingBag,   label: "My Orders" },
   { to: "/my-addresses",    icon: MdLocationOn,    label: "My Addresses" },
   { to: "/wishlist",        icon: MdFavoriteBorder,label: "My Wishlist" },
+  { to: "/my-coupons",      icon: MdLocalOffer,    label: "My Coupons" },
+  { to: "/my-reviews",      icon: MdStar,          label: "My Reviews" },
   { to: "/notifications",   icon: MdNotifications, label: "Notifications" },
+  { to: "/my-settings",     icon: MdSettings,      label: "Settings" },
 ];
 
 const AccountLayout = ({ children }) => {

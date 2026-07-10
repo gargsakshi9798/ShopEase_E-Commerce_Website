@@ -45,7 +45,7 @@ const MyOrders = () => {
 
   useEffect(() => {
     const params = { page, per_page: PER_PAGE };
-    if (activeFilter !== "All") params.status = activeFilter.toLowerCase();
+    if (activeFilter !== "All") params.order_status = activeFilter.toLowerCase();
     dispatch(fetchMyOrders(params));
   }, [dispatch, page, activeFilter]);
 
@@ -125,22 +125,29 @@ const MyOrders = () => {
             {/* Top row */}
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
-                <p className="text-xs text-gray-400 mb-0.5">Order ID</p>
-                <p className="text-sm font-bold text-gray-800 font-mono">#{order._id?.slice(-8).toUpperCase()}</p>
+                <p className="text-xs text-gray-400 mb-0.5">Order</p>
+                <p className="text-sm font-bold text-gray-800 font-mono">
+                  {order.order_number ? `#${order.order_number}` : `#${order._id?.slice(-8).toUpperCase()}`}
+                </p>
               </div>
-              <StatusBadge status={order.status} />
+              <StatusBadge status={order.order_status || order.status} />
             </div>
 
             {/* Items preview */}
             {order.items?.slice(0, 2).map((item) => (
               <div key={item._id ?? item.product_id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
                 <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
-                  {item.image ? (
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-xl" />
+                  {(item.product_image || item.image) ? (
+                    <img
+                      src={item.product_image || item.image}
+                      alt={item.product_name || item.name}
+                      className="w-full h-full object-cover rounded-xl"
+                      onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.parentElement.innerText = "📦"; }}
+                    />
                   ) : "📦"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{item.name ?? "Product"}</p>
+                  <p className="text-sm font-semibold text-gray-800 truncate">{item.product_name || item.name || "Product"}</p>
                   <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
                 </div>
                 <p className="text-sm font-bold text-gray-900 flex-shrink-0">
@@ -153,17 +160,17 @@ const MyOrders = () => {
             )}
 
             {/* Bottom row */}
-            <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-50">
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-50 flex-wrap gap-3">
               <div>
                 <p className="text-xs text-gray-400">Ordered on</p>
                 <p className="text-sm text-gray-700 font-medium">{formatDate(order.createdAt)}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-400">Total</p>
-                <p className="text-base font-bold text-gray-900">{formatCurrency(order.total_amount ?? order.grand_total)}</p>
+                <p className="text-base font-bold text-gray-900">{formatCurrency(order.total_amount)}</p>
               </div>
               <Link
-                to={`/orders/${order._id}`}
+                to={`/my-orders/${order._id}`}
                 className="flex items-center gap-1.5 text-sm text-primary-600 font-semibold hover:underline"
               >
                 View Details <MdArrowForward size={15} />

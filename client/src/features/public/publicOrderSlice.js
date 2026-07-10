@@ -50,6 +50,18 @@ export const returnOrder = createAsyncThunk(
   }
 );
 
+// Track order by order_number
+export const trackOrder = createAsyncThunk(
+  "publicOrder/track",
+  async (orderNumber, { rejectWithValue }) => {
+    try {
+      return await GET(APIS.Customer.TrackOrder(orderNumber));
+    } catch (err) {
+      return rejectWithValue(err.response?.data || { message: "Order not found" });
+    }
+  }
+);
+
 const publicOrderSlice = createSlice({
   name: "publicOrder",
   initialState: {
@@ -58,8 +70,10 @@ const publicOrderSlice = createSlice({
     totalPages: 1,
     currentPage: 1,
     detail: null,
+    tracked: null,
     status: "idle",
     detailStatus: "idle",
+    trackStatus: "idle",
     actionStatus: "idle",
     error: null,
   },
@@ -67,6 +81,10 @@ const publicOrderSlice = createSlice({
     clearOrderDetail(state) {
       state.detail = null;
       state.detailStatus = "idle";
+    },
+    clearTracked(state) {
+      state.tracked = null;
+      state.trackStatus = "idle";
     },
   },
   extraReducers: (builder) => {
@@ -106,9 +124,16 @@ const publicOrderSlice = createSlice({
           state.detail = action.payload.data;
         }
       })
-      .addCase(returnOrder.rejected, (state, action) => { state.actionStatus = "failed"; state.error = action.payload; });
+      .addCase(returnOrder.rejected, (state, action) => { state.actionStatus = "failed"; state.error = action.payload; })
+      // Track
+      .addCase(trackOrder.pending, (state) => { state.trackStatus = "loading"; state.error = null; })
+      .addCase(trackOrder.fulfilled, (state, action) => {
+        state.trackStatus = "succeeded";
+        state.tracked = action.payload?.data ?? null;
+      })
+      .addCase(trackOrder.rejected, (state, action) => { state.trackStatus = "failed"; state.error = action.payload; });
   },
 });
 
-export const { clearOrderDetail } = publicOrderSlice.actions;
+export const { clearOrderDetail, clearTracked } = publicOrderSlice.actions;
 export default publicOrderSlice.reducer;

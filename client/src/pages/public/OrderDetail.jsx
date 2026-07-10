@@ -130,7 +130,7 @@ const OrderDetail = () => {
   };
 
   const order      = detail;
-  const orderStatus = order?.status?.toLowerCase();
+  const orderStatus = (order?.order_status || order?.status || "").toLowerCase();
   const canCancel  = ["pending", "confirmed"].includes(orderStatus);
   const canReturn  = orderStatus === "delivered";
 
@@ -151,11 +151,11 @@ const OrderDetail = () => {
             <div>
               <h1 className="text-lg font-bold text-gray-900">Order Details</h1>
               {order && (
-                <p className="text-xs text-gray-400 font-mono">#{order._id?.slice(-8).toUpperCase()}</p>
+                <p className="text-xs text-gray-400 font-mono">#{order.order_number || order._id?.slice(-8).toUpperCase()}</p>
               )}
             </div>
           </div>
-          {order && <StatusBadge status={order.status} />}
+          {order && <StatusBadge status={order.order_status || order.status} />}
         </div>
 
         {/* Loading */}
@@ -181,7 +181,7 @@ const OrderDetail = () => {
             {/* Tracking */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <p className="text-sm font-bold text-gray-700 mb-4">Order Progress</p>
-              <OrderTracker status={order.status} />
+              <OrderTracker status={order.order_status || order.status} />
             </div>
 
             {/* Items */}
@@ -193,12 +193,17 @@ const OrderDetail = () => {
                 {order.items?.map((item) => (
                   <div key={item._id ?? item.product_id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
                     <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center text-3xl flex-shrink-0">
-                      {item.image
-                        ? <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-xl" />
+                      {item.product_image
+                        ? <img
+                            src={item.product_image}
+                            alt={item.product_name}
+                            className="w-full h-full object-cover rounded-xl"
+                            onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.parentElement.innerText = "📦"; }}
+                          />
                         : "📦"}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800">{item.name ?? "Product"}</p>
+                      <p className="text-sm font-semibold text-gray-800">{item.product_name ?? item.name ?? "Product"}</p>
                       {item.variant && (
                         <p className="text-xs text-gray-400 mt-0.5">{item.variant}</p>
                       )}
@@ -219,7 +224,7 @@ const OrderDetail = () => {
               <div className="space-y-2.5 text-sm">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>{formatCurrency(order.subtotal ?? order.total_amount)}</span>
+                  <span>{formatCurrency(order.subtotal)}</span>
                 </div>
                 {order.discount > 0 && (
                   <div className="flex justify-between text-green-600">
@@ -233,21 +238,27 @@ const OrderDetail = () => {
                     <span>− {formatCurrency(order.coupon_discount)}</span>
                   </div>
                 )}
+                {order.tax > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>GST (5%)</span>
+                    <span>{formatCurrency(order.tax)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-600">
                   <span>Delivery Charges</span>
-                  <span>{order.delivery_charge > 0 ? formatCurrency(order.delivery_charge) : <span className="text-green-600 font-semibold">FREE</span>}</span>
+                  <span>{(order.shipping_charge > 0) ? formatCurrency(order.shipping_charge) : <span className="text-green-600 font-semibold">FREE</span>}</span>
                 </div>
                 <div className="border-t border-dashed border-gray-200 pt-2.5 flex justify-between font-bold text-gray-900 text-base">
-                  <span>Grand Total</span>
-                  <span>{formatCurrency(order.grand_total ?? order.total_amount)}</span>
+                  <span>Total Amount</span>
+                  <span>{formatCurrency(order.total_amount)}</span>
                 </div>
               </div>
               {order.payment_method && (
                 <p className="mt-3 text-xs text-gray-400">
-                  Payment: <span className="font-semibold text-gray-600 capitalize">{order.payment_method.replace(/_/g, " ")}</span>
+                  Payment: <span className="font-semibold text-gray-600 capitalize">{order.payment_method === "cod" ? "Cash on Delivery" : order.payment_method}</span>
                   {order.payment_status && (
-                    <span className={`ml-2 font-bold ${order.payment_status === "paid" ? "text-green-600" : "text-amber-600"}`}>
-                      ({order.payment_status})
+                    <span className={`ml-2 font-bold ${order.payment_status === "paid" ? "text-green-600" : order.payment_status === "cod" ? "text-amber-600" : "text-gray-500"}`}>
+                      ({order.payment_status === "cod" ? "Pay on delivery" : order.payment_status})
                     </span>
                   )}
                 </p>
@@ -255,20 +266,18 @@ const OrderDetail = () => {
             </div>
 
             {/* Delivery address */}
-            {order.shipping_address && (
+            {order.address && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <MdLocationOn size={18} className="text-gray-500" />
                   <p className="text-sm font-bold text-gray-700">Delivery Address</p>
                 </div>
                 <div className="text-sm text-gray-600 leading-relaxed">
-                  <p className="font-semibold text-gray-900">{order.shipping_address.full_name}</p>
-                  <p>{order.shipping_address.address_line1}
-                    {order.shipping_address.address_line2 ? `, ${order.shipping_address.address_line2}` : ""}
-                  </p>
-                  {order.shipping_address.landmark && <p>Near: {order.shipping_address.landmark}</p>}
-                  <p>{order.shipping_address.city}, {order.shipping_address.state} — {order.shipping_address.pincode}</p>
-                  <p>📞 {order.shipping_address.contact_no}</p>
+                  <p className="font-semibold text-gray-900">{order.address.full_name}</p>
+                  <p>{order.address.address_line1}{order.address.address_line2 ? `, ${order.address.address_line2}` : ""}</p>
+                  {order.address.landmark && <p>Near: {order.address.landmark}</p>}
+                  <p>{order.address.city}, {order.address.state} — {order.address.pincode}</p>
+                  <p>📞 {order.address.contact_no}</p>
                 </div>
               </div>
             )}
@@ -281,16 +290,34 @@ const OrderDetail = () => {
                   <p className="text-xs text-gray-400">Order Placed</p>
                   <p className="font-semibold text-gray-700">{formatDate(order.createdAt)}</p>
                 </div>
-                {order.expected_delivery && (
+                {(order.estimated_delivery || order.expected_delivery) && (
                   <div>
                     <p className="text-xs text-gray-400">Expected Delivery</p>
-                    <p className="font-semibold text-gray-700">{formatDate(order.expected_delivery)}</p>
+                    <p className="font-semibold text-gray-700">{formatDate(order.estimated_delivery || order.expected_delivery)}</p>
+                  </div>
+                )}
+                {order.invoice_no && (
+                  <div>
+                    <p className="text-xs text-gray-400">Invoice No</p>
+                    <p className="font-semibold text-gray-700 font-mono text-xs">{order.invoice_no}</p>
                   </div>
                 )}
                 {order.tracking_id && (
                   <div>
                     <p className="text-xs text-gray-400">Tracking ID</p>
                     <p className="font-semibold text-gray-700 font-mono">{order.tracking_id}</p>
+                  </div>
+                )}
+                {order.courier_name && (
+                  <div>
+                    <p className="text-xs text-gray-400">Courier</p>
+                    <p className="font-semibold text-gray-700">{order.courier_name}</p>
+                  </div>
+                )}
+                {order.delivered_at && (
+                  <div>
+                    <p className="text-xs text-gray-400">Delivered On</p>
+                    <p className="font-semibold text-gray-700">{formatDate(order.delivered_at)}</p>
                   </div>
                 )}
               </div>
