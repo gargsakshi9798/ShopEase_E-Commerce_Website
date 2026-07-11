@@ -86,11 +86,13 @@ export const APIS = {
 
   // Public (unauthenticated storefront)
   Public: {
-    Home:       "/public/home",
-    Products:   "/public/products",
+    Home:          "/public/home",
+    Products:      "/public/products",
     ProductDetail: (slug) => `/public/products/${slug}`,
-    Categories: "/public/categories",
-    FAQs:       "/public/faqs",
+    Categories:    "/public/categories",
+    Brands:        "/public/brands",
+    FAQs:          "/public/faqs",
+    Settings:      "/public/settings",
   },
 
   // Customer (authenticated — requires shopease_customer_token)
@@ -102,6 +104,7 @@ export const APIS = {
     TrackOrder:    (orderNumber) => `/customer/orders/track/${orderNumber}`,
     Coupons:       "/customer/coupons",
     Reviews:       "/customer/reviews",
+    MyReviews:     "/customer/reviews/my",
     Notifications: "/customer/notifications",
     // Payment & Checkout
     Payment: {

@@ -33,11 +33,13 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Only act on true 401 Unauthorized — ignore network errors, 404s, etc.
     if (error.response?.status === 401) {
       const url = error.config?.url || "";
+      const currentPath = window.location.pathname;
 
       if (url.includes("/customer/")) {
-        // Clear cookie
+        // Clear customer cookie
         Cookies.remove("shopease_customer_token");
 
         // Reset Redux state if store is available
@@ -47,16 +49,27 @@ axiosClient.interceptors.response.use(
           _store.dispatch({ type: "publicWishlist/clearUserWishlist" });
         }
 
-        // Redirect to login (skip if already there)
-        if (!window.location.pathname.startsWith("/login") &&
-            !window.location.pathname.startsWith("/register")) {
+        // _skipRedirect flag means this was a silent background verify call —
+        // do NOT hard-redirect, just let the thunk handle state cleanup.
+        const skipRedirect = error.config?._skipRedirect;
+        if (
+          !skipRedirect &&
+          !currentPath.startsWith("/login") &&
+          !currentPath.startsWith("/register")
+        ) {
           window.location.href = "/login";
         }
-      } else {
+      } else if (url.includes("/admin/")) {
+        // Admin 401 — only redirect if we are actually inside the admin panel
         Cookies.remove("shopease_admin_token");
-        if (!window.location.pathname.startsWith("/login")) {
+        if (_store) {
+          _store.dispatch({ type: "auth/logout" });
+        }
+        if (currentPath.startsWith("/admin")) {
           window.location.href = "/login";
         }
+        // If we are on a public page (e.g. PublicLayout calling /admin/settings
+        // before this fix), do NOT redirect — just silently fail.
       }
     }
     return Promise.reject(error);

@@ -61,11 +61,19 @@ const authSlice = createSlice({
       .addCase(adminLogin.fulfilled, (state, action) => {
         state.status = IDS.SLICESTATUS.Succeeded;
         if (action.payload.success) {
-          state.token = action.payload.data.token;
-          state.role = action.payload.data.role;
-          state.role_slug = action.payload.data.role_slug;
+          state.token      = action.payload.data.token;
+          state.role       = action.payload.data.role;
+          state.role_slug  = action.payload.data.role_slug;
           state.permissions = action.payload.data.permissions;
-          state.isLogin = true;
+          state.isLogin    = true;
+          // Store user data immediately so Header shows correct name/role on login
+          state.data = {
+            name:          action.payload.data.name,
+            email:         action.payload.data.email,
+            profile_image: action.payload.data.profile_image,
+            role:          action.payload.data.role,
+            role_slug:     action.payload.data.role_slug,
+          };
         }
       })
       .addCase(adminLogin.rejected, (state, action) => {

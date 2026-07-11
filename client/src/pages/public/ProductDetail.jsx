@@ -14,6 +14,7 @@ import { toggleWishlist } from "../../features/public/publicWishlistSlice";
 import { GET, POST } from "../../utils/Methods";
 import { APIS } from "../../utils/APIS";
 import Cookies from "js-cookie";
+import { useSettings } from "../../hooks/useSettings";
 
 // ─── Star rating ─────────────────────────────────────────────────────────────
 const StarRating = ({ value = 0, max = 5, size = 16 }) => (
@@ -160,9 +161,15 @@ const ProductDetail = () => {
   const { slug }   = useParams();
   const dispatch   = useDispatch();
   const navigate   = useNavigate();
+  const { s }      = useSettings();
+
+  const trust1 = s("product_trust_1", "Free delivery on orders above ₹499");
+  const trust2 = s("product_trust_2", "7-day easy return policy");
+  const trust3 = s("product_trust_3", "100% secure payments");
 
   const { detail, detailStatus } = useSelector((s) => s.publicProduct);
   const wishlist   = useSelector((s) => s.publicWishlist.items);
+  const { relatedProducts } = useSelector((s) => s.publicProduct);
   const isWished   = wishlist.some((w) => w._id === detail?._id);
 
   const [selectedImg,   setSelectedImg]   = useState(0);
@@ -368,13 +375,13 @@ const ProductDetail = () => {
               {/* Delivery info */}
               <div className="mt-5 space-y-2 border-t border-gray-100 pt-4">
                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <MdLocalShipping size={15} className="text-blue-500" /> Free delivery on orders above ₹499
+                  <MdLocalShipping size={15} className="text-blue-500" /> {trust1}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <MdUndo size={15} className="text-green-500" /> 7-day easy return policy
+                  <MdUndo size={15} className="text-green-500" /> {trust2}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <MdSecurity size={15} className="text-amber-500" /> 100% secure payments
+                  <MdSecurity size={15} className="text-amber-500" /> {trust3}
                 </div>
               </div>
             </div>
@@ -415,6 +422,54 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* ── Related Products ── */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">You Might Also Like</h2>
+              {detail.category_id?._id && (
+                <Link
+                  to={`/products?category_id=${detail.category_id._id}`}
+                  className="text-sm text-primary-600 font-semibold hover:underline flex items-center gap-1"
+                >
+                  View More
+                </Link>
+              )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+              {relatedProducts.slice(0, 10).map((rp) => {
+                const rpPrice = rp.price ?? 0;
+                const rpMrp   = rp.mrp ?? rpPrice;
+                const rpDisc  = rpMrp > rpPrice ? Math.round(((rpMrp - rpPrice) / rpMrp) * 100) : 0;
+                return (
+                  <Link
+                    key={rp._id}
+                    to={`/product/${rp.slug || rp._id}`}
+                    className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex flex-col"
+                  >
+                    <div className="h-36 bg-gray-50 flex items-center justify-center overflow-hidden relative">
+                      {rp.thumbnail
+                        ? <img src={rp.thumbnail} alt={rp.name} className="w-full h-full object-contain p-2" />
+                        : <span className="text-5xl">🛒</span>}
+                      {rpDisc > 0 && (
+                        <span className="absolute top-2 right-2 text-[10px] bg-green-100 text-green-700 font-bold px-1.5 py-0.5 rounded">{rpDisc}% off</span>
+                      )}
+                    </div>
+                    <div className="p-3 flex flex-col flex-1">
+                      <p className="text-xs font-semibold text-gray-800 line-clamp-2 flex-1">{rp.name}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-sm font-bold text-gray-900">₹{rpPrice.toLocaleString()}</span>
+                        {rpMrp > rpPrice && <span className="text-xs text-gray-400 line-through">₹{rpMrp.toLocaleString()}</span>}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

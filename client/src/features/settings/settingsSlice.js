@@ -3,8 +3,14 @@ import { GET, PUT } from "../../utils/Methods";
 import { APIS } from "../../utils/APIS";
 import { IDS } from "../../utils/IDS";
 
+// Admin — requires auth token
 export const fetchSettings = createAsyncThunk("settings/fetch", async (_, { rejectWithValue }) => {
   try { return await GET(APIS.Settings); } catch (e) { return rejectWithValue(e.response?.data); }
+});
+
+// Public — no auth required, used by storefront
+export const fetchPublicSettings = createAsyncThunk("settings/fetchPublic", async (_, { rejectWithValue }) => {
+  try { return await GET(APIS.Public.Settings); } catch (e) { return rejectWithValue(e.response?.data); }
 });
 
 export const updateSettings = createAsyncThunk("settings/update", async (data, { rejectWithValue }) => {
@@ -17,7 +23,8 @@ const settingsSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchSettings.fulfilled, (s, a) => { s.data = a.payload?.data || {}; });
+      .addCase(fetchSettings.fulfilled, (s, a) => { s.data = a.payload?.data || {}; })
+      .addCase(fetchPublicSettings.fulfilled, (s, a) => { s.data = a.payload?.data || {}; });
   },
 });
 

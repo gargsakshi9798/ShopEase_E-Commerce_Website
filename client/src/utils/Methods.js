@@ -1,41 +1,43 @@
 import axiosClient from "./ApiInstance";
 
-const BASE = import.meta.env.VITE_API_BASE_URL;
+// axiosClient already has VITE_API_BASE_URL as baseURL — pass relative paths only.
+// DO NOT prepend BASE here; doing so causes double-baseURL requests like:
+//   http://localhost:5000/api/v1/http://localhost:5000/api/v1/customer/profile
 
 export const GET = async (url, params = {}) => {
-  const response = await axiosClient.get(BASE + url, { params });
+  const response = await axiosClient.get(url, { params });
   return response.data;
 };
 
 export const POST = async (url, data) => {
-  const response = await axiosClient.post(BASE + url, data);
+  const response = await axiosClient.post(url, data);
   return response.data;
 };
 
 export const PUT = async (url, data) => {
-  const response = await axiosClient.put(BASE + url, data);
+  const response = await axiosClient.put(url, data);
   return response.data;
 };
 
 export const PATCH = async (url, data) => {
-  const response = await axiosClient.patch(BASE + url, data);
+  const response = await axiosClient.patch(url, data);
   return response.data;
 };
 
 export const DELETE = async (url) => {
-  const response = await axiosClient.delete(BASE + url);
+  const response = await axiosClient.delete(url);
   return response.data;
 };
 
 export const POST_FORM = async (url, formData) => {
-  const response = await axiosClient.post(BASE + url, formData, {
+  const response = await axiosClient.post(url, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;
 };
 
 export const PUT_FORM = async (url, formData) => {
-  const response = await axiosClient.put(BASE + url, formData, {
+  const response = await axiosClient.put(url, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;

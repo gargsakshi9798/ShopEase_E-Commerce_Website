@@ -38,6 +38,18 @@ export const fetchPublicCategories = createAsyncThunk(
   }
 );
 
+// Fetch brands list (public)
+export const fetchPublicBrands = createAsyncThunk(
+  "publicProduct/fetchBrands",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await GET(APIS.Public.Brands || "/public/brands");
+    } catch (err) {
+      return rejectWithValue(err.response?.data || { message: "Failed to fetch brands" });
+    }
+  }
+);
+
 const publicProductSlice = createSlice({
   name: "publicProduct",
   initialState: {
@@ -46,7 +58,9 @@ const publicProductSlice = createSlice({
     totalPages: 1,
     currentPage: 1,
     detail: null,
+    relatedProducts: [],
     categories: [],
+    brands: [],
     status: "idle",        // idle | loading | succeeded | failed
     detailStatus: "idle",
     error: null,
@@ -55,6 +69,7 @@ const publicProductSlice = createSlice({
     clearDetail(state) {
       state.detail = null;
       state.detailStatus = "idle";
+      state.relatedProducts = [];
     },
   },
   extraReducers: (builder) => {
@@ -74,12 +89,19 @@ const publicProductSlice = createSlice({
       .addCase(fetchProductDetail.pending, (state) => { state.detailStatus = "loading"; })
       .addCase(fetchProductDetail.fulfilled, (state, action) => {
         state.detailStatus = "succeeded";
-        state.detail = action.payload?.data ?? null;
+        // API returns { product, related } or just the product
+        const d = action.payload?.data;
+        state.detail = d?.product ?? d ?? null;
+        state.relatedProducts = d?.related ?? [];
       })
       .addCase(fetchProductDetail.rejected, (state, action) => { state.detailStatus = "failed"; state.error = action.payload; })
       // Categories
       .addCase(fetchPublicCategories.fulfilled, (state, action) => {
         state.categories = action.payload?.data ?? [];
+      })
+      // Brands
+      .addCase(fetchPublicBrands.fulfilled, (state, action) => {
+        state.brands = action.payload?.data ?? [];
       });
   },
 });

@@ -1,81 +1,76 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
-  MdStar, MdStarBorder, MdEdit, MdDelete,
-  MdCheck, MdArrowForward,
+  MdStar, MdStarBorder, MdEdit, MdDelete, MdCheck,
+  MdArrowForward, MdRefresh,
 } from "react-icons/md";
 import toast from "react-hot-toast";
-
-// ─── Static demo review data ──────────────────────────────────────────────────
-const initialReviews = [
-  {
-    id: 1, orderId: "SE2024002", product: "Nike Air Max 270",
-    emoji: "👟", category: "Sports", date: "Jul 6, 2026",
-    rating: 5, title: "Absolutely love these shoes!",
-    body: "Super comfortable right out of the box. The cushioning is excellent for daily walks and light running. The design looks premium and gets a lot of compliments. Highly recommend!",
-    helpful: 12, verified: true, images: ["👟", "✨👟", "👟🏃"],
-  },
-  {
-    id: 2, orderId: "SE2024004", product: "LEGO Classic Brick Box 900pcs",
-    emoji: "🧱", category: "Toys", date: "Jun 30, 2026",
-    rating: 5, title: "Best gift for kids — hours of fun",
-    body: "My 7-year-old has been playing with this for days non-stop. All pieces are genuine LEGO, fit perfectly and the variety of colours is great for creative building. Storage box is a bonus.",
-    helpful: 8, verified: true, images: ["🧱", "🧱✨"],
-  },
-  {
-    id: 3, orderId: "SE2024006", product: "Prestige Pressure Cooker 5L",
-    emoji: "🍲", category: "Home & Kitchen", date: "Jun 22, 2026",
-    rating: 4, title: "Solid cooker, great build quality",
-    body: "Good quality cooker that feels sturdy and well-made. The gasket fits snugly and the safety valve works correctly. One star off because the handles get a little warm during cooking.",
-    helpful: 5, verified: true, images: [],
-  },
-];
-
-// ─── Pending (bought but not yet reviewed) ───────────────────────────────────
-const pendingReviews = [
-  { orderId: "SE2024001", product: "Samsung Galaxy S24 Ultra", emoji: "📱", category: "Mobiles",     date: "Jul 7, 2026"  },
-  { orderId: "SE2024003", product: "Atomic Habits — Paperback",emoji: "📗", category: "Books",       date: "Jul 3, 2026"  },
-];
+import { GET, POST, PUT, DELETE } from "../../utils/Methods";
+import { APIS } from "../../utils/APIS";
+import { formatDate, getImgUrl } from "../../utils/Methods";
+import AccountLayout from "../../components/public/layout/AccountLayout";
 
 // ─── Star selector ────────────────────────────────────────────────────────────
 const StarSelector = ({ value, onChange }) => (
   <div className="flex items-center gap-1">
     {[1, 2, 3, 4, 5].map((s) => (
-      <button key={s} type="button" onClick={() => onChange(s)} className="transition-transform hover:scale-110">
+      <button key={s} type="button" onClick={() => onChange(s)}
+        className="transition-transform hover:scale-110">
         {s <= value
           ? <MdStar size={28} className="text-amber-400" />
           : <MdStarBorder size={28} className="text-gray-300" />}
       </button>
     ))}
-    <span className="text-sm font-bold text-gray-600 ml-2">
-      {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][value]}
-    </span>
+    {value > 0 && (
+      <span className="text-sm font-bold text-gray-600 ml-2">
+        {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][value]}
+      </span>
+    )}
   </div>
 );
 
 // ─── Display Stars ────────────────────────────────────────────────────────────
 const Stars = ({ rating, size = 15 }) => (
   <span className="flex items-center gap-0.5">
-    {[1, 2, 3, 4, 5].map((s) => (
+    {[1, 2, 3, 4, 5].map((s) =>
       s <= rating
         ? <MdStar key={s} size={size} className="text-amber-400" />
         : <MdStarBorder key={s} size={size} className="text-gray-200" />
-    ))}
+    )}
   </span>
 );
 
-// ─── Write/Edit Form ──────────────────────────────────────────────────────────
-const ReviewForm = ({ initial = null, productName, onSave, onCancel }) => {
+// ─── Skeleton card ────────────────────────────────────────────────────────────
+const ReviewSkeleton = () => (
+  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-pulse">
+    <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-50 bg-gray-50/50">
+      <div className="w-11 h-11 bg-gray-200 rounded-xl flex-shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 bg-gray-200 rounded w-1/2" />
+        <div className="h-3 bg-gray-100 rounded w-1/3" />
+      </div>
+    </div>
+    <div className="px-5 py-5 space-y-3">
+      <div className="h-4 bg-gray-200 rounded w-1/4" />
+      <div className="h-3 bg-gray-100 rounded w-3/4" />
+      <div className="h-3 bg-gray-100 rounded w-2/3" />
+    </div>
+  </div>
+);
+
+// ─── Review Form (add / edit) ─────────────────────────────────────────────────
+const ReviewForm = ({ initial = null, onSave, onCancel, saving }) => {
   const [rating, setRating] = useState(initial?.rating || 0);
   const [title,  setTitle]  = useState(initial?.title  || "");
-  const [body,   setBody]   = useState(initial?.body   || "");
+  const [body,   setBody]   = useState(initial?.review || "");
 
   const submit = (e) => {
     e.preventDefault();
-    if (!rating)   { toast.error("Please select a star rating"); return; }
-    if (!title.trim()){ toast.error("Please add a review title"); return; }
-    if (!body.trim()) { toast.error("Please write your review"); return; }
-    onSave({ rating, title: title.trim(), body: body.trim() });
+    if (!rating)        { toast.error("Please select a star rating"); return; }
+    if (!title.trim())  { toast.error("Please add a review title"); return; }
+    if (!body.trim())   { toast.error("Please write your review"); return; }
+    onSave({ rating, title: title.trim(), review: body.trim() });
   };
 
   return (
@@ -86,26 +81,33 @@ const ReviewForm = ({ initial = null, productName, onSave, onCancel }) => {
       </div>
       <div>
         <label className="text-xs font-extrabold text-gray-500 mb-1 block">Review Title *</label>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={100}
+        <input
+          value={title} onChange={(e) => setTitle(e.target.value)} maxLength={100}
           placeholder="Summarise your experience in one line"
-          className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500" />
+          className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+        />
         <p className="text-[10px] text-gray-400 mt-1 text-right">{title.length}/100</p>
       </div>
       <div>
         <label className="text-xs font-extrabold text-gray-500 mb-1 block">Detailed Review *</label>
-        <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} maxLength={1000}
-          placeholder="What did you like or dislike? What should buyers know? Be specific and helpful."
-          className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 resize-none" />
+        <textarea
+          value={body} onChange={(e) => setBody(e.target.value)} rows={4} maxLength={1000}
+          placeholder="What did you like or dislike? Be specific and helpful."
+          className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 resize-none"
+        />
         <p className="text-[10px] text-gray-400 mt-1 text-right">{body.length}/1000</p>
       </div>
       <div className="flex gap-3">
-        <button type="button" onClick={onCancel}
+        <button type="button" onClick={onCancel} disabled={saving}
           className="flex-1 border border-gray-200 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm">
           Cancel
         </button>
-        <button type="submit"
-          className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-extrabold py-3 rounded-xl transition-colors shadow-md text-sm flex items-center justify-center gap-2">
-          <MdCheck size={16} /> {initial ? "Update Review" : "Submit Review"}
+        <button type="submit" disabled={saving}
+          className="flex-1 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-extrabold py-3 rounded-xl transition-colors shadow-md text-sm flex items-center justify-center gap-2">
+          {saving
+            ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : <MdCheck size={16} />}
+          {saving ? "Saving…" : initial ? "Update Review" : "Submit Review"}
         </button>
       </div>
     </form>
@@ -114,236 +116,227 @@ const ReviewForm = ({ initial = null, productName, onSave, onCancel }) => {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const MyReviews = () => {
-  const [reviews,  setReviews]  = useState(initialReviews);
-  const [pending,  setPending]  = useState(pendingReviews);
-  const [editId,   setEditId]   = useState(null);
-  const [writeFor, setWriteFor] = useState(null);   // pending review item
-  const [activeTab, setTab]     = useState("submitted");
+  const [reviews,   setReviews]   = useState([]);
+  const [loading,   setLoading]   = useState(true);
+  const [saving,    setSaving]    = useState(false);
+  const [editId,    setEditId]    = useState(null);   // review._id being edited
+  const [activeTab, setTab]       = useState("submitted");
 
-  // Submit new review from pending
-  const handleNew = (item, data) => {
-    const newReview = {
-      id: Date.now(), orderId: item.orderId, product: item.product,
-      emoji: item.emoji, category: item.category,
-      date: new Date().toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" }),
-      verified: true, helpful: 0, images: [],
-      ...data,
-    };
-    setReviews((r) => [newReview, ...r]);
-    setPending((p) => p.filter((x) => x.orderId !== item.orderId));
-    setWriteFor(null);
-    toast.success("Review submitted! Thank you.");
+  // ── Fetch customer's own reviews ─────────────────────────────────────────
+  const loadReviews = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await GET(APIS.Customer.MyReviews);
+      setReviews(res?.data?.data ?? res?.data ?? []);
+    } catch {
+      toast.error("Failed to load reviews");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadReviews(); }, [loadReviews]);
+
+  // ── Save (update) ─────────────────────────────────────────────────────────
+  const handleUpdate = async (id, data) => {
+    setSaving(true);
+    try {
+      await PUT(`${APIS.Customer.Reviews}/${id}`, data);
+      toast.success("Review updated!");
+      setEditId(null);
+      loadReviews();
+    } catch {
+      toast.error("Failed to update review");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Update existing review
-  const handleEdit = (id, data) => {
-    setReviews((r) => r.map((x) => x.id === id ? { ...x, ...data } : x));
-    setEditId(null);
-    toast.success("Review updated successfully!");
+  // ── Delete ────────────────────────────────────────────────────────────────
+  const handleDelete = async (id, productName) => {
+    if (!window.confirm(`Delete your review for "${productName}"?`)) return;
+    try {
+      await DELETE(`${APIS.Customer.Reviews}/${id}`);
+      toast.success("Review deleted");
+      setReviews((r) => r.filter((x) => x._id !== id));
+    } catch {
+      toast.error("Failed to delete review");
+    }
   };
 
-  // Delete review
-  const handleDelete = (id, product) => {
-    setReviews((r) => r.filter((x) => x.id !== id));
-    toast.success(`Review for "${product}" deleted`);
-  };
-
-  // Mark helpful
-  const markHelpful = (id) => {
-    setReviews((r) => r.map((x) => x.id === id ? { ...x, helpful: x.helpful + 1 } : x));
-    toast.success("Thanks for your feedback!");
+  // ── Mark helpful ──────────────────────────────────────────────────────────
+  const handleHelpful = async (id) => {
+    try {
+      await POST(`${APIS.Customer.Reviews}/${id}/helpful`, {});
+      loadReviews();
+    } catch { /* silent */ }
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <AccountLayout>
+      <div className="space-y-4">
 
-      {/* Page Header */}
-      <div className="bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-[900px] mx-auto px-4 py-5">
-          <h1 className="text-xl font-extrabold text-gray-900">My Reviews</h1>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {reviews.length} review{reviews.length !== 1 ? "s" : ""} submitted
-            {pending.length > 0 && ` · ${pending.length} pending`}
-          </p>
-          {/* Tabs */}
-          <div className="flex gap-2 mt-4">
-            {[
-              { key: "submitted", label: `Submitted (${reviews.length})` },
-              { key: "pending",   label: `Pending (${pending.length})`, dot: pending.length > 0 },
-            ].map((t) => (
-              <button key={t.key} onClick={() => setTab(t.key)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === t.key ? "bg-primary-600 text-white shadow" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-                {t.label}
-                {t.dot && <span className="w-2 h-2 bg-white rounded-full opacity-80" />}
-              </button>
-            ))}
+        {/* Header */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
+              <MdStar size={20} className="text-amber-500" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">My Reviews</h1>
+              <p className="text-xs text-gray-400">
+                {loading ? "Loading…" : `${reviews.length} review${reviews.length !== 1 ? "s" : ""} submitted`}
+              </p>
+            </div>
           </div>
+          <button onClick={loadReviews} disabled={loading}
+            className="flex items-center gap-1.5 text-xs text-gray-500 border border-gray-200 px-3 py-1.5 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors">
+            <MdRefresh size={14} className={loading ? "animate-spin" : ""} /> Refresh
+          </button>
         </div>
-      </div>
 
-      <div className="max-w-[900px] mx-auto px-4 py-6 space-y-4">
-
-        {/* ── SUBMITTED REVIEWS TAB ── */}
-        {activeTab === "submitted" && (
-          <>
-            {reviews.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 py-20 text-center shadow-sm">
-                <span className="text-5xl">⭐</span>
-                <p className="text-gray-600 font-bold mt-4">No reviews yet</p>
-                <p className="text-sm text-gray-400 mt-1">Reviews you write will appear here</p>
-                <button onClick={() => setTab("pending")}
-                  className="inline-flex items-center gap-1.5 mt-5 bg-primary-600 hover:bg-primary-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors">
-                  Write a Review <MdArrowForward size={14} />
-                </button>
-              </div>
-            ) : (
-              reviews.map((r) => (
-                <div key={r.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  {/* Product info */}
-                  <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-50 bg-gray-50/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 bg-white border border-gray-200 rounded-xl flex items-center justify-center text-2xl shadow-sm">{r.emoji}</div>
-                      <div>
-                        <p className="text-sm font-extrabold text-gray-900">{r.product}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">Order #{r.orderId} · {r.date}</p>
-                      </div>
-                    </div>
-                    {r.verified && (
-                      <span className="flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
-                        <MdCheck size={11} /> Verified Purchase
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Review content or edit form */}
-                  <div className="px-5 py-5">
-                    {editId === r.id ? (
-                      <ReviewForm
-                        initial={r}
-                        productName={r.product}
-                        onSave={(data) => handleEdit(r.id, data)}
-                        onCancel={() => setEditId(null)}
-                      />
-                    ) : (
-                      <>
-                        <div className="flex items-start justify-between gap-4 mb-3">
-                          <div>
-                            <Stars rating={r.rating} />
-                            <p className="text-sm font-extrabold text-gray-900 mt-2">{r.title}</p>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <button onClick={() => setEditId(r.id)}
-                              className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:border-blue-300 hover:text-blue-600 transition-colors">
-                              <MdEdit size={15} />
-                            </button>
-                            <button onClick={() => handleDelete(r.id, r.product)}
-                              className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:border-red-300 hover:text-red-500 transition-colors">
-                              <MdDelete size={15} />
-                            </button>
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600 leading-relaxed">{r.body}</p>
-                        {r.images.length > 0 && (
-                          <div className="flex gap-2 mt-3">
-                            {r.images.map((img, i) => (
-                              <div key={i} className="w-16 h-16 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-center text-2xl">{img}</div>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-50">
-                          <button onClick={() => markHelpful(r.id)}
-                            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary-600 font-medium transition-colors">
-                            👍 Helpful ({r.helpful})
-                          </button>
-                          <span className="text-xs text-gray-300">|</span>
-                          <span className="text-xs text-gray-400">{r.category}</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </>
+        {/* Loading skeletons */}
+        {loading && (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => <ReviewSkeleton key={i} />)}
+          </div>
         )}
 
-        {/* ── PENDING REVIEWS TAB ── */}
-        {activeTab === "pending" && (
-          <>
-            {pending.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 py-20 text-center shadow-sm">
-                <span className="text-5xl">🎉</span>
-                <p className="text-gray-600 font-bold mt-4">All caught up!</p>
-                <p className="text-sm text-gray-400 mt-1">You've reviewed all your recent purchases.</p>
-                <button onClick={() => setTab("submitted")}
-                  className="inline-flex items-center gap-1.5 mt-5 border border-gray-200 text-gray-600 font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-gray-50 transition-colors">
-                  See Submitted Reviews
-                </button>
-              </div>
-            ) : (
-              pending.map((item) => (
-                <div key={item.orderId} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  {/* Product info */}
-                  <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-center text-2xl">{item.emoji}</div>
-                      <div>
-                        <p className="text-sm font-extrabold text-gray-900">{item.product}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">Order #{item.orderId} · Delivered {item.date}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs bg-amber-100 text-amber-700 font-bold px-2.5 py-1 rounded-full flex-shrink-0">Awaiting Review</span>
-                  </div>
+        {/* Empty state */}
+        {!loading && reviews.length === 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center shadow-sm">
+            <span className="text-5xl">⭐</span>
+            <p className="text-gray-600 font-bold mt-4">No reviews yet</p>
+            <p className="text-sm text-gray-400 mt-1">Reviews you write on product pages will appear here</p>
+            <Link to="/"
+              className="inline-flex items-center gap-1.5 mt-5 bg-primary-600 hover:bg-primary-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors">
+              Start Shopping <MdArrowForward size={14} />
+            </Link>
+          </div>
+        )}
 
-                  {/* Write form or button */}
-                  <div className="px-5 py-5">
-                    {writeFor === item.orderId ? (
-                      <ReviewForm
-                        productName={item.product}
-                        onSave={(data) => handleNew(item, data)}
-                        onCancel={() => setWriteFor(null)}
-                      />
-                    ) : (
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-700">How was your experience?</p>
-                          <p className="text-xs text-gray-400 mt-0.5">Your review helps millions of shoppers make better decisions.</p>
-                          {/* Preview stars — clickable to start review */}
-                          <div className="flex items-center gap-1 mt-3">
-                            {[1, 2, 3, 4, 5].map((s) => (
-                              <button key={s} onClick={() => setWriteFor(item.orderId)}
-                                className="transition-transform hover:scale-125">
-                                <MdStarBorder size={24} className="text-gray-300 hover:text-amber-400 transition-colors" />
-                              </button>
-                            ))}
-                            <span className="text-xs text-gray-400 ml-2">Click to rate</span>
-                          </div>
-                        </div>
-                        <button onClick={() => setWriteFor(item.orderId)}
-                          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-colors shadow-md flex-shrink-0">
-                          <MdStar size={15} /> Write Review
+        {/* Reviews list */}
+        {!loading && reviews.map((r) => {
+          const product     = r.product_id;
+          const productName = product?.name || "Product";
+          const productImg  = product?.thumbnail;
+          const productSlug = product?.slug || product?._id;
+          const orderNum    = r.order_id?.order_number;
+
+          return (
+            <div key={r._id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              {/* Product info header */}
+              <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-50 bg-gray-50/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 bg-white border border-gray-200 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {productImg
+                      ? <img src={getImgUrl(productImg)} alt={productName} className="w-full h-full object-contain p-1" />
+                      : <span className="text-2xl">📦</span>}
+                  </div>
+                  <div>
+                    {productSlug
+                      ? <Link to={`/product/${productSlug}`}
+                          className="text-sm font-extrabold text-gray-900 hover:text-primary-600 transition-colors line-clamp-1">
+                          {productName}
+                        </Link>
+                      : <p className="text-sm font-extrabold text-gray-900">{productName}</p>}
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {orderNum && <>Order #{orderNum} · </>}
+                      {formatDate(r.createdAt)}
+                    </p>
+                  </div>
+                </div>
+                {r.is_verified_purchase && (
+                  <span className="flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                    <MdCheck size={11} /> Verified Purchase
+                  </span>
+                )}
+              </div>
+
+              {/* Review content / edit form */}
+              <div className="px-5 py-5">
+                {editId === r._id ? (
+                  <ReviewForm
+                    initial={r}
+                    saving={saving}
+                    onSave={(data) => handleUpdate(r._id, data)}
+                    onCancel={() => setEditId(null)}
+                  />
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div>
+                        <Stars rating={r.rating} />
+                        {r.title && (
+                          <p className="text-sm font-extrabold text-gray-900 mt-2">{r.title}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={() => setEditId(r._id)}
+                          className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:border-blue-300 hover:text-blue-600 transition-colors"
+                          title="Edit review">
+                          <MdEdit size={15} />
+                        </button>
+                        <button onClick={() => handleDelete(r._id, productName)}
+                          className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:border-red-300 hover:text-red-500 transition-colors"
+                          title="Delete review">
+                          <MdDelete size={15} />
                         </button>
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
+                    </div>
 
-            {/* Tip card */}
-            {pending.length > 0 && (
-              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0">💡</span>
-                <div>
-                  <p className="text-sm font-extrabold text-amber-800">Earn 50 reward points per review!</p>
-                  <p className="text-xs text-amber-600 mt-0.5">Write a detailed review with a photo to earn bonus points redeemable on your next order.</p>
-                </div>
+                    {/* Review text — field is "review" in schema, fallback to "comment" for older records */}
+                    <p className="text-sm text-gray-600 leading-relaxed">{r.review || r.comment}</p>
+
+                    {/* Images */}
+                    {r.images?.length > 0 && (
+                      <div className="flex gap-2 mt-3 flex-wrap">
+                        {r.images.map((img, i) => (
+                          <img key={i} src={getImgUrl(img)} alt="" className="w-16 h-16 rounded-xl object-cover border border-gray-200" />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Footer actions */}
+                    <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-50">
+                      <button onClick={() => handleHelpful(r._id)}
+                        className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary-600 font-medium transition-colors">
+                        👍 Helpful ({r.helpful_count ?? 0})
+                      </button>
+                      {product?.category_id?.name && (
+                        <>
+                          <span className="text-xs text-gray-300">|</span>
+                          <span className="text-xs text-gray-400">{product.category_id.name}</span>
+                        </>
+                      )}
+                      {r.is_approved === false && (
+                        <span className="ml-auto text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">
+                          Pending Approval
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
-            )}
-          </>
+            </div>
+          );
+        })}
+
+        {/* Tip */}
+        {!loading && reviews.length > 0 && (
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-start gap-3">
+            <span className="text-2xl flex-shrink-0">💡</span>
+            <div>
+              <p className="text-sm font-extrabold text-amber-800">Your reviews help other shoppers</p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                You can write reviews directly on product pages after purchasing.
+              </p>
+            </div>
+          </div>
         )}
+
       </div>
-    </div>
+    </AccountLayout>
   );
 };
 

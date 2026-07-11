@@ -104,6 +104,73 @@ class ReviewController {
       return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
     }
   }
+
+  // Get current customer's own reviews
+  async getMyReviews(req, res) {
+    try {
+      return Paginate(
+        Review,
+        {
+          filter: { user_id: req.user.user },
+          sort: { createdAt: -1 },
+          populate: [
+            { path: "product_id", select: "name thumbnail slug category_id" },
+            { path: "order_id",   select: "order_number" },
+          ],
+        },
+        req,
+        res
+      );
+    } catch (error) {
+      return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  // Edit own review
+  async updateReview(req, res) {
+    try {
+      const review = await Review.findOne({ _id: req.params.id, user_id: req.user.user });
+      if (!review) return Base.sendError(res, HTTPS.NOT_FOUND, "Review not found");
+
+      const { rating, title, review: reviewText } = req.body;
+      if (rating)      review.rating = Number(rating);
+      if (title)       review.title  = title;
+      if (reviewText)  review.review = reviewText;
+
+      await review.save();
+
+      // Recalculate product rating
+      const allReviews = await Review.find({ product_id: review.product_id, is_approved: true });
+      const avgRating = allReviews.reduce((s, r) => s + r.rating, 0) / (allReviews.length || 1);
+      await Product.findByIdAndUpdate(review.product_id, {
+        rating_avg:   Math.round(avgRating * 10) / 10,
+        rating_count: allReviews.length,
+      });
+
+      return Base.sendResponse(res, HTTPS.OK, review, "Review updated");
+    } catch (error) {
+      return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  // Delete own review
+  async deleteReview(req, res) {
+    try {
+      const review = await Review.findOneAndDelete({ _id: req.params.id, user_id: req.user.user });
+      if (!review) return Base.sendError(res, HTTPS.NOT_FOUND, "Review not found");
+
+      // Recalculate product rating
+      const allReviews = await Review.find({ product_id: review.product_id, is_approved: true });
+      await Product.findByIdAndUpdate(review.product_id, {
+        rating_avg:   allReviews.length ? Math.round(allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length * 10) / 10 : 0,
+        rating_count: allReviews.length,
+      });
+
+      return Base.sendResponse(res, HTTPS.OK, null, "Review deleted");
+    } catch (error) {
+      return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
+    }
+  }
 }
 
 module.exports = new ReviewController();

@@ -15,4 +15,19 @@ router.get("/categories", homeController.getCategories);
 // FAQs
 router.get("/faqs", homeController.getFAQs);
 
+// Public settings (logo, site name, feature strips, etc.) — no auth required
+router.get("/settings", async (req, res) => {
+  const Settings = require("../../../../models/Settings");
+  const Base = require("../../../../helper/exception_handling/index.js");
+  const { HTTPS } = require("../../../../helper/https-status-codes/https-status-codes");
+  try {
+    const settings = await Settings.find();
+    const result = {};
+    settings.forEach((s) => (result[s.key] = s.value));
+    return Base.sendResponse(res, HTTPS.OK, result);
+  } catch (error) {
+    return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
+  }
+});
+
 module.exports = router;

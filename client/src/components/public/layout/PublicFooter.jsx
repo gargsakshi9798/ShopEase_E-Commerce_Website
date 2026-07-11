@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FaShoppingBag, FaFacebook, FaInstagram, FaTwitter, FaYoutube, FaWhatsapp } from "react-icons/fa";
-import { MdEmail, MdLock, MdLanguage, MdPhone, MdLocationOn } from "react-icons/md";
+import { MdEmail, MdLock, MdLanguage, MdPhone } from "react-icons/md";
+import { useSettings } from "../../../hooks/useSettings";
+import { getImgUrl } from "../../../utils/Methods";
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
+// ─── Static nav link arrays (links don't change via CMS) ─────────────────────
 const topCategories = [
   { label: "Fashion",          path: "/fashion"      },
   { label: "Electronics",      path: "/electronics"  },
@@ -16,41 +17,22 @@ const topCategories = [
 ];
 
 const customerService = [
-  { label: "Help Center",          path: "/help-center"         },
-  { label: "Track Your Order",     path: "/track-order"         },
-  { label: "Returns & Refunds",    path: "/returns"             },
-  { label: "Shipping Policy",      path: "/shipping-policy"     },
-  { label: "Cancellation Policy",  path: "/cancellation-policy" },
-  { label: "Contact Us",           path: "/contact-us"          },
+  { label: "Help Center",         path: "/help-center"         },
+  { label: "Track Your Order",    path: "/track-order"         },
+  { label: "Returns & Refunds",   path: "/returns"             },
+  { label: "Shipping Policy",     path: "/shipping-policy"     },
+  { label: "Cancellation Policy", path: "/cancellation-policy" },
+  { label: "Contact Us",          path: "/contact-us"          },
 ];
 
 const company = [
-  { label: "About Us",           path: "/about-us"       },
-  { label: "Careers",            path: "/careers"        },
-  { label: "Press & Media",      path: "/press-media"    },
-  { label: "Become a Seller",    path: "/become-seller"  },
-  { label: "Affiliate Program",  path: "/affiliate"      },
+  { label: "About Us",           path: "/about-us"         },
+  { label: "Careers",            path: "/careers"          },
+  { label: "Press & Media",      path: "/press-media"      },
+  { label: "Become a Seller",    path: "/become-seller"    },
+  { label: "Affiliate Program",  path: "/affiliate"        },
   { label: "Terms & Conditions", path: "/terms-conditions" },
-  { label: "Privacy Policy",     path: "/privacy-policy" },
-];
-
-const topBrands = [
-  { label: "Nike",      path: "/sports"      },
-  { label: "Adidas",    path: "/sports"      },
-  { label: "Puma",      path: "/sports"      },
-  { label: "Samsung",   path: "/electronics" },
-  { label: "Apple",     path: "/mobiles"     },
-  { label: "OnePlus",   path: "/mobiles"     },
-  { label: "Prestige",  path: "/home-kitchen"},
-];
-
-const features = [
-  { icon: "🚚", title: "Free Delivery",         sub: "On orders above ₹499"            },
-  { icon: "🔒", title: "Secure Payments",        sub: "256-bit SSL encryption"          },
-  { icon: "↩️", title: "Easy Returns",           sub: "7-day hassle-free returns"       },
-  { icon: "💰", title: "Best Price Guarantee",   sub: "Lowest prices, always"           },
-  { icon: "🎧", title: "24/7 Support",           sub: "Round-the-clock assistance"      },
-  { icon: "🛡️", title: "100% Genuine",           sub: "Authenticated seller products"   },
+  { label: "Privacy Policy",     path: "/privacy-policy"   },
 ];
 
 const bottomLinks = [
@@ -60,10 +42,68 @@ const bottomLinks = [
   { label: "Gift Cards",    path: "/gift-cards"    },
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Default values ───────────────────────────────────────────────────────────
+const DEFAULT_FEATURES = [
+  { icon: "🚚", title: "Free Delivery",       sub: "On orders above ₹499"          },
+  { icon: "🔒", title: "Secure Payments",      sub: "256-bit SSL encryption"        },
+  { icon: "↩️", title: "Easy Returns",         sub: "7-day hassle-free returns"     },
+  { icon: "💰", title: "Best Price Guarantee", sub: "Lowest prices, always"         },
+  { icon: "🎧", title: "24/7 Support",         sub: "Round-the-clock assistance"    },
+  { icon: "🛡️", title: "100% Genuine",         sub: "Authenticated seller products" },
+];
+
+const DEFAULT_STATS = [
+  { stat: "10M+",  label: "Happy Customers", icon: "😊" },
+  { stat: "20L+",  label: "Products",         icon: "🛍️" },
+  { stat: "50K+",  label: "Trusted Sellers",  icon: "🤝" },
+  { stat: "99.9%", label: "Secure Payments",  icon: "🛡️" },
+];
+
+// Parse "stat|label" pipe value
+const parseStat = (raw, def) => {
+  if (!raw) return def;
+  const [stat, label] = raw.split("|").map((v) => v.trim());
+  return { stat: stat || def.stat, label: label || def.label, icon: def.icon };
+};
+
 const PublicFooter = () => {
-  const [email, setEmail] = useState("");
+  const { s } = useSettings();
+  const [email,      setEmail]      = useState("");
   const [subscribed, setSubscribed] = useState(false);
+
+  // ── Dynamic values from settings ─────────────────────────────────────────
+  const siteName      = s("site_name",       "ShopEase");
+  const siteLogo      = s("logo",            "");
+  const halfLen       = Math.ceil(siteName.length / 2);
+  const namePart1     = siteName.slice(0, halfLen);
+  const namePart2     = siteName.slice(halfLen);
+
+  const footerTagline = s("footer_tagline",  "Your one-stop destination for online shopping. Best products, best prices, best experience.");
+  const supportPhone  = s("support_phone",   "1800-123-4567 (Free)");
+  const supportEmail  = s("support_email",   "support@shopease.in");
+  const copyrightTpl  = s("footer_copyright","© {year} ShopEase Technologies Pvt. Ltd. All rights reserved.");
+  const copyright     = copyrightTpl.replace("{year}", new Date().getFullYear());
+
+  // Social links
+  const socialFb   = s("social_facebook",  "#");
+  const socialIg   = s("social_instagram", "#");
+  const socialTw   = s("social_twitter",   "#");
+  const socialYt   = s("social_youtube",   "#");
+  const socialWa   = s("social_whatsapp",  "#");
+
+  // App download
+  const appPlaystore = s("app_playstore_url", "#");
+  const appAppstore  = s("app_appstore_url",  "#");
+  const appHeadline  = s("app_headline",  `Download the ${siteName} App`);
+  const appSubtitle  = s("app_subtitle",  "Exclusive app offers, faster checkout and real-time tracking.");
+
+  // Footer stats
+  const footerStats = [
+    parseStat(s("footer_stat_1", ""), DEFAULT_STATS[0]),
+    parseStat(s("footer_stat_2", ""), DEFAULT_STATS[1]),
+    parseStat(s("footer_stat_3", ""), DEFAULT_STATS[2]),
+    parseStat(s("footer_stat_4", ""), DEFAULT_STATS[3]),
+  ];
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -77,7 +117,7 @@ const PublicFooter = () => {
       <div className="border-y border-gray-100">
         <div className="max-w-[1280px] mx-auto px-4 py-5">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {features.map((f) => (
+            {DEFAULT_FEATURES.map((f) => (
               <div key={f.title} className="flex items-start gap-3">
                 <span className="text-2xl flex-shrink-0">{f.icon}</span>
                 <div>
@@ -111,9 +151,11 @@ const PublicFooter = () => {
                 <form onSubmit={handleSubscribe} className="flex max-w-lg">
                   <div className="relative flex-1">
                     <MdEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                    <input
+                      type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email address"
-                      className="w-full h-12 pl-10 pr-4 border border-gray-200 rounded-l-xl text-sm outline-none focus:border-primary-500 bg-white" />
+                      className="w-full h-12 pl-10 pr-4 border border-gray-200 rounded-l-xl text-sm outline-none focus:border-primary-500 bg-white"
+                    />
                   </div>
                   <button type="submit" className="h-12 px-6 bg-primary-600 hover:bg-primary-700 text-white font-semibold text-sm rounded-r-xl transition-colors whitespace-nowrap">
                     Subscribe
@@ -136,14 +178,16 @@ const PublicFooter = () => {
               style={{ background: "linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)" }}>
               <div className="flex-1 z-10 relative">
                 <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-1">SHOP ON THE GO</p>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Download the ShopEase App</h3>
-                <p className="text-sm text-gray-600 mb-4">Exclusive app offers, faster checkout and real-time tracking.</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{appHeadline}</h3>
+                <p className="text-sm text-gray-600 mb-4">{appSubtitle}</p>
                 <div className="flex gap-3 flex-wrap">
-                  <a href="#" className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-gray-900 transition-colors">
+                  <a href={appPlaystore} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-gray-900 transition-colors">
                     <span className="text-lg">🤖</span>
                     <div><p className="text-[9px] opacity-70 leading-none">GET IT ON</p><p className="text-sm font-bold leading-tight">Google Play</p></div>
                   </a>
-                  <a href="#" className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-gray-900 transition-colors">
+                  <a href={appAppstore} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-gray-900 transition-colors">
                     <span className="text-lg">🍎</span>
                     <div><p className="text-[9px] opacity-70 leading-none">Download on the</p><p className="text-sm font-bold leading-tight">App Store</p></div>
                   </a>
@@ -154,12 +198,7 @@ const PublicFooter = () => {
               </div>
             </div>
             <div className="flex gap-8 flex-wrap justify-center lg:justify-end">
-              {[
-                { stat:"10M+", label:"Happy Customers", icon:"😊" },
-                { stat:"20L+", label:"Products",         icon:"🛍️" },
-                { stat:"50K+", label:"Trusted Sellers",  icon:"🤝" },
-                { stat:"99.9%",label:"Secure Payments",  icon:"🛡️" },
-              ].map((s) => (
+              {footerStats.map((s) => (
                 <div key={s.label} className="flex flex-col items-center text-center w-24">
                   <span className="text-3xl mb-1">{s.icon}</span>
                   <p className="text-xl font-bold text-gray-900">{s.stat}</p>
@@ -179,31 +218,33 @@ const PublicFooter = () => {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <Link to="/" className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                  <FaShoppingBag size={15} className="text-white" />
+                <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center overflow-hidden">
+                  {siteLogo
+                    ? <img src={getImgUrl(siteLogo)} alt={siteName} className="w-full h-full object-contain p-0.5" />
+                    : <FaShoppingBag size={15} className="text-white" />}
                 </div>
                 <span className="text-lg font-bold">
-                  <span className="text-primary-600">Shop</span><span className="text-gray-900">Ease</span>
+                  <span className="text-primary-600">{namePart1}</span>
+                  <span className="text-gray-900">{namePart2}</span>
                 </span>
               </Link>
-              <p className="text-xs text-gray-500 leading-relaxed mb-3">
-                Your one-stop destination for online shopping. Best products, best prices, best experience.
-              </p>
+              <p className="text-xs text-gray-500 leading-relaxed mb-3">{footerTagline}</p>
               <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
-                <MdPhone size={13} className="text-green-500" /> 1800-123-4567 (Free)
+                <MdPhone size={13} className="text-green-500" /> {supportPhone}
               </div>
               <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
-                <MdEmail size={13} className="text-blue-500" /> support@shopease.in
+                <MdEmail size={13} className="text-blue-500" /> {supportEmail}
               </div>
+              {/* Social icons */}
               <div className="flex gap-2">
                 {[
-                  { icon: FaFacebook,  color: "text-blue-600", href: "#" },
-                  { icon: FaInstagram, color: "text-pink-600", href: "#" },
-                  { icon: FaTwitter,   color: "text-sky-500",  href: "#" },
-                  { icon: FaYoutube,   color: "text-red-600",  href: "#" },
-                  { icon: FaWhatsapp,  color: "text-green-600",href: "#" },
+                  { icon: FaFacebook,  color: "text-blue-600",  href: socialFb },
+                  { icon: FaInstagram, color: "text-pink-600",  href: socialIg },
+                  { icon: FaTwitter,   color: "text-sky-500",   href: socialTw },
+                  { icon: FaYoutube,   color: "text-red-600",   href: socialYt },
+                  { icon: FaWhatsapp,  color: "text-green-600", href: socialWa },
                 ].map(({ icon: Icon, color, href }, i) => (
-                  <a key={i} href={href}
+                  <a key={i} href={href} target="_blank" rel="noopener noreferrer"
                     className={`w-8 h-8 border border-gray-200 rounded-full flex items-center justify-center ${color} hover:border-primary-300 transition-colors`}>
                     <Icon size={13} />
                   </a>
@@ -248,21 +289,8 @@ const PublicFooter = () => {
               </ul>
             </div>
 
-            {/* Popular Brands */}
-            <div>
-              <h4 className="text-sm font-bold text-gray-900 mb-3">Popular Brands</h4>
-              <ul className="space-y-2">
-                {topBrands.map((b) => (
-                  <li key={b.label}>
-                    <Link to={b.path} className="text-xs text-gray-500 hover:text-primary-600 transition-colors">{b.label}</Link>
-                  </li>
-                ))}
-                <li><Link to="/categories" className="text-xs text-primary-600 font-semibold hover:underline">View All Brands →</Link></li>
-              </ul>
-            </div>
-
             {/* Payment & Delivery */}
-            <div>
+            <div className="col-span-2 md:col-span-1">
               <h4 className="text-sm font-bold text-gray-900 mb-3">Payment Methods</h4>
               <div className="flex flex-wrap gap-2 mb-4">
                 {["VISA","MC","RuPay","UPI","EMI","COD"].map((p) => (
@@ -289,7 +317,7 @@ const PublicFooter = () => {
       {/* ── Bottom Bar ── */}
       <div className="bg-gray-50 border-t border-gray-100">
         <div className="max-w-[1280px] mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-gray-500">© 2026 ShopEase Technologies Pvt. Ltd. All rights reserved.</p>
+          <p className="text-xs text-gray-500">{copyright}</p>
           <div className="flex flex-wrap items-center gap-3">
             <button className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700">
               <MdLanguage size={14} /> India (English)
@@ -302,6 +330,7 @@ const PublicFooter = () => {
           </div>
         </div>
       </div>
+
     </footer>
   );
 };

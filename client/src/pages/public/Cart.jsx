@@ -11,14 +11,10 @@ import { FaTag } from "react-icons/fa";
 import { removeFromCart, updateQty, clearCart } from "../../features/public/publicCartSlice";
 import { toggleWishlist } from "../../features/public/publicWishlistSlice";
 import { MdFavoriteBorder, MdFavorite } from "react-icons/md";
-
-// ─── Available coupons ────────────────────────────────────────────────────────
-const COUPONS = [
-  { code: "SAVE10",   discount: 10,  type: "percent", desc: "10% off on total cart" },
-  { code: "FLAT100",  discount: 100, type: "flat",    desc: "₹100 flat off above ₹499" },
-  { code: "FASHION20",discount: 20,  type: "percent", desc: "20% off on fashion items" },
-  { code: "FIRST50",  discount: 50,  type: "flat",    desc: "₹50 off on first order" },
-];
+import { GET } from "../../utils/Methods";
+import { APIS } from "../../utils/APIS";
+import { useEffect } from "react";
+import { useSettings } from "../../hooks/useSettings";
 
 const CouponChip = ({ coupon, onCopy }) => {
   const [copied, setCopied] = useState(false);
@@ -142,6 +138,24 @@ const Cart = () => {
   const navigate   = useNavigate();
   const { items }  = useSelector((s) => s.publicCart);
   const customer   = useSelector((s) => s.customerAuth?.user);
+  const { s }      = useSettings();
+
+  // Shipping config from settings (fallback to standard values)
+  const freeShippingThreshold = Number(s("free_shipping_threshold", 499));
+  const defaultShippingCharge = Number(s("default_shipping_charge", 49));
+
+  // Live coupons from API (fallback empty so cart still works)
+  const [liveCoupons, setLiveCoupons] = useState([]);
+
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const res = await GET(APIS.Customer.Coupons);
+        setLiveCoupons(res?.data ?? []);
+      } catch { /* silent — cart works without coupons */ }
+    };
+    if (customer) fetchCoupons();
+  }, [customer]);
 
   const [couponInput,   setCouponInput]   = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -152,20 +166,27 @@ const Cart = () => {
   const savings   = mrpTotal - subtotal;
 
   const couponDiscount = appliedCoupon
-    ? appliedCoupon.type === "percent"
-      ? Math.round(subtotal * appliedCoupon.discount / 100)
-      : Math.min(appliedCoupon.discount, subtotal)
+    ? appliedCoupon.type === "percent" || appliedCoupon.discount_type === "percentage"
+      ? Math.round(subtotal * (appliedCoupon.discount || appliedCoupon.discount_value) / 100)
+      : Math.min(appliedCoupon.discount || appliedCoupon.discount_value, subtotal)
     : 0;
 
-  const deliveryCharge = subtotal >= 499 ? 0 : 49;
+  const deliveryCharge = subtotal >= freeShippingThreshold ? 0 : defaultShippingCharge;
   const grandTotal     = subtotal - couponDiscount + deliveryCharge;
+
+  // Merge live coupons (from API) with any locally applied coupon
+  const displayCoupons = liveCoupons.length > 0 ? liveCoupons : [];
 
   const applyCoupon = () => {
     setCouponError("");
-    const found = COUPONS.find((c) => c.code.toLowerCase() === couponInput.trim().toLowerCase());
+    const code = couponInput.trim().toLowerCase();
+    // Search in live coupons first, then any local fallback
+    const found = liveCoupons.find((c) => c.code.toLowerCase() === code);
     if (found) {
-      if (found.code === "FLAT100" && subtotal < 499) {
-        setCouponError("Minimum order ₹499 required for this coupon"); return;
+      const minOrder = found.min_order_amount || 0;
+      if (subtotal < minOrder) {
+        setCouponError(`Minimum order ₹${minOrder.toLocaleString()} required for this coupon`);
+        return;
       }
       setAppliedCoupon(found);
       toast.success(`Coupon "${found.code}" applied!`);
@@ -225,15 +246,15 @@ const Cart = () => {
           <div className="flex-1 min-w-0 space-y-4">
 
             {/* Delivery banner */}
-            {subtotal < 499 && (
+            {subtotal < freeShippingThreshold && (
               <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex items-center gap-2">
                 <MdLocalShipping size={18} className="text-amber-600 flex-shrink-0" />
                 <p className="text-sm text-amber-700">
-                  Add items worth <span className="font-bold">₹{(499 - subtotal).toLocaleString()}</span> more for <span className="font-bold">FREE delivery</span>!
+                  Add items worth <span className="font-bold">₹{(freeShippingThreshold - subtotal).toLocaleString()}</span> more for <span className="font-bold">FREE delivery</span>!
                 </p>
               </div>
             )}
-            {subtotal >= 499 && (
+            {subtotal >= freeShippingThreshold && (
               <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-3 flex items-center gap-2">
                 <MdCheck size={18} className="text-green-600 flex-shrink-0" />
                 <p className="text-sm text-green-700 font-semibold">🎉 You've unlocked FREE delivery!</p>
@@ -272,9 +293,18 @@ const Cart = () => {
                 </div>
               )}
               <div className="space-y-2">
-                {COUPONS.map((c) => (
-                  <CouponChip key={c.code} coupon={c} onCopy={(code) => { setCouponInput(code); toast.success(`Code "${code}" pasted!`); }} />
+                {displayCoupons.slice(0, 4).map((c) => (
+                  <CouponChip
+                    key={c._id || c.code}
+                    coupon={c}
+                    onCopy={(code) => { setCouponInput(code); toast.success(`Code "${code}" pasted!`); }}
+                  />
                 ))}
+                {displayCoupons.length === 0 && (
+                  <p className="text-xs text-gray-400 text-center py-2">
+                    {customer ? "No coupons available right now" : "Login to see available coupons"}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -341,7 +371,9 @@ const Cart = () => {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <MdLocalShipping size={14} className="text-blue-500" />
-                  {deliveryCharge === 0 ? "Free delivery on this order" : "Free delivery on orders above ₹499"}
+                  {deliveryCharge === 0
+                    ? "Free delivery on this order"
+                    : `Free delivery on orders above ₹${freeShippingThreshold.toLocaleString()}`}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <MdLocalOffer size={14} className="text-amber-500" />

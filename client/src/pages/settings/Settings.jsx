@@ -6,10 +6,12 @@ import toast from "react-hot-toast";
 import {
   MdStore, MdPayment, MdLocalShipping, MdEmail,
   MdSecurity, MdNotifications, MdSave, MdRefresh,
+  MdTextFields,
 } from "react-icons/md";
 
 const TABS = [
   { id: "general",    label: "General",         icon: MdStore },
+  { id: "content",    label: "Content / CMS",   icon: MdTextFields },
   { id: "payment",    label: "Payment",          icon: MdPayment },
   { id: "shipping",   label: "Shipping & Tax",   icon: MdLocalShipping },
   { id: "email",      label: "Email / SMTP",     icon: MdEmail },
@@ -159,6 +161,103 @@ const Settings = () => {
                 <Toggle id="show_out_of_stock" label="Show Out of Stock Products"
                   hint="Display products with 0 stock on the storefront"
                   register={register} />
+              </SectionCard>
+            </>
+          )}
+
+          {/* ── Content / CMS ──────────────────────────────────────────── */}
+          {activeTab === "content" && (
+            <>
+              <SectionCard title="TopBar Announcement">
+                <p className="text-xs text-gray-500 mb-3">The thin bar at the very top of the website. Each field is a separate message strip.</p>
+                <div className="grid grid-cols-1 gap-4">
+                  <Field label="Left Message" hint="e.g. Free Delivery on orders above ₹499">
+                    <input className="input-field" placeholder="Free Delivery on orders above ₹499" {...register("topbar_left")} />
+                  </Field>
+                  <Field label="Center Promo Message" hint="e.g. Summer Sale is Live! Up to 60% OFF">
+                    <input className="input-field" placeholder="Summer Sale is Live! Up to 60% OFF" {...register("topbar_center")} />
+                  </Field>
+                  <Field label="Right Message" hint="e.g. 24/7 Customer Support">
+                    <input className="input-field" placeholder="24/7 Customer Support" {...register("topbar_right")} />
+                  </Field>
+                </div>
+              </SectionCard>
+
+              <SectionCard title="Home Page — Feature Strip">
+                <p className="text-xs text-gray-500 mb-3">Five trust badges shown below the category bar on the homepage. Format: <code className="bg-gray-100 px-1 rounded">Label|Subtitle</code></p>
+                <div className="grid grid-cols-1 gap-3">
+                  {[1,2,3,4,5].map((i) => (
+                    <Field key={i} label={`Badge ${i}`} hint="Label|Subtitle (pipe-separated)">
+                      <input className="input-field" placeholder={["Free Delivery|On orders above ₹499","Easy Returns|7 days return policy","Secure Payments|100% secure payments","Best Price Guarantee|Find a lower price? We'll match it","24/7 Support|We are here to help"][i-1]} {...register(`feature_strip_${i}`)} />
+                    </Field>
+                  ))}
+                </div>
+              </SectionCard>
+
+              <SectionCard title="Home Page — Bottom Features">
+                <p className="text-xs text-gray-500 mb-3">Five icon-badges at the bottom of the homepage. Format: <code className="bg-gray-100 px-1 rounded">Emoji|Label|Subtitle</code></p>
+                <div className="grid grid-cols-1 gap-3">
+                  {[1,2,3,4,5].map((i) => (
+                    <Field key={i} label={`Bottom Badge ${i}`} hint="Emoji|Label|Subtitle (pipe-separated)">
+                      <input className="input-field" placeholder={["📦|Wide Range|Millions of products","⭐|Top Brands|100% Original Products","🔒|Secure Checkout|Multiple payment options","🚚|Track Order|Real-time order tracking","🎁|Exclusive Offers|Best deals & discounts"][i-1]} {...register(`bottom_feature_${i}`)} />
+                    </Field>
+                  ))}
+                </div>
+              </SectionCard>
+
+              <SectionCard title="Footer — Brand Info">
+                <div className="grid grid-cols-1 gap-4">
+                  <Field label="Brand Tagline" hint="Short description shown below logo in footer">
+                    <input className="input-field" placeholder="Your one-stop destination for online shopping." {...register("footer_tagline")} />
+                  </Field>
+                  <Field label="Support Phone" hint="Shown in footer contact section">
+                    <input className="input-field" placeholder="1800-123-4567 (Free)" {...register("support_phone")} />
+                  </Field>
+                  <Field label="Support Email" hint="Shown in footer contact section">
+                    <input className="input-field" placeholder="support@shopease.in" {...register("support_email")} />
+                  </Field>
+                  <Field label="Copyright Text" hint="Bottom bar copyright. Use {year} for auto year.">
+                    <input className="input-field" placeholder="© {year} ShopEase Technologies Pvt. Ltd. All rights reserved." {...register("footer_copyright")} />
+                  </Field>
+                </div>
+              </SectionCard>
+
+              <SectionCard title="Footer — Social Media Links">
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Facebook URL"><input className="input-field" placeholder="https://facebook.com/shopease" {...register("social_facebook")} /></Field>
+                  <Field label="Instagram URL"><input className="input-field" placeholder="https://instagram.com/shopease" {...register("social_instagram")} /></Field>
+                  <Field label="Twitter / X URL"><input className="input-field" placeholder="https://twitter.com/shopease" {...register("social_twitter")} /></Field>
+                  <Field label="YouTube URL"><input className="input-field" placeholder="https://youtube.com/shopease" {...register("social_youtube")} /></Field>
+                  <Field label="WhatsApp Number"><input className="input-field" placeholder="+919999999999" {...register("social_whatsapp")} /></Field>
+                </div>
+              </SectionCard>
+
+              <SectionCard title="Footer — App Download">
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Play Store Link"><input className="input-field" placeholder="https://play.google.com/..." {...register("app_playstore_url")} /></Field>
+                  <Field label="App Store Link"><input className="input-field" placeholder="https://apps.apple.com/..." {...register("app_appstore_url")} /></Field>
+                  <Field label="App Promo Headline"><input className="input-field" placeholder="Download the ShopEase App" {...register("app_headline")} /></Field>
+                  <Field label="App Promo Subtitle"><input className="input-field" placeholder="Exclusive app offers, faster checkout and real-time tracking." {...register("app_subtitle")} /></Field>
+                </div>
+              </SectionCard>
+
+              <SectionCard title="Footer — Store Stats">
+                <p className="text-xs text-gray-500 mb-3">Displayed as trust numbers in footer</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Stat 1" hint="Format: Value|Label (e.g. 10M+|Happy Customers)"><input className="input-field" placeholder="10M+|Happy Customers" {...register("footer_stat_1")} /></Field>
+                  <Field label="Stat 2"><input className="input-field" placeholder="20L+|Products" {...register("footer_stat_2")} /></Field>
+                  <Field label="Stat 3"><input className="input-field" placeholder="50K+|Trusted Sellers" {...register("footer_stat_3")} /></Field>
+                  <Field label="Stat 4"><input className="input-field" placeholder="99.9%|Secure Payments" {...register("footer_stat_4")} /></Field>
+                </div>
+              </SectionCard>
+
+              <SectionCard title="Product Detail — Trust Badges">
+                <p className="text-xs text-gray-500 mb-3">Three trust lines shown below Add to Cart on product pages</p>
+                <div className="grid grid-cols-1 gap-3">
+                  <Field label="Trust Badge 1"><input className="input-field" placeholder="Free delivery on orders above ₹499" {...register("product_trust_1")} /></Field>
+                  <Field label="Trust Badge 2"><input className="input-field" placeholder="7-day easy return policy" {...register("product_trust_2")} /></Field>
+                  <Field label="Trust Badge 3"><input className="input-field" placeholder="100% secure payments" {...register("product_trust_3")} /></Field>
+                </div>
               </SectionCard>
             </>
           )}

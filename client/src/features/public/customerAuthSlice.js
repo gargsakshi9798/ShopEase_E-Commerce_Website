@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { GET, POST } from "../../utils/Methods";
+import { POST } from "../../utils/Methods";
+import axiosClient from "../../utils/ApiInstance";
 import { APIS } from "../../utils/APIS";
 import Cookies from "js-cookie";
 import { switchUserCart, clearUserCart } from "./publicCartSlice";
@@ -41,8 +42,13 @@ export const verifyCustomerToken = createAsyncThunk(
   "customerAuth/verify",
   async (_, { rejectWithValue, dispatch }) => {
     try {
-      const res = await GET(APIS.Customer.Profile);
-      return res;
+      // Use relative path only — axiosClient already has baseURL set.
+      // _skipRedirect tells the axios interceptor NOT to redirect to /login
+      // if this background verify call fails with 401 — we just silently clear state.
+      const res = await axiosClient.get(APIS.Customer.Profile, {
+        _skipRedirect: true,
+      });
+      return res.data;
     } catch (err) {
       // Token rejected by server — clear everything
       Cookies.remove("shopease_customer_token");

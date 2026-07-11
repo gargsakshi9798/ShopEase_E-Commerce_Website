@@ -10,6 +10,8 @@ import {
 } from "react-icons/md";
 import { FaShoppingBag } from "react-icons/fa";
 import { customerLogout } from "../../../features/public/customerAuthSlice";
+import { useSettings } from "../../../hooks/useSettings";
+import { getImgUrl } from "../../../utils/Methods";
 
 const categories = [
   "Fashion", "Electronics", "Mobiles", "Home & Kitchen",
@@ -21,6 +23,13 @@ const PublicHeader = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
   const dispatch  = useDispatch();
+  const { s }     = useSettings();
+
+  const siteName  = s("site_name",  "ShopEase");
+  const siteLogo  = s("logo",       "");
+  const halfLen   = Math.ceil(siteName.length / 2);
+  const namePart1 = siteName.slice(0, halfLen);
+  const namePart2 = siteName.slice(halfLen);
 
   const [searchQuery,      setSearchQuery]      = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -32,6 +41,7 @@ const PublicHeader = () => {
   const cartCount     = useSelector((s) => s.publicCart?.count     ?? 0);
   const wishlistCount = useSelector((s) => s.publicWishlist?.count ?? 0);
   const customer      = useSelector((s) => s.customerAuth?.user    ?? null);
+  const unreadNotifs  = useSelector((s) => s.publicNotification?.unread ?? 0);
 
   // Close account dropdown on outside click
   useEffect(() => {
@@ -67,12 +77,14 @@ const PublicHeader = () => {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center">
-              <FaShoppingBag size={17} className="text-white" />
+            <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center overflow-hidden">
+              {siteLogo
+                ? <img src={getImgUrl(siteLogo)} alt={siteName} className="w-full h-full object-contain p-1" />
+                : <FaShoppingBag size={17} className="text-white" />}
             </div>
             <span className="text-xl font-bold">
-              <span className="text-primary-600">Shop</span>
-              <span className="text-gray-900">Ease</span>
+              <span className="text-primary-600">{namePart1}</span>
+              <span className="text-gray-900">{namePart2}</span>
             </span>
           </Link>
 
@@ -208,7 +220,6 @@ const PublicHeader = () => {
                       <Link to="/my-coupons" onClick={() => setAccountDropdown(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
                         <MdLocalOffer size={17} className="text-gray-400 group-hover:text-primary-600"/> My Coupons
-                        <span className="ml-auto bg-orange-100 text-orange-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">7</span>
                       </Link>
                       <Link to="/my-reviews" onClick={() => setAccountDropdown(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
@@ -217,7 +228,11 @@ const PublicHeader = () => {
                       <Link to="/notifications" onClick={() => setAccountDropdown(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
                         <MdNotifications size={17} className="text-gray-400 group-hover:text-primary-600"/> Notifications
-                        <span className="ml-auto bg-primary-100 text-primary-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">3</span>
+                        {unreadNotifs > 0 && (
+                          <span className="ml-auto bg-primary-100 text-primary-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
+                            {unreadNotifs > 9 ? "9+" : unreadNotifs}
+                          </span>
+                        )}
                       </Link>
                       <Link to="/gift-cards" onClick={() => setAccountDropdown(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
