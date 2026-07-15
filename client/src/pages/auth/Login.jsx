@@ -195,7 +195,7 @@ const Login = () => {
                       ? "border-red-400 ring-1 ring-red-400"
                       : "border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   }`}
-                  {...register("password", { required: "Password is required" })}
+                  {...register("password", { required: "Password is required", minLength: { value: 6, message: "Password must be at least 6 characters" } })}
                 />
                 <button
                   type="button" tabIndex={-1}

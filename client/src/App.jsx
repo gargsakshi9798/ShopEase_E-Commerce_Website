@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { getAdminDetails } from "./features/auth/authSlice";
 import { verifyCustomerToken } from "./features/public/customerAuthSlice";
 import useTokenExpiry from "./hooks/useTokenExpiry";
@@ -34,16 +34,30 @@ const Loader = () => (
 
 /**
  * AdminRoute — protects /admin/* routes.
- * Uses isTokenValid (not just cookie existence) so an expired admin token
- * is rejected client-side before any server round-trip.
+ * Checks both token validity AND that the role is one of the allowed admin
+ * roles decoded from the JWT. A customer token that happens to be valid will
+ * be rejected here before any admin page renders.
  */
+const ADMIN_ROLES = ["super_admin", "admin", "employee"];
+
 const AdminRoute = ({ children }) => {
+  // Read from Redux so the guard reacts immediately to logout dispatches
+  const { isLogin, role_slug } = useSelector((s) => s.auth);
   const token = getAdminToken();
+
+  // 1. Token must exist and pass client-side expiry check
   if (!isTokenValid(token)) {
-    // Evict stale cookie right here in case it wasn't cleared yet
     if (token) clearAdminToken();
     return <Navigate to="/login" replace />;
   }
+
+  // 2. Redux must confirm login AND the role must be an admin role.
+  //    This blocks a customer JWT from reaching the admin panel.
+  if (!isLogin || !ADMIN_ROLES.includes(role_slug)) {
+    clearAdminToken();
+    return <Navigate to="/login" replace />;
+  }
+
   return children;
 };
 
@@ -53,6 +67,14 @@ const App = () => {
   // Proactive mid-session expiry watcher — warns 60s before expiry,
   // dispatches logout the moment a token expires without needing an API call.
   useTokenExpiry();
+
+  // Redux auth state — used to redirect already-authenticated users away from
+  // auth pages (/login, /register, /forgot-password, /reset-password)
+  const adminAuth    = useSelector((s) => s.auth);
+  const customerAuth = useSelector((s) => s.customerAuth);
+
+  const isAdminLoggedIn    = adminAuth.isLogin    && ADMIN_ROLES.includes(adminAuth.role_slug);
+  const isCustomerLoggedIn = customerAuth.isLogin;
 
   useEffect(() => {
     const adminToken    = getAdminToken();
@@ -73,6 +95,14 @@ const App = () => {
       clearCustomerToken();
     }
   }, [dispatch]);
+
+  // Redirect an already-authenticated user away from auth pages
+  // Admin users go to their dashboard; customers go home
+  const authRedirect = isAdminLoggedIn
+    ? <Navigate to="/admin/dashboard" replace />
+    : isCustomerLoggedIn
+      ? <Navigate to="/" replace />
+      : null;
 
   return (
     <Suspense fallback={<Loader />}>
@@ -95,14 +125,14 @@ const App = () => {
         <Route path="/customer/login"    element={<Navigate to="/login" replace />} />
         <Route path="/customer/register" element={<Navigate to="/register" replace />} />
 
-        {/* ── Auth pages — full screen, no header/footer ── */}
-        <Route path="/login"           element={<Login />} />
-        <Route path="/register"        element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password"  element={<ResetPassword />} />
+        {/* ── Auth pages — redirect away if already logged in ── */}
+        <Route path="/login"           element={authRedirect ?? <Login />} />
+        <Route path="/register"        element={authRedirect ?? <Register />} />
+        <Route path="/forgot-password" element={authRedirect ?? <ForgotPassword />} />
+        <Route path="/reset-password"  element={authRedirect ?? <ResetPassword />} />
 
         {/* ── Public storefront (all with header/footer) ── */}
-        {/* This catches everything else including /login, /register, / */}
+        {/* This catches everything else including / */}
         <Route path="/*" element={<PublicLayout />} />
       </Routes>
     </Suspense>

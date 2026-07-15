@@ -1,5 +1,4 @@
 import React from "react";
-import ProtectedCustomerRoute from "./components/public/ProtectedCustomerRoute";
 
 // ── Core Public Pages ─────────────────────────────────────────────────────────
 const Home                       = React.lazy(() => import("./pages/public/Home"));
@@ -73,17 +72,9 @@ const BulkOrders                 = React.lazy(() => import("./pages/public/BulkO
 const StoreLocator               = React.lazy(() => import("./pages/public/StoreLocator"));
 const Sitemap                    = React.lazy(() => import("./pages/public/Sitemap"));
 
-// Helper: wraps element in ProtectedCustomerRoute
-const guard = (Component) => (
-  <ProtectedCustomerRoute>
-    <Component />
-  </ProtectedCustomerRoute>
-);
-
 const publicRoutes = [
   // ── Home ──
-  { path: "/",     element: Home },
-  { path: "/home", element: Home },
+  { path: "/", element: Home },
 
   // ── Generic Product Detail (primary route for all products) ──
   { path: "/product/:slug", element: ProductDetail },
@@ -146,13 +137,9 @@ const publicRoutes = [
   { path: "/my-profile",             element: MyProfile,    protected: true },
   { path: "/my-orders",              element: MyOrders,     protected: true },
   { path: "/my-orders/:id",          element: OrderDetail,  protected: true },
-  { path: "/orders",                 element: MyOrders,     protected: true },
-  { path: "/orders/:id",             element: OrderDetail,  protected: true },
   { path: "/my-addresses",           element: MyAddresses,  protected: true },
-  { path: "/account/addresses",      element: MyAddresses,  protected: true },
   { path: "/my-coupons",             element: MyCoupons,    protected: true },
   { path: "/notifications",          element: Notifications,protected: true },
-  { path: "/account/notifications",  element: Notifications,protected: true },
   { path: "/my-settings",            element: MySettings,   protected: true },
   { path: "/my-reviews",             element: MyReviews,    protected: true },
   { path: "/my-tickets",             element: MyTickets,    protected: true },

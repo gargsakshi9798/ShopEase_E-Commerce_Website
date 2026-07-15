@@ -90,6 +90,52 @@ app.use("*", (req, res) => {
   });
 });
 
+// ─── Global Error Handler ─────────────────────────────────────────────────────
+// Catches any error thrown by middleware or controllers that was not caught
+// locally (e.g. synchronous throws, missing await, multer errors, etc.).
+// Must be declared AFTER all routes and have exactly 4 arguments so Express
+// recognises it as an error-handling middleware.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error("Unhandled server error:", err);
+
+  // Mongoose validation error → 422
+  if (err.name === "ValidationError") {
+    const errors = Object.fromEntries(
+      Object.entries(err.errors).map(([k, v]) => [k, v.message])
+    );
+    return res.status(422).json({ success: false, message: "Validation failed", errors });
+  }
+
+  // Mongoose duplicate key → 409
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyValue || {})[0] || "field";
+    return res.status(409).json({
+      success: false,
+      message: "Duplicate entry",
+      errors: { [field]: `${field} already exists` },
+    });
+  }
+
+  // JWT errors → 401
+  if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+    return res.status(401).json({ success: false, message: "Invalid or expired token" });
+  }
+
+  // Multer / file-upload size error → 413
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res.status(413).json({ success: false, message: "File too large" });
+  }
+
+  // Default → 500
+  const status  = err.status || err.statusCode || 500;
+  const message = process.env.NODE_ENV === "production"
+    ? "Internal server error"
+    : (err.message || "Internal server error");
+
+  return res.status(status).json({ success: false, message });
+});
+
 // ─── MongoDB Connection ───────────────────────────────────────────────────────
 mongoose
   .connect(process.env.MONGO_URI)

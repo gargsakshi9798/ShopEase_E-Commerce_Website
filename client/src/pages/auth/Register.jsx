@@ -101,7 +101,11 @@ const Register = () => {
                         ? "border-red-400 ring-1 ring-red-400"
                         : "border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     }`}
-                    {...register("first_name", { required: "Required", minLength: { value: 2, message: "Min 2 chars" } })}
+                    {...register("first_name", {
+                      required: "Required",
+                      minLength: { value: 2, message: "Min 2 chars" },
+                      validate: (v) => v.trim().length >= 2 || "Min 2 non-space characters",
+                    })}
                   />
                 </div>
                 {errors.first_name && <p className="text-red-500 text-xs mt-1">{errors.first_name.message}</p>}
@@ -119,7 +123,11 @@ const Register = () => {
                         ? "border-red-400 ring-1 ring-red-400"
                         : "border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     }`}
-                    {...register("last_name", { required: "Required", minLength: { value: 2, message: "Min 2 chars" } })}
+                    {...register("last_name", {
+                      required: "Required",
+                      minLength: { value: 2, message: "Min 2 chars" },
+                      validate: (v) => v.trim().length >= 2 || "Min 2 non-space characters",
+                    })}
                   />
                 </div>
                 {errors.last_name && <p className="text-red-500 text-xs mt-1">{errors.last_name.message}</p>}
