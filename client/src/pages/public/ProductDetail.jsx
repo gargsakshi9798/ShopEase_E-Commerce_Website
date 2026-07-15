@@ -97,7 +97,16 @@ const ReviewsSection = ({ productId }) => {
     setLoading(true);
     try {
       const res = await GET(`${APIS.Customer.Reviews}/product/${productId}`);
-      setReviews(res?.data ?? []);
+      const data = res?.data;
+      // Handle both { data: [...] } and { data: { reviews: [...] } } shapes
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.reviews)
+          ? data.reviews
+          : Array.isArray(data?.data)
+            ? data.data
+            : [];
+      setReviews(list);
     } catch { /* ignore */ }
     finally { setLoading(false); }
   };
@@ -445,7 +454,7 @@ const ProductDetail = () => {
                 return (
                   <Link
                     key={rp._id}
-                    to={`/product/${rp.slug || rp._id}`}
+                    to={rp.slug ? `/product/${rp.slug}` : "/products"}
                     className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex flex-col"
                   >
                     <div className="h-36 bg-gray-50 flex items-center justify-center overflow-hidden relative">

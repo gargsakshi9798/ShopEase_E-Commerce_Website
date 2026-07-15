@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { adminLogin } from "../../features/auth/authSlice";
 import { customerLogin } from "../../features/public/customerAuthSlice";
-import toast from "react-hot-toast";
+import { showSuccess } from "../../utils/toast";
 import {
   MdEmail, MdLock, MdVisibility, MdVisibilityOff,
   MdLocalShipping, MdSecurity, MdLoop, MdHeadset,
@@ -42,7 +42,7 @@ const Login = () => {
       const adminPayload = (await dispatch(adminLogin(data))).payload;
       if (adminPayload?.success) {
         const role = adminPayload.data?.role_slug;
-        toast.success("Welcome back!");
+        showSuccess("Welcome back!");
         navigate(
           ["super_admin", "admin", "employee"].includes(role) ? "/admin/dashboard" : from,
           { replace: true }
@@ -52,7 +52,7 @@ const Login = () => {
 
       const custPayload = (await dispatch(customerLogin(data))).payload;
       if (custPayload?.success) {
-        toast.success("Welcome back!");
+        showSuccess("Welcome back!");
         navigate(from, { replace: true });
         return;
       }

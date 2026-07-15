@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import { customerRegister } from "../../features/public/customerAuthSlice";
-import toast from "react-hot-toast";
+import { showSuccess, showError } from "../../utils/toast";
 import {
   MdEmail, MdLock, MdPerson, MdPhone,
   MdVisibility, MdVisibilityOff,
@@ -12,6 +12,8 @@ import {
 } from "react-icons/md";
 import { FaGoogle, FaFacebook, FaShoppingBag } from "react-icons/fa";
 import registerBg from "../../assets/images/regiser.png";
+import PasswordStrengthIndicator from "../../components/common/PasswordStrengthIndicator";
+import ConfirmPasswordMatch from "../../components/common/ConfirmPasswordMatch";
 
 const features = [
   { icon: MdLocalOffer,    title: "Exclusive Offers",  sub: "Get access to exclusive deals and member discounts." },
@@ -30,6 +32,8 @@ const Register = () => {
   const [showPass,        setShowPass]        = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [serverError,     setServerError]     = useState(null);
+  const [pwdValue,        setPwdValue]        = useState("");
+  const [confirmValue,    setConfirmValue]    = useState("");
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
   const password = watch("password");
@@ -40,12 +44,12 @@ const Register = () => {
     const payload = { ...rest, name: `${first_name.trim()} ${last_name.trim()}` };
     const res = await dispatch(customerRegister(payload));
     if (res.payload?.success) {
-      toast.success("Account created! Please log in.");
+      showSuccess("Account created! Please log in.");
       navigate("/login");
     } else {
       const msg = res.payload?.message || "Registration failed. Please try again.";
       setServerError(msg);
-      toast.error(msg);
+      showError(msg);
     }
   };
 
@@ -185,7 +189,7 @@ const Register = () => {
                       ? "border-red-400 ring-1 ring-red-400"
                       : "border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   }`}
-                  {...register("password", { required: "Password is required", minLength: { value: 6, message: "Min 6 characters" } })}
+                  {...register("password", { required: "Password is required", minLength: { value: 8, message: "Min 8 characters" }, onChange: (e) => setPwdValue(e.target.value) })}
                 />
                 <button type="button" tabIndex={-1} onClick={() => setShowPass((v) => !v)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -193,6 +197,7 @@ const Register = () => {
                 </button>
               </div>
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+              <PasswordStrengthIndicator password={pwdValue} />
             </div>
 
             {/* Confirm Password */}
@@ -211,6 +216,7 @@ const Register = () => {
                   {...register("confirmPassword", {
                     required: "Please confirm your password",
                     validate: (v) => v === password || "Passwords do not match",
+                    onChange: (e) => setConfirmValue(e.target.value),
                   })}
                 />
                 <button type="button" tabIndex={-1} onClick={() => setShowConfirmPass((v) => !v)}
@@ -219,6 +225,7 @@ const Register = () => {
                 </button>
               </div>
               {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
+              <ConfirmPasswordMatch password={pwdValue} confirmPassword={confirmValue} />
             </div>
 
             {/* Terms */}

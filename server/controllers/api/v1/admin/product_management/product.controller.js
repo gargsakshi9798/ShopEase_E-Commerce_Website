@@ -138,6 +138,44 @@ class ProductController {
     }
   }
 
+  // Get all products for inventory view — all products with brand+category, sorted by stock asc
+  async getAllForInventory(req, res) {
+    try {
+      const { search = "", stock_status, category_id, brand_id } = req.query;
+      const filter = { status: true };
+
+      if (search)      filter.name        = { $regex: search, $options: "i" };
+      if (category_id) filter.category_id = category_id;
+      if (brand_id)    filter.brand_id    = brand_id;
+
+      // stock_status filter: out_of_stock | low_stock | in_stock
+      if (stock_status === "out_of_stock") {
+        filter.stock = 0;
+      } else if (stock_status === "low_stock") {
+        filter.$expr = { $and: [{ $gt: ["$stock", 0] }, { $lte: ["$stock", "$low_stock_threshold"] }] };
+      } else if (stock_status === "in_stock") {
+        filter.$expr = { $gt: ["$stock", "$low_stock_threshold"] };
+      }
+
+      return Paginate(
+        Product,
+        {
+          filter,
+          sort: { stock: 1 },
+          populate: [
+            { path: "category_id", select: "name slug" },
+            { path: "brand_id",    select: "name logo" },
+          ],
+        },
+        req,
+        res
+      );
+    } catch (error) {
+      console.error("getAllForInventory error:", error);
+      return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   // Get low stock products
   async getLowStock(req, res) {
     try {
@@ -146,7 +184,10 @@ class ProductController {
         {
           filter: { $expr: { $lte: ["$stock", "$low_stock_threshold"] }, status: true },
           sort: { stock: 1 },
-          populate: [{ path: "category_id", select: "name" }],
+          populate: [
+            { path: "category_id", select: "name slug" },
+            { path: "brand_id",    select: "name logo" },
+          ],
         },
         req,
         res

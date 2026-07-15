@@ -1,15 +1,43 @@
 import { useState } from "react";
 import { MdHeadset, MdEmail, MdPhone, MdLocationOn, MdSend, MdCheck } from "react-icons/md";
 import { FaWhatsapp, FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
+import { POST } from "../../utils/Methods";
+import { APIS } from "../../utils/APIS";
 
 const departments = ["Order & Delivery", "Returns & Refunds", "Payment Issue", "Product Query", "Account Help", "Feedback / Suggestion", "Other"];
 
 const ContactUs = () => {
   const [form, setForm]       = useState({ name: "", email: "", phone: "", dept: "", message: "" });
   const [submitted, setSubmit] = useState(false);
+  const [loading, setLoading]  = useState(false);
+  const [error, setError]      = useState("");
 
   const handle = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-  const submit = (e) => { e.preventDefault(); setSubmit(true); };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await POST(APIS.Contact, {
+        name:       form.name,
+        email:      form.email,
+        phone:      form.phone,
+        department: form.dept,
+        subject:    form.dept || "General Enquiry",
+        message:    form.message,
+      });
+      if (res?.success) {
+        setSubmit(true);
+      } else {
+        setError(res?.message || "Failed to send message. Please try again.");
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -88,9 +116,14 @@ const ContactUs = () => {
                   <textarea name="message" value={form.message} onChange={handle} required rows={5} placeholder="Describe your issue or question in detail…"
                     className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 resize-none" />
                 </div>
-                <button type="submit"
-                  className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-md shadow-blue-200">
-                  <MdSend size={17} /> Send Message
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{error}</div>
+                )}
+                <button type="submit" disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-md shadow-blue-200 disabled:opacity-60">
+                  {loading
+                    ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending…</>
+                    : <><MdSend size={17} /> Send Message</>}
                 </button>
               </form>
             )}

@@ -38,18 +38,27 @@ export const fetchLowStock = createAsyncThunk("product/lowStock", async (params 
   catch (e) { return rejectWithValue(e.response?.data); }
 });
 
+export const fetchAllInventory = createAsyncThunk("product/allInventory", async (params = {}, { rejectWithValue }) => {
+  try { return await GET(`${APIS.Products}/inventory`, params); }
+  catch (e) { return rejectWithValue(e.response?.data); }
+});
+
 const productSlice = createSlice({
   name: "product",
   initialState: {
-    list:         [],
-    total:        0,
-    current_page: 1,
-    total_pages:  1,
-    selected:     null,
-    lowStockList: [],
-    status:       IDS.SLICESTATUS.Idle,
-    mutating:     false,
-    error:        null,
+    list:              [],
+    total:             0,
+    current_page:      1,
+    total_pages:       1,
+    selected:          null,
+    lowStockList:      [],
+    inventoryList:     [],
+    inventoryTotal:    0,
+    inventoryPage:     1,
+    inventoryPages:    1,
+    status:            IDS.SLICESTATUS.Idle,
+    mutating:          false,
+    error:             null,
   },
   reducers: {
     clearSelected: (state) => { state.selected = null; },
@@ -77,19 +86,27 @@ const productSlice = createSlice({
         s.lowStockList = a.payload?.data?.data || [];
       })
 
-      // Update stock — optimistically update lowStockList in-place
+      // All inventory list (all products with brand+category)
+      .addCase(fetchAllInventory.pending,   (s) => { s.status = IDS.SLICESTATUS.Loading; })
+      .addCase(fetchAllInventory.rejected,  (s, a) => { s.status = IDS.SLICESTATUS.Failed; s.error = a.payload; })
+      .addCase(fetchAllInventory.fulfilled, (s, a) => {
+        s.status         = IDS.SLICESTATUS.Succeeded;
+        s.inventoryList  = a.payload?.data?.data        || [];
+        s.inventoryTotal = a.payload?.data?.total        || 0;
+        s.inventoryPage  = a.payload?.data?.current_page || 1;
+        s.inventoryPages = a.payload?.data?.total_pages  || 1;
+      })
+
+      // Update stock — optimistically update all three lists in-place
       .addCase(updateStock.pending,   (s) => { s.mutating = true; })
       .addCase(updateStock.rejected,  (s) => { s.mutating = false; })
       .addCase(updateStock.fulfilled, (s, a) => {
         s.mutating = false;
         const updated = a.payload?.data;
         if (updated) {
-          s.lowStockList = s.lowStockList.map((p) =>
-            p._id === updated._id ? { ...p, stock: updated.stock } : p
-          );
-          s.list = s.list.map((p) =>
-            p._id === updated._id ? { ...p, stock: updated.stock } : p
-          );
+          s.lowStockList    = s.lowStockList.map((p)    => p._id === updated._id ? { ...p, stock: updated.stock } : p);
+          s.inventoryList   = s.inventoryList.map((p)   => p._id === updated._id ? { ...p, stock: updated.stock } : p);
+          s.list            = s.list.map((p)            => p._id === updated._id ? { ...p, stock: updated.stock } : p);
         }
       })
 

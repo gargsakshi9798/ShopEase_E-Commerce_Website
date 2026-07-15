@@ -85,7 +85,7 @@ const ProductCard = ({ product, view }) => {
   if (view === "list") {
     return (
       <Link
-        to={`/product/${product.slug || product._id}`}
+        to={product.slug ? `/product/${product.slug}` : "/products"}
         className="bg-white rounded-2xl shadow-sm border border-gray-100 flex gap-4 p-4 hover:shadow-md transition-shadow group"
       >
         <div className="w-32 h-32 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 relative overflow-hidden">

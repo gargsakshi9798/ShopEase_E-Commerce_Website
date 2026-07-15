@@ -13,6 +13,11 @@ export const APIS = {
 
   // Dashboard
   Dashboard: "/admin/dashboard",
+  EmployeeDashboard: "/admin/dashboard/employee",
+
+  // Employee-scoped order endpoints
+  MyOrders: "/admin/order-management/my-orders",
+  MyOrderStats: "/admin/order-management/my-stats",
 
   // Masters
   Masters: {
@@ -106,6 +111,13 @@ export const APIS = {
     Reviews:       "/customer/reviews",
     MyReviews:     "/customer/reviews/my",
     Notifications: "/customer/notifications",
+    // Support Tickets
+    Support: {
+      Tickets:      "/customer/support/tickets",
+      TicketById:   (id) => `/customer/support/tickets/${id}`,
+      TicketReply:  (id) => `/customer/support/tickets/${id}/reply`,
+      TicketClose:  (id) => `/customer/support/tickets/${id}/close`,
+    },
     // Payment & Checkout
     Payment: {
       ValidateCheckout:    "/customer/payment/validate-checkout",
@@ -115,4 +127,7 @@ export const APIS = {
       Invoice:             (orderId) => `/customer/payment/invoice/${orderId}`,
     },
   },
+
+  // Public contact form (no auth)
+  Contact: "/public/contact",
 };

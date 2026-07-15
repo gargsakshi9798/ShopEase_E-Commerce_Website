@@ -22,23 +22,23 @@ class HomeController {
         Banner.find({ position: "hero", status: true }).sort({ sort_order: 1 }).limit(10),
         Category.find({ level: 1, status: true, is_featured: true }).sort({ sort_order: 1 }).limit(12),
         Product.find({ is_featured: true, status: true })
-          .select("name thumbnail price mrp discount_percent rating_avg rating_count")
+          .select("name slug thumbnail price mrp discount_percent rating_avg rating_count brand_id")
           .sort({ createdAt: -1 })
           .limit(12),
         Product.find({ is_bestseller: true, status: true })
-          .select("name thumbnail price mrp discount_percent rating_avg total_sold")
+          .select("name slug thumbnail price mrp discount_percent rating_avg total_sold brand_id")
           .sort({ total_sold: -1 })
           .limit(12),
         Product.find({ is_new_arrival: true, status: true })
-          .select("name thumbnail price mrp discount_percent rating_avg")
+          .select("name slug thumbnail price mrp discount_percent rating_avg brand_id")
           .sort({ createdAt: -1 })
           .limit(12),
         Product.find({ is_on_sale: true, status: true, sale_end: { $gte: new Date() } })
-          .select("name thumbnail price mrp discount_percent sale_end")
+          .select("name slug thumbnail price mrp discount_percent sale_end brand_id")
           .sort({ discount_percent: -1 })
           .limit(12),
         Product.find({ status: true })
-          .select("name thumbnail price mrp discount_percent rating_avg")
+          .select("name slug thumbnail price mrp discount_percent rating_avg brand_id")
           .sort({ rating_count: -1 })
           .limit(12),
         Brand.find({ is_featured: true, status: true }).sort({ sort_order: 1 }).limit(20),
@@ -91,7 +91,7 @@ class HomeController {
 
       const [data, total] = await Promise.all([
         Product.find(filter)
-          .select("name thumbnail price mrp discount_percent rating_avg rating_count is_bestseller is_new_arrival")
+          .select("name slug thumbnail price mrp discount_percent rating_avg rating_count is_bestseller is_new_arrival brand_id category_id")
           .populate("category_id", "name slug")
           .populate("brand_id", "name")
           .sort(sortObj)
@@ -127,7 +127,7 @@ class HomeController {
         _id: { $ne: product._id },
         status: true,
       })
-        .select("name thumbnail price mrp discount_percent rating_avg")
+        .select("name slug thumbnail price mrp discount_percent rating_avg brand_id")
         .limit(8);
 
       return Base.sendResponse(res, HTTPS.OK, { product, related });

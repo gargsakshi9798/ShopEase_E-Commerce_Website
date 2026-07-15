@@ -7,7 +7,7 @@ import DataTable   from "../../components/common/DataTable";
 import Modal       from "../../components/common/Modal";
 import ConfirmDelete from "../../components/common/ConfirmDelete";
 import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
+import { showSuccess, showError } from "../../utils/toast";
 import {
   MdAdd, MdEdit, MdDelete, MdSearch, MdLabelOutline,
   MdStar, MdRefresh, MdClose, MdCloudUpload,
@@ -80,14 +80,14 @@ const Brands = () => {
       let res;
       if (editItem) {
         res = await dispatch(updateBrand({ id: editItem._id, formData: fd }));
-        if (res.payload?.success) { toast.success("Brand updated!"); closeForm(); load(); }
-        else toast.error(res.payload?.message || "Update failed");
+        if (res.payload?.success) { showSuccess("Brand updated!"); closeForm(); load(); }
+        else showError(res.payload?.message || "Update failed");
       } else {
         res = await dispatch(createBrand(fd));
-        if (res.payload?.success) { toast.success("Brand created!"); closeForm(); load(); }
-        else toast.error(res.payload?.message || "Create failed");
+        if (res.payload?.success) { showSuccess("Brand created!"); closeForm(); load(); }
+        else showError(res.payload?.message || "Create failed");
       }
-    } catch { toast.error("Something went wrong"); }
+    } catch { showError("Something went wrong"); }
   };
 
   const onDelete = async () => {

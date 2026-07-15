@@ -25,6 +25,8 @@ import publicAddressReducer from "../features/public/publicAddressSlice";
 import publicProfileReducer from "../features/public/publicProfileSlice";
 import publicNotificationReducer from "../features/public/publicNotificationSlice";
 import publicPaymentReducer from "../features/public/publicPaymentSlice";
+import publicSupportReducer from "../features/public/publicSupportSlice";
+import publicHomeReducer from "../features/public/publicHomeSlice";
 
 export const store = configureStore({
   reducer: {
@@ -55,5 +57,7 @@ export const store = configureStore({
     publicProfile:       publicProfileReducer,
     publicNotification:  publicNotificationReducer,
     publicPayment:       publicPaymentReducer,
+    publicSupport:       publicSupportReducer,
+    publicHome:          publicHomeReducer,
   },
 });

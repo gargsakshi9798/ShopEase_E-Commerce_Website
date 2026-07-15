@@ -4,6 +4,7 @@ import {
   MdPerson, MdShoppingBag, MdLocationOn,
   MdNotifications, MdLogout, MdFavoriteBorder,
   MdChevronRight, MdLocalOffer, MdStar, MdSettings,
+  MdHelpOutline,
 } from "react-icons/md";
 import { customerLogout } from "../../../features/public/customerAuthSlice";
 import toast from "react-hot-toast";
@@ -16,6 +17,7 @@ const navItems = [
   { to: "/wishlist",        icon: MdFavoriteBorder,label: "My Wishlist" },
   { to: "/my-coupons",      icon: MdLocalOffer,    label: "My Coupons" },
   { to: "/my-reviews",      icon: MdStar,          label: "My Reviews" },
+  { to: "/my-tickets",      icon: MdHelpOutline,   label: "My Support Tickets" },
   { to: "/notifications",   icon: MdNotifications, label: "Notifications" },
   { to: "/my-settings",     icon: MdSettings,      label: "Settings" },
 ];
@@ -26,6 +28,9 @@ const AccountLayout = ({ children }) => {
   const customer  = useSelector((s) => s.customerAuth?.user);
   const profile   = useSelector((s) => s.publicProfile?.profile);
   const unread    = useSelector((s) => s.publicNotification?.unread ?? 0);
+  const openTickets = useSelector((s) =>
+    (s.publicSupport?.list || []).filter((t) => t.status === "waiting_customer").length
+  );
 
   const displayUser = profile ?? customer;
 
@@ -85,6 +90,11 @@ const AccountLayout = ({ children }) => {
                     {label === "Notifications" && unread > 0 && (
                       <span className="ml-1 min-w-[18px] h-[18px] bg-primary-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
                         {unread > 9 ? "9+" : unread}
+                      </span>
+                    )}
+                    {label === "My Support Tickets" && openTickets > 0 && (
+                      <span className="ml-1 min-w-[18px] h-[18px] bg-yellow-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                        {openTickets > 9 ? "9+" : openTickets}
                       </span>
                     )}
                   </span>

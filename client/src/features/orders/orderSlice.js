@@ -11,6 +11,15 @@ export const fetchOrders = createAsyncThunk(
   }
 );
 
+// ─── Employee-scoped: only orders assigned to logged-in employee ──────────────
+export const fetchMyOrders = createAsyncThunk(
+  "order/fetchMyOrders",
+  async (params = {}, { rejectWithValue }) => {
+    try { return await GET(APIS.MyOrders, params); }
+    catch (e) { return rejectWithValue(e.response?.data); }
+  }
+);
+
 export const fetchOrderById = createAsyncThunk(
   "order/fetchById",
   async (id, { rejectWithValue }) => {
@@ -43,6 +52,15 @@ export const fetchOrderStats = createAsyncThunk(
   }
 );
 
+// ─── Employee-scoped stats ────────────────────────────────────────────────────
+export const fetchMyOrderStats = createAsyncThunk(
+  "order/fetchMyStats",
+  async (_, { rejectWithValue }) => {
+    try { return await GET(APIS.MyOrderStats); }
+    catch (e) { return rejectWithValue(e.response?.data); }
+  }
+);
+
 const orderSlice = createSlice({
   name: "order",
   initialState: {
@@ -61,6 +79,7 @@ const orderSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // fetchOrders (admin — all orders)
       .addCase(fetchOrders.pending,   (s) => { s.status = IDS.SLICESTATUS.Loading; })
       .addCase(fetchOrders.rejected,  (s, a) => { s.status = IDS.SLICESTATUS.Failed; s.error = a.payload; })
       .addCase(fetchOrders.fulfilled, (s, a) => {
@@ -71,8 +90,27 @@ const orderSlice = createSlice({
         s.total_pages  = a.payload?.data?.total_pages  || 1;
       })
 
+      // fetchMyOrders (employee — assigned only) — reuses same list/pagination state
+      .addCase(fetchMyOrders.pending,   (s) => { s.status = IDS.SLICESTATUS.Loading; })
+      .addCase(fetchMyOrders.rejected,  (s, a) => { s.status = IDS.SLICESTATUS.Failed; s.error = a.payload; })
+      .addCase(fetchMyOrders.fulfilled, (s, a) => {
+        s.status       = IDS.SLICESTATUS.Succeeded;
+        s.list         = a.payload?.data?.data || [];
+        s.total        = a.payload?.data?.total || 0;
+        s.current_page = a.payload?.data?.current_page || 1;
+        s.total_pages  = a.payload?.data?.total_pages  || 1;
+      })
+
       .addCase(fetchOrderById.fulfilled, (s, a) => { s.selected = a.payload?.data || null; })
+
+      // fetchOrderStats → array of {_id, count, revenue}
       .addCase(fetchOrderStats.fulfilled, (s, a) => { s.stats = a.payload?.data || []; })
+
+      // fetchMyOrderStats → {status_stats, today_count, total_count, pending_count}
+      // normalise to same stats array shape so Orders.jsx works unchanged
+      .addCase(fetchMyOrderStats.fulfilled, (s, a) => {
+        s.stats = a.payload?.data?.status_stats || [];
+      })
 
       .addCase(updateOrderStatus.pending,   (s) => { s.mutating = true; })
       .addCase(updateOrderStatus.fulfilled, (s, a) => {

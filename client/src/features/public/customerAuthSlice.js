@@ -3,58 +3,52 @@ import { POST } from "../../utils/Methods";
 import axiosClient from "../../utils/ApiInstance";
 import { APIS } from "../../utils/APIS";
 import Cookies from "js-cookie";
+import {
+  isTokenValid,
+  getUserIdFromToken,
+  getCustomerToken,
+  clearCustomerToken,
+} from "../../utils/tokenUtils";
 import { switchUserCart, clearUserCart } from "./publicCartSlice";
 import { switchUserWishlist, clearUserWishlist } from "./publicWishlistSlice";
 
-// ── Helper: decode userId from JWT ────────────────────────────────────────────
-const userIdFromToken = (token) => {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload?.id || payload?._id || payload?.sub || null;
-  } catch {
-    return null;
-  }
-};
-
-// ── Helper: check client-side JWT expiry ─────────────────────────────────────
-const isTokenValid = (token) => {
-  if (!token) return false;
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    if (payload.exp && payload.exp * 1000 < Date.now()) {
-      Cookies.remove("shopease_customer_token");
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-// ── Thunks ────────────────────────────────────────────────────────────────────
+// ─── Thunks ───────────────────────────────────────────────────────────────────
 
 /**
- * verifyCustomerToken — called on every app load when a cookie exists.
- * Makes a real API call to validate the token server-side.
- * On 401 the axios interceptor clears the cookie; here we just reset Redux state.
+ * verifyCustomerToken
+ * Called on every app load when a customer cookie exists.
+ * 1. Client-side expiry check first — avoids a network round-trip for dead tokens.
+ * 2. If token looks valid, hits the server to confirm and refresh user profile data.
+ * 3. Uses `skipRedirect: true` so the response interceptor does NOT hard-navigate
+ *    to /login when this background call fails with 401 — the thunk handles cleanup.
  */
 export const verifyCustomerToken = createAsyncThunk(
   "customerAuth/verify",
   async (_, { rejectWithValue, dispatch }) => {
+    const token = getCustomerToken();
+
+    // ── Step 1: fast client-side check ──
+    if (!isTokenValid(token)) {
+      clearCustomerToken();
+      dispatch(clearUserCart());
+      dispatch(clearUserWishlist());
+      return rejectWithValue("Token missing or expired");
+    }
+
+    // ── Step 2: server-side confirmation ──
     try {
-      // Use relative path only — axiosClient already has baseURL set.
-      // _skipRedirect tells the axios interceptor NOT to redirect to /login
-      // if this background verify call fails with 401 — we just silently clear state.
       const res = await axiosClient.get(APIS.Customer.Profile, {
-        _skipRedirect: true,
+        skipRedirect: true,   // tell response interceptor: don't redirect on 401
       });
       return res.data;
     } catch (err) {
-      // Token rejected by server — clear everything
-      Cookies.remove("shopease_customer_token");
+      // Server rejected the token (tampered / blacklisted / truly expired)
+      clearCustomerToken();
       dispatch(clearUserCart());
       dispatch(clearUserWishlist());
-      return rejectWithValue(null);
+      return rejectWithValue(
+        err?.response?.data?.message || "Session verification failed"
+      );
     }
   }
 );
@@ -64,22 +58,30 @@ export const customerLogin = createAsyncThunk(
   async (data, { rejectWithValue, dispatch, getState }) => {
     try {
       const res = await POST(APIS.Auth.Login, data);
+
       if (res.success) {
         const token  = res.data.token;
-        const userId = userIdFromToken(token);
+        const userId = getUserIdFromToken(token);
 
+        // Set cookie synchronously — dynamic import() was async and could race
+        // with switchUserCart/switchUserWishlist dispatches below
         Cookies.set("shopease_customer_token", token, { expires: 30 });
 
-        // Capture guest cart & wishlist BEFORE switching
+        // Merge guest cart/wishlist into the now-identified user's lists
         const guestCartItems     = getState().publicCart.items;
         const guestWishlistItems = getState().publicWishlist.items;
-
-        // Switch to user-specific storage and merge guest items
         dispatch(switchUserCart({ userId, guestItems: guestCartItems }));
         dispatch(switchUserWishlist({ userId, guestItems: guestWishlistItems }));
       }
+
       return res;
     } catch (err) {
+      // Normalise TOKEN_EXPIRED errors thrown by the request interceptor.
+      // Those errors have no .response, so err.response?.data would be undefined
+      // and callers would silently swallow the failure.
+      if (err.code === "TOKEN_EXPIRED") {
+        return rejectWithValue({ message: "Session expired. Please log in again." });
+      }
       return rejectWithValue(err.response?.data || { message: "Login failed" });
     }
   }
@@ -99,33 +101,48 @@ export const customerRegister = createAsyncThunk(
 export const customerLogout = createAsyncThunk(
   "customerAuth/logout",
   async (_, { dispatch }) => {
-    Cookies.remove("shopease_customer_token");
+    clearCustomerToken();
     dispatch(clearUserCart());
     dispatch(clearUserWishlist());
     return null;
   }
 );
 
-// ── Initial state ─────────────────────────────────────────────────────────────
-const initToken   = Cookies.get("shopease_customer_token") || null;
-const initIsLogin = isTokenValid(initToken);
+// ─── Initial state ────────────────────────────────────────────────────────────
+// Validate the cookie immediately on module load so Redux state is correct
+// before the first render — no flash of "logged-in" for expired tokens.
+const initToken   = getCustomerToken();
+const initIsValid = isTokenValid(initToken);
 
-// ── Slice ─────────────────────────────────────────────────────────────────────
+// If the stored token is already expired, evict the cookie right away
+if (initToken && !initIsValid) {
+  clearCustomerToken();
+}
+
+// ─── Slice ────────────────────────────────────────────────────────────────────
 const customerAuthSlice = createSlice({
   name: "customerAuth",
   initialState: {
     user:    null,
-    token:   initIsLogin ? initToken : null,
-    isLogin: initIsLogin,
+    token:   initIsValid ? initToken : null,
+    isLogin: initIsValid,
     status:  "idle",
     error:   null,
   },
-  reducers: {},
+  reducers: {
+    // Allows components to imperatively clear auth (e.g. after token error)
+    resetCustomerAuth(state) {
+      state.user    = null;
+      state.token   = null;
+      state.isLogin = false;
+      state.status  = "idle";
+      state.error   = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
-      // ── Verify token on app load ──
+      // ── verifyCustomerToken ──────────────────────────────────────────────
       .addCase(verifyCustomerToken.pending, (state) => {
-        // Keep current isLogin until server responds
         state.status = "loading";
       })
       .addCase(verifyCustomerToken.fulfilled, (state, action) => {
@@ -137,6 +154,7 @@ const customerAuthSlice = createSlice({
             name:          data.name,
             email:         data.email,
             profile_image: data.profile_image,
+            contact_no:    data.contact_no ?? null,
           };
         }
       })
@@ -147,7 +165,7 @@ const customerAuthSlice = createSlice({
         state.isLogin = false;
       })
 
-      // ── Login ──
+      // ── customerLogin ────────────────────────────────────────────────────
       .addCase(customerLogin.pending, (state) => {
         state.status = "loading";
         state.error  = null;
@@ -156,12 +174,12 @@ const customerAuthSlice = createSlice({
         state.status = "succeeded";
         if (action.payload?.success) {
           state.token   = action.payload.data.token;
+          state.isLogin = true;
           state.user    = {
             name:          action.payload.data.name,
             email:         action.payload.data.email,
-            profile_image: action.payload.data.profile_image,
+            profile_image: action.payload.data.profile_image ?? null,
           };
-          state.isLogin = true;
         }
       })
       .addCase(customerLogin.rejected, (state, action) => {
@@ -169,7 +187,7 @@ const customerAuthSlice = createSlice({
         state.error  = action.payload;
       })
 
-      // ── Logout ──
+      // ── customerLogout ───────────────────────────────────────────────────
       .addCase(customerLogout.fulfilled, (state) => {
         state.user    = null;
         state.token   = null;
@@ -179,4 +197,5 @@ const customerAuthSlice = createSlice({
   },
 });
 
+export const { resetCustomerAuth } = customerAuthSlice.actions;
 export default customerAuthSlice.reducer;

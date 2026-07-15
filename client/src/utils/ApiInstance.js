@@ -1,5 +1,13 @@
 import axios from "axios";
 import Cookies from "js-cookie";
+import {
+  isTokenValid,
+  clearCustomerToken,
+  clearAdminToken,
+} from "./tokenUtils";
+
+const CUSTOMER_COOKIE = "shopease_customer_token";
+const ADMIN_COOKIE    = "shopease_admin_token";
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -11,47 +19,87 @@ const axiosClient = axios.create({
 let _store = null;
 export const injectStore = (store) => { _store = store; };
 
-// Request interceptor - attach the correct token based on the URL
+// ─── Helper: build a uniform TOKEN_EXPIRED rejection ─────────────────────────
+// Gives every catch block both err.code === "TOKEN_EXPIRED" AND
+// err.response?.data?.message so handlers don't need special-casing.
+const makeExpiredError = (message) =>
+  Object.assign(new Error(message), {
+    code: "TOKEN_EXPIRED",
+    response: {
+      status: 401,
+      data:   { success: false, message },
+    },
+  });
+
+// ─── Request Interceptor ──────────────────────────────────────────────────────
+// 1. Picks the right token based on URL prefix.
+// 2. Validates client-side before attaching — expired tokens are cleared and
+//    the request is aborted immediately, saving a round-trip to the server.
 axiosClient.interceptors.request.use(
   (config) => {
     const url = config.url || "";
 
     if (url.includes("/customer/")) {
-      const customerToken = Cookies.get("shopease_customer_token");
-      if (customerToken) config.headers["Authorization"] = `Bearer ${customerToken}`;
-    } else {
-      const adminToken = Cookies.get("shopease_admin_token");
-      if (adminToken) config.headers["Authorization"] = `Bearer ${adminToken}`;
+      const token = Cookies.get(CUSTOMER_COOKIE);
+      if (token) {
+        if (isTokenValid(token)) {
+          config.headers["Authorization"] = `Bearer ${token}`;
+        } else {
+          // Expired — evict and reject before the request fires
+          clearCustomerToken();
+          if (_store) {
+            _store.dispatch({ type: "customerAuth/logout/fulfilled" });
+            _store.dispatch({ type: "publicCart/clearUserCart" });
+            _store.dispatch({ type: "publicWishlist/clearUserWishlist" });
+          }
+          return Promise.reject(
+            makeExpiredError("Session expired. Please log in again.")
+          );
+        }
+      }
+    } else if (url.includes("/admin/")) {
+      const token = Cookies.get(ADMIN_COOKIE);
+      if (token) {
+        if (isTokenValid(token)) {
+          config.headers["Authorization"] = `Bearer ${token}`;
+        } else {
+          // Expired — evict and reject before the request fires
+          clearAdminToken();
+          if (_store) {
+            _store.dispatch({ type: "auth/logout" });
+          }
+          return Promise.reject(
+            makeExpiredError("Admin session expired. Please log in again.")
+          );
+        }
+      }
     }
+    // /common/ and /public/ routes need no token
 
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor - handle 401
+// ─── Response Interceptor ─────────────────────────────────────────────────────
+// Handles true server-side 401s (tampered / blacklisted token).
+// skipRedirect:true on a request config lets background verify calls fail
+// silently without hard-navigating the user to /login.
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Only act on true 401 Unauthorized — ignore network errors, 404s, etc.
     if (error.response?.status === 401) {
-      const url = error.config?.url || "";
-      const currentPath = window.location.pathname;
+      const url          = error.config?.url || "";
+      const skipRedirect = error.config?.skipRedirect === true;
+      const currentPath  = window.location.pathname;
 
       if (url.includes("/customer/")) {
-        // Clear customer cookie
-        Cookies.remove("shopease_customer_token");
-
-        // Reset Redux state if store is available
+        clearCustomerToken();
         if (_store) {
           _store.dispatch({ type: "customerAuth/logout/fulfilled" });
           _store.dispatch({ type: "publicCart/clearUserCart" });
           _store.dispatch({ type: "publicWishlist/clearUserWishlist" });
         }
-
-        // _skipRedirect flag means this was a silent background verify call —
-        // do NOT hard-redirect, just let the thunk handle state cleanup.
-        const skipRedirect = error.config?._skipRedirect;
         if (
           !skipRedirect &&
           !currentPath.startsWith("/login") &&
@@ -60,18 +108,16 @@ axiosClient.interceptors.response.use(
           window.location.href = "/login";
         }
       } else if (url.includes("/admin/")) {
-        // Admin 401 — only redirect if we are actually inside the admin panel
-        Cookies.remove("shopease_admin_token");
+        clearAdminToken();
         if (_store) {
           _store.dispatch({ type: "auth/logout" });
         }
-        if (currentPath.startsWith("/admin")) {
+        if (!skipRedirect && currentPath.startsWith("/admin")) {
           window.location.href = "/login";
         }
-        // If we are on a public page (e.g. PublicLayout calling /admin/settings
-        // before this fix), do NOT redirect — just silently fail.
       }
     }
+
     return Promise.reject(error);
   }
 );

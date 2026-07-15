@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchOrders, fetchOrderStats } from "../../features/orders/orderSlice";
+import {
+  fetchOrders, fetchMyOrders,
+  fetchOrderStats, fetchMyOrderStats,
+} from "../../features/orders/orderSlice";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../../components/common/DataTable";
 import { IDS } from "../../utils/IDS";
@@ -48,6 +51,11 @@ const Orders = () => {
   const navigate  = useNavigate();
   const { list, total, current_page, total_pages, status, stats } =
     useSelector((s) => s.order);
+  const { role_slug } = useSelector((s) => s.auth);
+
+  // Employee sees only their assigned orders; admin/super_admin see all
+  const isEmployee = role_slug === "employee";
+
   const loading = status === "loading";
 
   const [search, setSearch]             = useState("");
@@ -68,13 +76,19 @@ const Orders = () => {
     return params;
   };
 
-  const load = (p = page) => dispatch(fetchOrders(buildParams(p)));
+  // dispatch the correct thunk based on role
+  const load = (p = page) =>
+    isEmployee
+      ? dispatch(fetchMyOrders(buildParams(p)))
+      : dispatch(fetchOrders(buildParams(p)));
 
   useEffect(() => {
-    dispatch(fetchOrderStats());
-  }, [dispatch]);
+    isEmployee
+      ? dispatch(fetchMyOrderStats())
+      : dispatch(fetchOrderStats());
+  }, [dispatch, isEmployee]);
 
-  useEffect(() => { load(page); }, [page, activeTab, paymentFilter, startDate, endDate]);
+  useEffect(() => { load(page); }, [page, activeTab, paymentFilter, startDate, endDate, isEmployee]);
 
   useEffect(() => {
     const t = setTimeout(() => { setPage(1); load(1); }, 350);
@@ -178,11 +192,21 @@ const Orders = () => {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage and track all customer orders</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEmployee ? "My Assigned Orders" : "Orders"}
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {isEmployee
+              ? "Orders assigned to you — only your orders are shown"
+              : "Manage and track all customer orders"}
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => { dispatch(fetchOrderStats()); load(page); }}
+          <button
+            onClick={() => {
+              isEmployee ? dispatch(fetchMyOrderStats()) : dispatch(fetchOrderStats());
+              load(page);
+            }}
             className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50" title="Refresh">
             <MdRefresh size={18} />
           </button>
@@ -196,10 +220,12 @@ const Orders = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total Revenue",  value: formatCurrency(totalRevenue),  icon: MdShoppingCart,  bg: "bg-primary-50", color: "text-primary-600" },
-          { label: "Total Orders",   value: totalOrders,                   icon: MdShoppingCart,  bg: "bg-blue-50",    color: "text-blue-600" },
-          { label: "Delivered",      value: deliveredCnt,                  icon: MdCheckCircle,   bg: "bg-green-50",   color: "text-green-600" },
-          { label: "In Transit",     value: shippedCnt,                    icon: MdLocalShipping, bg: "bg-cyan-50",    color: "text-cyan-600" },
+          // Hide revenue for employees — they shouldn't see financial data
+          ...(!isEmployee ? [{ label: "Total Revenue", value: formatCurrency(totalRevenue), icon: MdShoppingCart, bg: "bg-primary-50", color: "text-primary-600" }] : []),
+          { label: "Total Orders",   value: totalOrders,  icon: MdShoppingCart,  bg: "bg-blue-50",    color: "text-blue-600" },
+          { label: "Delivered",      value: deliveredCnt, icon: MdCheckCircle,   bg: "bg-green-50",   color: "text-green-600" },
+          { label: "In Transit",     value: shippedCnt,   icon: MdLocalShipping, bg: "bg-cyan-50",    color: "text-cyan-600" },
+          ...(isEmployee ? [{ label: "Pending", value: pendingCnt, icon: MdPending, bg: "bg-orange-50", color: "text-orange-600" }] : []),
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-xl p-4 shadow-card flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${s.bg} flex-shrink-0`}>

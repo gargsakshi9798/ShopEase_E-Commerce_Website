@@ -27,6 +27,9 @@ router.use("/notifications", CustomerMiddleware, require("./notification/index")
 // Note: CustomerMiddleware is applied inside payment/index.js
 router.use("/payment", require("./payment/index"));
 
+// Support Tickets (customer — view own tickets, create, reply)
+router.use("/support/tickets", CustomerMiddleware, require("./support/index"));
+
 // Customer Coupons — browse available public coupons
 router.get("/coupons", CustomerMiddleware, async (req, res) => {
   const Base = require("../../../../helper/exception_handling/index.js");
