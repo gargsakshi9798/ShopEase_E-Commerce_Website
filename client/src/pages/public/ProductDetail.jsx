@@ -229,15 +229,27 @@ const ProductDetail = () => {
   const disc    = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
   const handleAddToCart = () => {
+    // #3 Stock validation — button is disabled when stock=0 but guard here too
+    if (stock <= 0) {
+      toast.error("This product is out of stock");
+      return;
+    }
+    // #1 Validate product is still active
+    if (!detail.status) {
+      toast.error("This product is no longer available");
+      return;
+    }
     dispatch(addToCart({
       product: {
-        _id:   detail._id,
-        name:  detail.name,
+        _id:        detail._id,
+        name:       detail.name,
         price,
         mrp,
-        img:   images[0] ?? "🛒",
-        brand: detail.brand_id?.name ?? "",
+        img:        images[0] ?? "",
+        brand:      detail.brand_id?.name ?? "",
         variant_id: selectedVar?._id ?? null,
+        stock,                               // pass stock so reducer can cap qty
+        status:     detail.status,
       },
       qty,
     }));
@@ -399,8 +411,7 @@ const ProductDetail = () => {
             {detail.description && (
               <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm mt-4">
                 <h3 className="text-base font-bold text-gray-900 mb-2">Product Description</h3>
-                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{detail.description}</p>
-              </div>
+                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{detail.description}</p>              </div>
             )}
 
             {/* Specifications */}

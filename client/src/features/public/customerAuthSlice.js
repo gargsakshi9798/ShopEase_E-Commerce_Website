@@ -9,8 +9,8 @@ import {
   getCustomerToken,
   clearCustomerToken,
 } from "../../utils/tokenUtils";
-import { switchUserCart, clearUserCart } from "./publicCartSlice";
-import { switchUserWishlist, clearUserWishlist } from "./publicWishlistSlice";
+import { loadServerCart, switchUserCart, clearUserCart } from "./publicCartSlice";
+import { loadServerWishlist, switchUserWishlist, clearUserWishlist } from "./publicWishlistSlice";
 
 // ─── Thunks ───────────────────────────────────────────────────────────────────
 
@@ -63,15 +63,21 @@ export const customerLogin = createAsyncThunk(
         const token  = res.data.token;
         const userId = getUserIdFromToken(token);
 
-        // Set cookie synchronously — dynamic import() was async and could race
-        // with switchUserCart/switchUserWishlist dispatches below
+        // Set cookie synchronously before dispatching any thunks
         Cookies.set("shopease_customer_token", token, { expires: 30 });
 
-        // Merge guest cart/wishlist into the now-identified user's lists
+        // Capture guest items before switching context
         const guestCartItems     = getState().publicCart.items;
         const guestWishlistItems = getState().publicWishlist.items;
-        dispatch(switchUserCart({ userId, guestItems: guestCartItems }));
-        dispatch(switchUserWishlist({ userId, guestItems: guestWishlistItems }));
+
+        // Update cart userId in Redux so the local cache key changes,
+        // then fetch the server cart and merge guest items into it
+        dispatch(switchUserCart({ userId }));
+        dispatch(loadServerCart(guestCartItems));
+
+        // Update wishlist userId, then fetch server wishlist and merge guest items
+        dispatch(switchUserWishlist({ userId }));
+        dispatch(loadServerWishlist(guestWishlistItems));
       }
 
       return res;

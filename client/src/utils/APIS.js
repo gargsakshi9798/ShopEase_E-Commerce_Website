@@ -118,6 +118,7 @@ export const APIS = {
       TicketReply:  (id) => `/customer/support/tickets/${id}/reply`,
       TicketClose:  (id) => `/customer/support/tickets/${id}/close`,
     },
+    Wishlist:      "/customer/wishlist",
     // Payment & Checkout
     Payment: {
       ValidateCheckout:    "/customer/payment/validate-checkout",
