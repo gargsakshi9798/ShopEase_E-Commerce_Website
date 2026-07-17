@@ -1,7 +1,9 @@
 import React from "react";
+import { Navigate, useParams } from "react-router-dom";
 
 // ── Core Public Pages ─────────────────────────────────────────────────────────
 const Home                       = React.lazy(() => import("./pages/public/Home"));
+const Products                   = React.lazy(() => import("./pages/public/Products"));
 const AllCategories              = React.lazy(() => import("./pages/public/AllCategories"));
 const More                       = React.lazy(() => import("./pages/public/More"));
 const Page404                    = React.lazy(() => import("./pages/Page404"));
@@ -9,7 +11,7 @@ const Page404                    = React.lazy(() => import("./pages/Page404"));
 // ── Generic Product Detail (dynamic — used by ALL categories) ────────────────
 const ProductDetail              = React.lazy(() => import("./pages/public/ProductDetail"));
 
-// ── Category Pages (all dynamic via CategoryPage component) ──────────────────
+// ── Category Pages ────────────────────────────────────────────────────────────
 const Fashion                    = React.lazy(() => import("./pages/public/Fashion"));
 const Electronics                = React.lazy(() => import("./pages/public/Electronics"));
 const Mobiles                    = React.lazy(() => import("./pages/public/Mobiles"));
@@ -21,19 +23,6 @@ const Books                      = React.lazy(() => import("./pages/public/Books
 const Toys                       = React.lazy(() => import("./pages/public/Toys"));
 const Grocery                    = React.lazy(() => import("./pages/public/Grocery"));
 const Automotive                 = React.lazy(() => import("./pages/public/Automotive"));
-
-// Legacy category product-detail pages — they redirect to /product/:id
-const FashionProductDetail       = React.lazy(() => import("./pages/public/FashionProductDetail"));
-const ElectronicsProductDetail   = React.lazy(() => import("./pages/public/ElectronicsProductDetail"));
-const MobilesProductDetail       = React.lazy(() => import("./pages/public/MobilesProductDetail"));
-const HomeKitchenProductDetail   = React.lazy(() => import("./pages/public/HomeKitchenProductDetail"));
-const AppliancesProductDetail    = React.lazy(() => import("./pages/public/AppliancesProductDetail"));
-const BeautyProductDetail        = React.lazy(() => import("./pages/public/BeautyProductDetail"));
-const SportsProductDetail        = React.lazy(() => import("./pages/public/SportsProductDetail"));
-const BooksProductDetail         = React.lazy(() => import("./pages/public/BooksProductDetail"));
-const ToysProductDetail          = React.lazy(() => import("./pages/public/ToysProductDetail"));
-const GroceryProductDetail       = React.lazy(() => import("./pages/public/GroceryProductDetail"));
-const AutomotiveProductDetail    = React.lazy(() => import("./pages/public/AutomotiveProductDetail"));
 
 // ── Shopping Pages ────────────────────────────────────────────────────────────
 const Wishlist                   = React.lazy(() => import("./pages/public/Wishlist"));
@@ -72,6 +61,14 @@ const BulkOrders                 = React.lazy(() => import("./pages/public/BulkO
 const StoreLocator               = React.lazy(() => import("./pages/public/StoreLocator"));
 const Sitemap                    = React.lazy(() => import("./pages/public/Sitemap"));
 
+// ── Legacy category product-detail redirect helper ────────────────────────────
+// All /category/product/:id routes redirect to the canonical /product/:id.
+// A tiny component is needed to read the dynamic :id param from the URL.
+const RedirectToProduct = () => {
+  const { id } = useParams();
+  return <Navigate to={`/product/${id}`} replace />;
+};
+
 const publicRoutes = [
   // ── Home ──
   { path: "/", element: Home },
@@ -79,53 +76,56 @@ const publicRoutes = [
   // ── Generic Product Detail (primary route for all products) ──
   { path: "/product/:slug", element: ProductDetail },
 
+  // ── All Products (search / filter / browse) ──
+  { path: "/products", element: Products },
+
   // ── Categories ──
   { path: "/categories", element: AllCategories },
   { path: "/more",       element: More },
 
   // ── Fashion ──
   { path: "/fashion",                 element: Fashion },
-  { path: "/fashion/product/:id",     element: FashionProductDetail },
+  { path: "/fashion/product/:id",     element: <RedirectToProduct /> },
 
   // ── Electronics ──
   { path: "/electronics",             element: Electronics },
-  { path: "/electronics/product/:id", element: ElectronicsProductDetail },
+  { path: "/electronics/product/:id", element: <RedirectToProduct /> },
 
   // ── Mobiles ──
   { path: "/mobiles",                 element: Mobiles },
-  { path: "/mobiles/product/:id",     element: MobilesProductDetail },
+  { path: "/mobiles/product/:id",     element: <RedirectToProduct /> },
 
   // ── Home & Kitchen ──
   { path: "/home-kitchen",                 element: HomeKitchen },
-  { path: "/home-kitchen/product/:id",     element: HomeKitchenProductDetail },
+  { path: "/home-kitchen/product/:id",     element: <RedirectToProduct /> },
 
   // ── Appliances ──
   { path: "/appliances",              element: Appliances },
-  { path: "/appliances/product/:id",  element: AppliancesProductDetail },
+  { path: "/appliances/product/:id",  element: <RedirectToProduct /> },
 
   // ── Beauty ──
   { path: "/beauty",                  element: Beauty },
-  { path: "/beauty/product/:id",      element: BeautyProductDetail },
+  { path: "/beauty/product/:id",      element: <RedirectToProduct /> },
 
   // ── Sports ──
   { path: "/sports",                  element: Sports },
-  { path: "/sports/product/:id",      element: SportsProductDetail },
+  { path: "/sports/product/:id",      element: <RedirectToProduct /> },
 
   // ── Books ──
   { path: "/books",                   element: Books },
-  { path: "/books/product/:id",       element: BooksProductDetail },
+  { path: "/books/product/:id",       element: <RedirectToProduct /> },
 
   // ── Toys ──
   { path: "/toys",                    element: Toys },
-  { path: "/toys/product/:id",        element: ToysProductDetail },
+  { path: "/toys/product/:id",        element: <RedirectToProduct /> },
 
   // ── Grocery ──
   { path: "/grocery",                 element: Grocery },
-  { path: "/grocery/product/:id",     element: GroceryProductDetail },
+  { path: "/grocery/product/:id",     element: <RedirectToProduct /> },
 
   // ── Automotive ──
   { path: "/automotive",              element: Automotive },
-  { path: "/automotive/product/:id",  element: AutomotiveProductDetail },
+  { path: "/automotive/product/:id",  element: <RedirectToProduct /> },
 
   // ── Shopping ──
   { path: "/wishlist", element: Wishlist },

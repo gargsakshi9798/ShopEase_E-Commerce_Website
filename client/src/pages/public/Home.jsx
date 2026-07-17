@@ -10,7 +10,7 @@ import {
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { fetchHomeData } from "../../features/public/publicHomeSlice";
-import { fetchPublicCategories } from "../../features/public/publicProductSlice";
+import { fetchPublicCategories, fetchPublicBrands } from "../../features/public/publicProductSlice";
 import { addToCart } from "../../features/public/publicCartSlice";
 import { toggleWishlist } from "../../features/public/publicWishlistSlice";
 import { getImgUrl } from "../../utils/Methods";
@@ -579,14 +579,15 @@ const Home = () => {
   // Redux state
   const {
     banners, featured_products, best_sellers, new_arrivals,
-    flash_sale, trending, brands, status,
+    flash_sale, trending, status,
   } = useSelector((st) => st.publicHome);
-  const { categories: apiCategories } = useSelector((st) => st.publicProduct);
+  const { categories: apiCategories, brands } = useSelector((st) => st.publicProduct);
 
   // Fetch on mount
   useEffect(() => {
     dispatch(fetchHomeData());
     dispatch(fetchPublicCategories());
+    dispatch(fetchPublicBrands());
   }, [dispatch]);
 
   const loading = status === "loading" || status === "idle";

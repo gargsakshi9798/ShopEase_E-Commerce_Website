@@ -36,7 +36,7 @@ const ProductCard = ({ product, view = "grid" }) => {
   if (view === "list") {
     return (
       <Link
-        to={`/products/${product.slug}`}
+        to={`/product/${product.slug}`}
         className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex gap-4 p-4 group"
       >
         <div className="w-32 h-32 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -79,7 +79,7 @@ const ProductCard = ({ product, view = "grid" }) => {
 
   return (
     <Link
-      to={`/products/${product.slug}`}
+      to={`/product/${product.slug}`}
       className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden group"
     >
       <div className="relative h-44 bg-gray-50 flex items-center justify-center overflow-hidden">

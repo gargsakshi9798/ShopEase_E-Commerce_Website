@@ -1,5 +1,5 @@
 // ─── Shared Electronics product data ─────────────────────────────────────────
-// Both Electronics.jsx (list) and ElectronicsProductDetail.jsx (detail) import from here.
+// Imported by Electronics.jsx for the category listing page.
 // _id must be a string so it works with publicCartSlice / publicWishlistSlice.
 
 export const electronicsProducts = [

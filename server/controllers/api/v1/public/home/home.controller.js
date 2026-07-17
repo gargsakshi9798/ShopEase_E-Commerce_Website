@@ -163,6 +163,24 @@ class HomeController {
       return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
     }
   }
+
+  // GET /public/brands
+  // Returns all active brands; optionally filters to featured-only via ?featured=true
+  async getBrands(req, res) {
+    try {
+      const filter = { status: true };
+      if (req.query.featured === "true") filter.is_featured = true;
+
+      const brands = await Brand.find(filter)
+        .select("name logo slug is_featured sort_order")
+        .sort({ sort_order: 1, name: 1 });
+
+      return Base.sendResponse(res, HTTPS.OK, brands);
+    } catch (error) {
+      console.error("getBrands error:", error);
+      return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
+    }
+  }
 }
 
 module.exports = new HomeController();

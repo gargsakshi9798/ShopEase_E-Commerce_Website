@@ -1,5 +1,5 @@
 // ─── Shared Fashion product data ─────────────────────────────────────────────
-// Both Fashion.jsx (list) and FashionProductDetail.jsx (detail) import from here.
+// Imported by Fashion.jsx for the category listing page.
 // _id must be a string so it works with publicCartSlice / publicWishlistSlice.
 
 export const fashionProducts = [

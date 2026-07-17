@@ -1,5 +1,5 @@
 // ─── Shared Mobiles product data ─────────────────────────────────────────────
-// Both Mobiles.jsx (list) and MobilesProductDetail.jsx (detail) import from here.
+// Imported by Mobiles.jsx for the category listing page.
 // _id must be a string so it works with publicCartSlice / publicWishlistSlice.
 
 export const mobilesProducts = [
