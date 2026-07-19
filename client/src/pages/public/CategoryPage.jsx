@@ -420,7 +420,7 @@ const CategoryPage = ({
       <div className={`bg-gradient-to-r ${bg} text-white`}>
         <div className="max-w-[1280px] mx-auto px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
-            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-3">
+            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-3 text-white">
               {categoryName} <span className={accentColor}>Store</span>
             </h1>
             <p className="text-white/70 max-w-md text-sm leading-relaxed mb-5">{tagline}</p>
