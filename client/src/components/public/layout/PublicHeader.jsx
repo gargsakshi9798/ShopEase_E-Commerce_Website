@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -6,12 +6,31 @@ import {
   MdPerson, MdKeyboardArrowDown, MdMenu, MdClose,
   MdLogout, MdShoppingBag, MdAccountCircle, MdLocationOn,
   MdLocalOffer, MdStar, MdNotifications, MdSettings,
-  MdCardGiftcard, MdSecurity, MdDashboard,
+  MdCardGiftcard, MdSecurity, MdDashboard, MdDoneAll,
+  MdCircle, MdLocalShipping, MdCheckCircle, MdInfo,
 } from "react-icons/md";
 import { FaShoppingBag } from "react-icons/fa";
 import { customerLogout } from "../../../features/public/customerAuthSlice";
+import {
+  fetchCustomerNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  markOneReadLocal,
+  markAllReadLocal,
+} from "../../../features/public/publicNotificationSlice";
 import { useSettings } from "../../../hooks/useSettings";
-import { getImgUrl } from "../../../utils/Methods";
+import { getImgUrl, formatDateTime } from "../../../utils/Methods";
+
+// ── Notification type config ──────────────────────────────────────────────────
+const NOTIF_TYPE = {
+  order:    { bg: "bg-blue-100",   text: "text-blue-600",   emoji: "🛒" },
+  payment:  { bg: "bg-green-100",  text: "text-green-600",  emoji: "💳" },
+  promo:    { bg: "bg-purple-100", text: "text-purple-600", emoji: "🎉" },
+  return:   { bg: "bg-orange-100", text: "text-orange-600", emoji: "↩️" },
+  account:  { bg: "bg-gray-100",   text: "text-gray-600",   emoji: "👤" },
+  general:  { bg: "bg-primary-100","text": "text-primary-600", emoji: "🔔" },
+};
+const getNT = (type) => NOTIF_TYPE[type?.toLowerCase()] ?? NOTIF_TYPE.general;
 
 const categories = [
   "Fashion", "Electronics", "Mobiles", "Home & Kitchen",
@@ -35,31 +54,60 @@ const PublicHeader = () => {
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [mobileMenuOpen,   setMobileMenuOpen]   = useState(false);
   const [accountDropdown,  setAccountDropdown]  = useState(false);
+  const [notifOpen,        setNotifOpen]         = useState(false);
 
   const accountRef = useRef(null);
+  const notifRef   = useRef(null);
 
   const cartCount     = useSelector((s) => s.publicCart?.count     ?? 0);
   const wishlistCount = useSelector((s) => s.publicWishlist?.count ?? 0);
   const customer      = useSelector((s) => s.customerAuth?.user    ?? null);
-  const unreadNotifs  = useSelector((s) => s.publicNotification?.unread ?? 0);
+  const { notifications, unread: unreadNotifs } =
+    useSelector((s) => s.publicNotification);
 
-  // Close account dropdown on outside click
+  // ── Auto-fetch notifications every 60s when logged in ──────────────────
+  const loadNotifs = useCallback(() => {
+    if (customer) dispatch(fetchCustomerNotifications({ per_page: 10 }));
+  }, [customer, dispatch]);
+
+  useEffect(() => {
+    loadNotifs();
+    const t = setInterval(loadNotifs, 60_000);
+    return () => clearInterval(t);
+  }, [loadNotifs]);
+
+  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
       if (accountRef.current && !accountRef.current.contains(e.target))
         setAccountDropdown(false);
+      if (notifRef.current && !notifRef.current.contains(e.target))
+        setNotifOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   // Close mobile menu on route change
-  useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
+  useEffect(() => { setMobileMenuOpen(false); setNotifOpen(false); }, [location.pathname]);
 
   const handleLogout = () => {
     dispatch(customerLogout());
     setAccountDropdown(false);
     navigate("/login");
+  };
+
+  const handleNotifClick = (n) => {
+    if (!n.is_read) {
+      dispatch(markOneReadLocal(n._id));
+      dispatch(markNotificationRead(n._id));
+    }
+    setNotifOpen(false);
+  };
+
+  const handleMarkAllRead = () => {
+    dispatch(markAllReadLocal());
+    dispatch(markAllNotificationsRead());
   };
 
   const handleSearch = (e) => {
@@ -125,7 +173,7 @@ const PublicHeader = () => {
             </button>
           </form>
 
-          {/* Right — Wishlist, Cart, Account */}
+          {/* Right — Wishlist, Cart, Notifications, Account */}
           <div className="flex items-center gap-5 flex-shrink-0">
 
             {/* Wishlist */}
@@ -159,6 +207,114 @@ const PublicHeader = () => {
               </div>
               <span className="text-[11px] text-gray-600 group-hover:text-primary-600 transition-colors leading-none">Cart</span>
             </Link>
+
+            {/* ── Notification Bell (only when logged in) ───────────────── */}
+            {customer && (
+              <div className="relative flex flex-col items-center gap-0.5" ref={notifRef}>
+                <button
+                  onClick={() => { setNotifOpen((v) => !v); setAccountDropdown(false); }}
+                  className="relative flex flex-col items-center gap-0.5 group"
+                  aria-label="Notifications"
+                >
+                  <div className="relative">
+                    <MdNotifications
+                      size={24}
+                      className={unreadNotifs > 0 ? "text-primary-600" : "text-gray-600 group-hover:text-primary-600 transition-colors"}
+                    />
+                    {unreadNotifs > 0 && (
+                      <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none animate-pulse">
+                        {unreadNotifs > 9 ? "9+" : unreadNotifs}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-gray-600 group-hover:text-primary-600 transition-colors leading-none">Alerts</span>
+                </button>
+
+                {/* ── Notification Dropdown ──────────────────────────── */}
+                {notifOpen && (
+                  <div className="absolute right-0 top-full mt-3 w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary-50 to-blue-50 border-b border-gray-100">
+                      <div className="flex items-center gap-2">
+                        <MdNotifications size={17} className="text-primary-600" />
+                        <span className="text-sm font-bold text-gray-800">Notifications</span>
+                        {unreadNotifs > 0 && (
+                          <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                            {unreadNotifs}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {unreadNotifs > 0 && (
+                          <button
+                            onClick={handleMarkAllRead}
+                            className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 font-semibold"
+                          >
+                            <MdDoneAll size={13} /> Mark all read
+                          </button>
+                        )}
+                        <button
+                          onClick={loadNotifs}
+                          className="text-xs text-gray-400 hover:text-gray-600 px-1"
+                          title="Refresh"
+                        >
+                          ↻
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* List */}
+                    <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                      {notifications.length === 0 ? (
+                        <div className="flex flex-col items-center py-10 gap-2 text-gray-400">
+                          <MdNotifications size={32} className="text-gray-200" />
+                          <p className="text-sm font-medium">No notifications yet</p>
+                        </div>
+                      ) : (
+                        notifications.slice(0, 8).map((n) => {
+                          const nt = getNT(n.type);
+                          return (
+                            <button
+                              key={n._id}
+                              onClick={() => handleNotifClick(n)}
+                              className={`w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${
+                                !n.is_read ? "bg-primary-50/40" : ""
+                              }`}
+                            >
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base ${nt.bg}`}>
+                                {nt.emoji}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <p className={`text-xs font-semibold truncate ${!n.is_read ? "text-gray-900" : "text-gray-600"}`}>
+                                    {n.title ?? "Notification"}
+                                  </p>
+                                  {!n.is_read && <MdCircle size={6} className="text-primary-600 flex-shrink-0" />}
+                                </div>
+                                <p className="text-xs text-gray-400 truncate mt-0.5">{n.message}</p>
+                                <p className="text-[10px] text-gray-300 mt-1">{formatDateTime(n.createdAt)}</p>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50">
+                      <Link
+                        to="/notifications"
+                        onClick={() => setNotifOpen(false)}
+                        className="block text-center text-xs font-semibold text-primary-600 hover:text-primary-800 py-1"
+                      >
+                        View all notifications →
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Account */}
             {customer ? (
@@ -229,7 +385,7 @@ const PublicHeader = () => {
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
                         <MdNotifications size={17} className="text-gray-400 group-hover:text-primary-600"/> Notifications
                         {unreadNotifs > 0 && (
-                          <span className="ml-auto bg-primary-100 text-primary-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
+                          <span className="ml-auto bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
                             {unreadNotifs > 9 ? "9+" : unreadNotifs}
                           </span>
                         )}

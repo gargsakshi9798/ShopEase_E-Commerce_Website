@@ -2,6 +2,8 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { GET, PATCH } from "../../utils/Methods";
 import { APIS } from "../../utils/APIS";
 
+// ── Thunks ────────────────────────────────────────────────────────────────────
+
 export const fetchCustomerNotifications = createAsyncThunk(
   "publicNotification/fetchAll",
   async (params = {}, { rejectWithValue }) => {
@@ -36,42 +38,73 @@ export const markAllNotificationsRead = createAsyncThunk(
   }
 );
 
+// ── Slice ─────────────────────────────────────────────────────────────────────
+
 const publicNotificationSlice = createSlice({
   name: "publicNotification",
   initialState: {
     notifications: [],
-    unread: 0,
-    total: 0,
-    totalPages: 1,
-    currentPage: 1,
-    status: "idle",
-    error: null,
+    unread:        0,
+    total:         0,
+    totalPages:    1,
+    currentPage:   1,
+    status:        "idle",
+    error:         null,
+    lastFetched:   null,   // ISO timestamp of last successful fetch
   },
-  reducers: {},
+  reducers: {
+    // Optimistically mark a single notification as read in the UI
+    markOneReadLocal: (state, action) => {
+      const n = state.notifications.find((n) => n._id === action.payload);
+      if (n && !n.is_read) {
+        n.is_read  = true;
+        state.unread = Math.max(0, state.unread - 1);
+      }
+    },
+    // Optimistically mark all as read in the UI
+    markAllReadLocal: (state) => {
+      state.notifications.forEach((n) => { n.is_read = true; });
+      state.unread = 0;
+    },
+  },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCustomerNotifications.pending, (state) => { state.status = "loading"; state.error = null; })
-      .addCase(fetchCustomerNotifications.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        const d = action.payload?.data;
-        state.notifications = d?.data        ?? [];
-        state.unread        = d?.unread      ?? 0;
-        state.total         = d?.total       ?? 0;
-        state.totalPages    = d?.total_pages ?? 1;
-        state.currentPage   = d?.current_page ?? 1;
+      // ── Fetch all ────────────────────────────────────────────────────────
+      .addCase(fetchCustomerNotifications.pending, (state) => {
+        state.status = "loading";
+        state.error  = null;
       })
-      .addCase(fetchCustomerNotifications.rejected, (state, action) => { state.status = "failed"; state.error = action.payload; })
-      // Mark single read
+      .addCase(fetchCustomerNotifications.fulfilled, (state, action) => {
+        state.status      = "succeeded";
+        const d           = action.payload?.data;
+        state.notifications = d?.data         ?? [];
+        state.unread        = d?.unread        ?? 0;
+        state.total         = d?.total         ?? 0;
+        state.totalPages    = d?.total_pages   ?? 1;
+        state.currentPage   = d?.current_page  ?? 1;
+        state.lastFetched   = new Date().toISOString();
+      })
+      .addCase(fetchCustomerNotifications.rejected, (state, action) => {
+        state.status = "failed";
+        state.error  = action.payload;
+      })
+
+      // ── Mark single read ─────────────────────────────────────────────────
       .addCase(markNotificationRead.fulfilled, (state, action) => {
         const n = state.notifications.find((n) => n._id === action.payload);
-        if (n && !n.is_read) { n.is_read = true; state.unread = Math.max(0, state.unread - 1); }
+        if (n && !n.is_read) {
+          n.is_read    = true;
+          state.unread = Math.max(0, state.unread - 1);
+        }
       })
-      // Mark all read
+
+      // ── Mark all read ────────────────────────────────────────────────────
       .addCase(markAllNotificationsRead.fulfilled, (state) => {
-        state.notifications.forEach((n) => (n.is_read = true));
+        state.notifications.forEach((n) => { n.is_read = true; });
         state.unread = 0;
       });
   },
 });
 
+export const { markOneReadLocal, markAllReadLocal } = publicNotificationSlice.actions;
 export default publicNotificationSlice.reducer;

@@ -3,6 +3,7 @@ const { HTTPS } = require("../../../../../helper/https-status-codes/https-status
 const { Paginate } = require("../../../../../helper/common/utils");
 const User = require("../../../../../models/User");
 const Role = require("../../../../../models/Role");
+const AccountDeletionRequest = require("../../../../../models/AccountDeletionRequest");
 const bcrypt = require("bcrypt");
 
 class UserController {
@@ -226,10 +227,29 @@ class UserController {
     try {
       const user = await User.findById(req.params.id);
       if (!user) return Base.sendError(res, HTTPS.NOT_FOUND, "User not found");
-      await User.findByIdAndUpdate(req.params.id, { status: false });
-      return Base.sendResponse(res, HTTPS.OK, null, "User deleted");
+
+      // 1. Resolve any active AccountDeletionRequest for this customer
+      //    so the unique partial index never conflicts on future operations.
+      await AccountDeletionRequest.updateMany(
+        {
+          customer_id: user._id,
+          status: { $in: ["pending", "reviewed", "approved"] },
+        },
+        {
+          $set: {
+            status:           "deleted",
+            rejection_reason: "Account hard-deleted by admin",
+          },
+        }
+      );
+
+      // 2. Hard-delete the user document
+      await User.findByIdAndDelete(req.params.id);
+
+      return Base.sendResponse(res, HTTPS.OK, null, "Customer deleted successfully");
     } catch (error) {
-      return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
+      console.error("remove user error:", error);
+      return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR, error.message);
     }
   }
 }

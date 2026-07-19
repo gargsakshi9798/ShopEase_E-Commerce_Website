@@ -8,6 +8,7 @@ import orderReducer from "../features/orders/orderSlice";
 import customerReducer from "../features/users/customerSlice";
 import employeeReducer from "../features/users/employeeSlice";
 import adminUsersReducer from "../features/users/adminUsersSlice";
+import accountDeletionReducer from "../features/users/accountDeletionSlice";
 import couponReducer from "../features/coupons/couponSlice";
 import reviewReducer from "../features/reviews/reviewSlice";
 import roleReducer from "../features/roles/roleSlice";
@@ -27,6 +28,7 @@ import publicNotificationReducer from "../features/public/publicNotificationSlic
 import publicPaymentReducer from "../features/public/publicPaymentSlice";
 import publicSupportReducer from "../features/public/publicSupportSlice";
 import publicHomeReducer from "../features/public/publicHomeSlice";
+import publicAccountDeletionReducer from "../features/public/publicAccountDeletionSlice";
 
 export const store = configureStore({
   reducer: {
@@ -40,6 +42,7 @@ export const store = configureStore({
     customer: customerReducer,
     employee: employeeReducer,
     adminUsers: adminUsersReducer,
+    accountDeletion: accountDeletionReducer,
     coupon: couponReducer,
     review: reviewReducer,
     role: roleReducer,
@@ -48,16 +51,17 @@ export const store = configureStore({
     support: supportReducer,
     notifications: notificationReducer,
     // Public / Customer
-    publicCart:          publicCartReducer,
-    publicWishlist:      publicWishlistReducer,
-    customerAuth:        customerAuthReducer,
-    publicProduct:       publicProductReducer,
-    publicOrder:         publicOrderReducer,
-    publicAddress:       publicAddressReducer,
-    publicProfile:       publicProfileReducer,
-    publicNotification:  publicNotificationReducer,
-    publicPayment:       publicPaymentReducer,
-    publicSupport:       publicSupportReducer,
-    publicHome:          publicHomeReducer,
+    publicCart:              publicCartReducer,
+    publicWishlist:          publicWishlistReducer,
+    customerAuth:            customerAuthReducer,
+    publicProduct:           publicProductReducer,
+    publicOrder:             publicOrderReducer,
+    publicAddress:           publicAddressReducer,
+    publicProfile:           publicProfileReducer,
+    publicNotification:      publicNotificationReducer,
+    publicPayment:           publicPaymentReducer,
+    publicSupport:           publicSupportReducer,
+    publicHome:              publicHomeReducer,
+    publicAccountDeletion:   publicAccountDeletionReducer,
   },
 });

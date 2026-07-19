@@ -5,20 +5,21 @@ import {
   MdSearch, MdLocalShipping, MdCheck, MdLocationOn,
   MdHome, MdArrowForward, MdHeadset, MdRefresh,
   MdCancel, MdPendingActions, MdCheckCircle, MdReceipt,
-  MdPayment,
+  MdPayment, MdHistory, MdInventory, MdDeliveryDining,
+  MdCelebration, MdOutbox,
 } from "react-icons/md";
 import { trackOrder, clearTracked } from "../../features/public/publicOrderSlice";
 import { formatDate, formatCurrency } from "../../utils/Methods";
 
 // ─── Order status config ──────────────────────────────────────────────────────
 const STATUS_STEPS = [
-  { key: "pending",          label: "Order Placed",     icon: "📦" },
-  { key: "confirmed",        label: "Confirmed",        icon: "✅" },
-  { key: "processing",       label: "Processing",       icon: "🔧" },
-  { key: "packed",           label: "Packed",           icon: "📫" },
-  { key: "shipped",          label: "Shipped",          icon: "🚚" },
-  { key: "out_for_delivery", label: "Out for Delivery", icon: "📍" },
-  { key: "delivered",        label: "Delivered",        icon: "🎉" },
+  { key: "pending",          label: "Order Placed",     icon: MdPendingActions,  emoji: "📦" },
+  { key: "confirmed",        label: "Confirmed",        icon: MdCheckCircle,     emoji: "✅" },
+  { key: "processing",       label: "Processing",       icon: MdRefresh,         emoji: "🔧" },
+  { key: "packed",           label: "Packed",           icon: MdInventory,       emoji: "📫" },
+  { key: "shipped",          label: "Shipped",          icon: MdLocalShipping,   emoji: "🚚" },
+  { key: "out_for_delivery", label: "Out for Delivery", icon: MdDeliveryDining,  emoji: "📍" },
+  { key: "delivered",        label: "Delivered",        icon: MdCelebration,     emoji: "🎉" },
 ];
 
 const STEP_KEYS = STATUS_STEPS.map((s) => s.key);
@@ -34,23 +35,39 @@ const statusColors = {
   cancelled:        "text-red-600 bg-red-50 border-red-200",
   return_requested: "text-pink-600 bg-pink-50 border-pink-200",
   returned:         "text-gray-600 bg-gray-100 border-gray-200",
+  refunded:         "text-teal-600 bg-teal-50 border-teal-200",
+};
+
+// Map every status key → { label, Icon } for the timeline
+const statusMeta = {
+  pending:          { label: "Order Placed",     Icon: MdPendingActions  },
+  confirmed:        { label: "Confirmed",        Icon: MdCheckCircle     },
+  processing:       { label: "Processing",       Icon: MdRefresh         },
+  packed:           { label: "Packed",           Icon: MdInventory       },
+  shipped:          { label: "Shipped",          Icon: MdLocalShipping   },
+  out_for_delivery: { label: "Out for Delivery", Icon: MdDeliveryDining  },
+  delivered:        { label: "Delivered",        Icon: MdCelebration     },
+  cancelled:        { label: "Cancelled",        Icon: MdCancel          },
+  return_requested: { label: "Return Requested", Icon: MdOutbox          },
+  returned:         { label: "Returned",         Icon: MdRefresh         },
+  refunded:         { label: "Refunded",         Icon: MdCheckCircle     },
 };
 
 // ─── Tracker Stepper ──────────────────────────────────────────────────────────
 const OrderTracker = ({ orderStatus, statusHistory }) => {
   const s = orderStatus?.toLowerCase() ?? "";
-  const isBad = s === "cancelled" || s === "returned" || s === "return_requested";
+  const isBad = ["cancelled", "returned", "return_requested", "refunded"].includes(s);
   const curIdx = STEP_KEYS.indexOf(s);
+  const meta = statusMeta[s];
 
   if (isBad) {
+    const lastNote = statusHistory?.slice().reverse().find((h) => h.note)?.note;
     return (
       <div className={`rounded-2xl px-5 py-4 flex items-center gap-3 border ${statusColors[s] || "bg-red-50 border-red-200"}`}>
-        <MdCancel size={22} className="flex-shrink-0" />
+        {meta ? <meta.Icon size={22} className="flex-shrink-0" /> : <MdCancel size={22} className="flex-shrink-0" />}
         <div>
-          <p className="text-sm font-bold capitalize">Order {s.replace(/_/g, " ")}</p>
-          {statusHistory?.slice(-1)[0]?.note && (
-            <p className="text-xs opacity-70 mt-0.5">{statusHistory.slice(-1)[0].note}</p>
-          )}
+          <p className="text-sm font-bold capitalize">{meta?.label ?? s.replace(/_/g, " ")}</p>
+          {lastNote && <p className="text-xs opacity-70 mt-0.5">{lastNote}</p>}
         </div>
       </div>
     );
@@ -62,17 +79,20 @@ const OrderTracker = ({ orderStatus, statusHistory }) => {
         {STATUS_STEPS.map((step, i) => {
           const done   = i <= curIdx;
           const active = i === curIdx;
+          const Icon   = step.icon;
           return (
             <div key={step.key} className="flex items-center">
-              <div className="flex flex-col items-center gap-2 w-20">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl border-2 transition-all z-10 shadow-sm ${
+              <div className="flex flex-col items-center gap-1.5 w-20">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-all z-10 shadow-sm ${
                   done
-                    ? "bg-primary-600 border-primary-600 shadow-primary-200"
+                    ? active
+                      ? "bg-primary-600 border-primary-600 shadow-primary-200 ring-4 ring-primary-100 scale-110"
+                      : "bg-primary-600 border-primary-600 shadow-primary-100"
                     : "bg-white border-gray-200"
-                } ${active ? "ring-4 ring-primary-100 scale-110" : ""}`}>
-                  {done && i < curIdx
+                }`}>
+                  {done && !active
                     ? <MdCheck size={22} className="text-white" />
-                    : <span>{step.icon}</span>}
+                    : <Icon size={20} className={done ? "text-white" : "text-gray-300"} />}
                 </div>
                 <p className={`text-[10px] font-bold text-center leading-tight ${done ? "text-primary-700" : "text-gray-400"}`}>
                   {step.label}
@@ -85,6 +105,47 @@ const OrderTracker = ({ orderStatus, statusHistory }) => {
           );
         })}
       </div>
+    </div>
+  );
+};
+
+// ─── Status Timeline ──────────────────────────────────────────────────────────
+const StatusTimeline = ({ history }) => {
+  if (!history?.length) return null;
+  const entries = [...history].reverse();
+
+  return (
+    <div className="space-y-0">
+      {entries.map((entry, i) => {
+        const meta   = statusMeta[entry.status?.toLowerCase()];
+        const Icon   = meta?.Icon ?? MdCheckCircle;
+        const color  = statusColors[entry.status?.toLowerCase()] ?? "text-gray-500 bg-gray-50 border-gray-200";
+        const isLast = i === entries.length - 1;
+        const ts = entry.changed_at
+          ? new Date(entry.changed_at).toLocaleString("en-IN", {
+              day: "numeric", month: "short", year: "numeric",
+              hour: "2-digit", minute: "2-digit",
+            })
+          : null;
+
+        return (
+          <div key={i} className="flex gap-3">
+            <div className="flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2 ${i === 0 ? color : "bg-gray-50 border-gray-200 text-gray-400"}`}>
+                <Icon size={14} />
+              </div>
+              {!isLast && <div className="w-0.5 flex-1 bg-gray-100 my-1 min-h-[20px]" />}
+            </div>
+            <div className="pb-5 flex-1 min-w-0">
+              <p className={`text-sm font-bold capitalize leading-tight ${i === 0 ? "text-gray-900" : "text-gray-500"}`}>
+                {meta?.label ?? entry.status?.replace(/_/g, " ")}
+              </p>
+              {entry.note && <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{entry.note}</p>}
+              {ts && <p className="text-[11px] text-gray-400 mt-1">{ts}</p>}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -120,6 +181,16 @@ const TrackResult = ({ order }) => {
         <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Tracking Progress</p>
         <OrderTracker orderStatus={order.order_status} statusHistory={order.status_history} />
       </div>
+
+      {/* Status Timeline */}
+      {order.status_history?.length > 0 && (
+        <div className="px-6 py-5 border-b border-gray-100">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+            <MdHistory size={13} /> Activity Timeline
+          </p>
+          <StatusTimeline history={order.status_history} />
+        </div>
+      )}
 
       {/* Order Items */}
       {order.items?.length > 0 && (

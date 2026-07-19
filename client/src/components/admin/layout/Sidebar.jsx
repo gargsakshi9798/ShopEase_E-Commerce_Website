@@ -14,7 +14,8 @@ import {
   MdSecurity, MdWork, MdChevronRight, MdLabelOutline,
   MdAssignment, MdLocalShipping, MdUndo, MdGroups,
   MdAdminPanelSettings, MdBusiness, MdStorage, MdSpeed,
-  MdOpenInNew, MdEmail, MdRefresh,
+  MdOpenInNew, MdEmail, MdRefresh, MdNotifications,
+  MdDeleteForever,
 } from "react-icons/md";
 import { FaShoppingBag } from "react-icons/fa";
 
@@ -48,21 +49,23 @@ const SUPER_ADMIN_NAV = [
   {
     label: "SYSTEM MANAGEMENT",
     items: [
-      { path: "/admin/reports",      label: "Reports & Analytics", icon: MdBarChart },
-      { path: "/admin/audit-logs",   label: "Audit Logs",          icon: MdAssignment },
-      { path: "/admin/settings",     label: "System Settings",     icon: MdSettings },
-      { path: "/admin/security",     label: "Security Center",     icon: MdSecurity },
-      { path: "/admin/backup",       label: "Backup & Restore",    icon: MdStorage },
+      { path: "/admin/reports",        label: "Reports & Analytics", icon: MdBarChart },
+      { path: "/admin/audit-logs",     label: "Audit Logs",          icon: MdAssignment },
+      { path: "/admin/notifications",  label: "Notifications",       icon: MdNotifications, badgeKey: "notifications" },
+      { path: "/admin/settings",       label: "System Settings",     icon: MdSettings },
+      { path: "/admin/security",       label: "Security Center",     icon: MdSecurity },
+      { path: "/admin/backup",         label: "Backup & Restore",    icon: MdStorage },
     ],
   },
   {
     label: "SUPPORT",
     items: [
-      { path: "/admin/support",  label: "Support Tickets",  icon: MdBuild,      badgeKey: "open_tickets" },
-      { path: "/admin/messages", label: "Contact Messages", icon: MdEmail,      badgeKey: "unread_messages" },
+      { path: "/admin/support",           label: "Support Tickets",       icon: MdBuild,          badgeKey: "open_tickets" },
+      { path: "/admin/messages",          label: "Contact Messages",      icon: MdEmail,          badgeKey: "unread_messages" },
+      { path: "/admin/account-deletion",  label: "Deletion Requests",     icon: MdDeleteForever,  badgeKey: "deletion_requests" },
     ],
   },
-];
+]; 
 
 const ADMIN_NAV = [
   {
@@ -89,14 +92,16 @@ const ADMIN_NAV = [
   {
     label: "SYSTEM",
     items: [
-      { path: "/admin/reports",   label: "Reports", icon: MdBarChart, permission: P.REPORTS_VIEW },
+      { path: "/admin/reports",       label: "Reports",       icon: MdBarChart,     permission: P.REPORTS_VIEW },
+      { path: "/admin/notifications", label: "Notifications", icon: MdNotifications },
     ],
   },
   {
     label: "SUPPORT",
     items: [
-      { path: "/admin/support",  label: "Support Tickets",  icon: MdBuild,  badgeKey: "open_tickets" },
-      { path: "/admin/messages", label: "Contact Messages", icon: MdEmail,  badgeKey: "unread_messages" },
+      { path: "/admin/support",          label: "Support Tickets",  icon: MdBuild,         badgeKey: "open_tickets" },
+      { path: "/admin/messages",         label: "Contact Messages", icon: MdEmail,         badgeKey: "unread_messages" },
+      { path: "/admin/account-deletion", label: "Deletion Requests",icon: MdDeleteForever, badgeKey: "deletion_requests" },
     ],
   },
 ];
@@ -115,8 +120,10 @@ const EMPLOYEE_NAV = [
   {
     label: "SUPPORT",
     items: [
-      { path: "/admin/support",  label: "Customer Support", icon: MdPeople },
-      { path: "/admin/messages", label: "Messages",         icon: MdEmail, badgeKey: "unread_messages" },
+      { path: "/admin/support",           label: "Customer Support",  icon: MdPeople,        badgeKey: "open_tickets" },
+      { path: "/admin/messages",          label: "Messages",          icon: MdEmail,         badgeKey: "unread_messages" },
+      { path: "/admin/account-deletion",  label: "Deletion Requests", icon: MdDeleteForever, badgeKey: "deletion_requests" },
+      { path: "/admin/notifications",     label: "Notifications",     icon: MdNotifications },
     ],
   },
 ];
@@ -135,13 +142,16 @@ const Sidebar = ({ isOpen, onClose }) => {
   const { permissions, data, role_slug } = useSelector((s) => s.auth);
   const { data: settings } = useSelector((s) => s.settings);
   const dashboardData = useSelector((s) => s.dashboard?.data);
+  const notifUnread   = useSelector((s) => s.notifications?.total_unread || 0);
 
   const [collapsedGroups, setCollapsedGroups] = useState({});
   // Dynamic badge counts
   const [badgeCounts, setBadgeCounts] = useState({
-    pending_orders:   0,
-    open_tickets:     0,
-    unread_messages:  0,
+    pending_orders:    0,
+    open_tickets:      0,
+    unread_messages:   0,
+    notifications:     0,
+    deletion_requests: 0,
   });
   // Revenue from dashboard or stats
   const [revenueStats, setRevenueStats] = useState({ total: 0, change: 18.5 });
@@ -157,10 +167,11 @@ const Sidebar = ({ isOpen, onClose }) => {
   // ── Fetch dynamic badge counts ─────────────────────────────────────────────
   const fetchBadges = async () => {
     try {
-      const [orderStats, ticketStats, msgStats] = await Promise.allSettled([
+      const [orderStats, ticketStats, msgStats, deletionStats] = await Promise.allSettled([
         GET(APIS.Orders + "/stats"),
         GET(APIS.Support.TicketStats),
         GET(APIS.Support.Messages, { status: "unread", page: 1, per_page: 1 }),
+        GET(APIS.AdminAccountDeletion.Stats),
       ]);
 
       let pending = 0;
@@ -182,7 +193,19 @@ const Sidebar = ({ isOpen, onClose }) => {
         unreadMsgs = msgStats.value?.data?.total || 0;
       }
 
-      setBadgeCounts({ pending_orders: pending, open_tickets: openTickets, unread_messages: unreadMsgs });
+      let deletionPending = 0;
+      if (deletionStats.status === "fulfilled") {
+        const d = deletionStats.value?.data;
+        deletionPending = (d?.pending || 0) + (d?.reviewed || 0);
+      }
+
+      setBadgeCounts({
+        pending_orders:    pending,
+        open_tickets:      openTickets,
+        unread_messages:   unreadMsgs,
+        notifications:     notifUnread,
+        deletion_requests: deletionPending,
+      });
     } catch { /* silently fail */ }
   };
 
@@ -204,6 +227,11 @@ const Sidebar = ({ isOpen, onClose }) => {
     const interval = setInterval(() => { fetchBadges(); }, 60000);
     return () => clearInterval(interval);
   }, [dispatch]);
+
+  // Keep notification badge in sync with Redux slice (updated by Header fetch)
+  useEffect(() => {
+    setBadgeCounts((prev) => ({ ...prev, notifications: notifUnread }));
+  }, [notifUnread]);
 
   const toggleGroup = (label) =>
     setCollapsedGroups((prev) => ({ ...prev, [label]: !prev[label] }));

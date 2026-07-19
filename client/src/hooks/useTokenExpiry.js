@@ -44,13 +44,16 @@ const useTokenExpiry = () => {
 
       if (customerToken) {
         if (!isTokenValid(customerToken)) {
-          // Expired mid-session — dismiss any pending warning, log out and notify
+          // Expired mid-session — but don't interrupt an active payment flow
+          const onCheckout = window.location.pathname.startsWith("/checkout");
           dismissToast("customer-expiry-warn");
-          dispatch(customerLogout());
-          showError("Your session has expired. Please log in again.", {
-            id:       "customer-expired",
-            duration: 5000,
-          });
+          if (!onCheckout) {
+            dispatch(customerLogout());
+            showError("Your session has expired. Please log in again.", {
+              id:       "customer-expired",
+              duration: 5000,
+            });
+          }
           warnedCustomer.current = false; // reset for next login
         } else {
           const secsLeft = tokenExpiresInSecs(customerToken);

@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { GET, PATCH } from "../../utils/Methods";
+import { GET, PATCH, DELETE } from "../../utils/Methods";
 import { APIS } from "../../utils/APIS";
 import { IDS } from "../../utils/IDS";
 
@@ -27,6 +27,14 @@ export const markOneRead = createAsyncThunk(
   }
 );
 
+export const deleteNotification = createAsyncThunk(
+  "notifications/deleteOne",
+  async (id, { rejectWithValue }) => {
+    try { return await DELETE(`${APIS.Notifications}/${id}`); }
+    catch (e) { return rejectWithValue(e.response?.data); }
+  }
+);
+
 const notificationSlice = createSlice({
   name: "notifications",
   initialState: {
@@ -42,6 +50,21 @@ const notificationSlice = createSlice({
       s.list         = s.list.map((n) => ({ ...n, is_read: true }));
       s.total_unread = 0;
     },
+    // Optimistically mark one as read
+    markOneReadLocal: (s, a) => {
+      const n = s.list.find((n) => n._id === a.payload);
+      if (n && !n.is_read) {
+        n.is_read      = true;
+        s.total_unread = Math.max(0, s.total_unread - 1);
+      }
+    },
+    // Optimistically remove one from the list
+    deleteNotificationLocal: (s, a) => {
+      const target = s.list.find((n) => n._id === a.payload);
+      if (target && !target.is_read) s.total_unread = Math.max(0, s.total_unread - 1);
+      s.list  = s.list.filter((n) => n._id !== a.payload);
+      s.total = Math.max(0, s.total - 1);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -56,9 +79,17 @@ const notificationSlice = createSlice({
       .addCase(markAllRead.fulfilled, (s) => {
         s.list         = s.list.map((n) => ({ ...n, is_read: true }));
         s.total_unread = 0;
+      })
+      .addCase(markOneRead.fulfilled, (s, a) => {
+        const id = a.meta.arg;
+        const n  = s.list.find((n) => n._id === id);
+        if (n && !n.is_read) {
+          n.is_read      = true;
+          s.total_unread = Math.max(0, s.total_unread - 1);
+        }
       });
   },
 });
 
-export const { markAllReadLocal } = notificationSlice.actions;
+export const { markAllReadLocal, markOneReadLocal, deleteNotificationLocal } = notificationSlice.actions;
 export default notificationSlice.reducer;

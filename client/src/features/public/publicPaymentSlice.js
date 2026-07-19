@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { GET, POST } from "../../utils/Methods";
+import axiosClient from "../../utils/ApiInstance";
 import { APIS } from "../../utils/APIS";
 
 // ── 1. Validate checkout (address + cart + pricing) ───────────────────────────
@@ -7,7 +8,8 @@ export const validateCheckout = createAsyncThunk(
   "publicPayment/validateCheckout",
   async (data, { rejectWithValue }) => {
     try {
-      return await POST(APIS.Customer.Payment.ValidateCheckout, data);
+      const res = await axiosClient.post(APIS.Customer.Payment.ValidateCheckout, data, { skipRedirect: true });
+      return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || { message: "Checkout validation failed" });
     }
@@ -19,8 +21,21 @@ export const createRazorpayOrder = createAsyncThunk(
   "publicPayment/createRazorpayOrder",
   async (data, { rejectWithValue }) => {
     try {
-      return await POST(APIS.Customer.Payment.RazorpayCreateOrder, data);
+      const res = await axiosClient.post(APIS.Customer.Payment.RazorpayCreateOrder, data, { skipRedirect: true });
+      return res.data;
     } catch (err) {
+      // TOKEN_EXPIRED is thrown by the request interceptor (client-side check)
+      // before the request even leaves the browser — err.response is undefined.
+      // err.response?.status === 401 covers server-side rejection.
+      const isSessionExpired =
+        err.code === "TOKEN_EXPIRED" || err.response?.status === 401;
+
+      if (isSessionExpired) {
+        return rejectWithValue({
+          message: "Your session has expired. Please log in again.",
+          sessionExpired: true,
+        });
+      }
       return rejectWithValue(err.response?.data || { message: "Failed to initiate payment" });
     }
   }
@@ -31,7 +46,8 @@ export const verifyRazorpayPayment = createAsyncThunk(
   "publicPayment/verifyRazorpay",
   async (data, { rejectWithValue }) => {
     try {
-      return await POST(APIS.Customer.Payment.RazorpayVerify, data);
+      const res = await axiosClient.post(APIS.Customer.Payment.RazorpayVerify, data, { skipRedirect: true });
+      return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || { message: "Payment verification failed" });
     }
@@ -43,7 +59,8 @@ export const placeCODOrder = createAsyncThunk(
   "publicPayment/placeCOD",
   async (data, { rejectWithValue }) => {
     try {
-      return await POST(APIS.Customer.Payment.CODPlaceOrder, data);
+      const res = await axiosClient.post(APIS.Customer.Payment.CODPlaceOrder, data, { skipRedirect: true });
+      return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || { message: "Failed to place COD order" });
     }
@@ -55,7 +72,8 @@ export const fetchInvoice = createAsyncThunk(
   "publicPayment/fetchInvoice",
   async (orderId, { rejectWithValue }) => {
     try {
-      return await GET(APIS.Customer.Payment.Invoice(orderId));
+      const res = await axiosClient.get(APIS.Customer.Payment.Invoice(orderId), { skipRedirect: true });
+      return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || { message: "Failed to fetch invoice" });
     }

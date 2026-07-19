@@ -60,8 +60,8 @@ const ticketSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Auto-generate ticket number
-ticketSchema.pre("save", async function (next) {
+// Auto-generate ticket number before validation (so required check passes)
+ticketSchema.pre("validate", async function (next) {
   if (!this.ticket_number) {
     const count = await mongoose.model("SupportTicket").countDocuments();
     this.ticket_number = `TKT-${String(count + 1).padStart(5, "0")}`;

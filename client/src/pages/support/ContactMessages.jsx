@@ -8,11 +8,12 @@ import {
 import DataTable    from "../../components/common/DataTable";
 import ConfirmDelete from "../../components/common/ConfirmDelete";
 import toast from "react-hot-toast";
-import { formatDateTime } from "../../utils/Methods";
+import { formatDateTime, getImgUrl } from "../../utils/Methods";
 import {
   MdSearch, MdRefresh, MdClose, MdReply, MdFilterList,
   MdEmail, MdMail, MdMarkEmailRead, MdArchive, MdDelete,
   MdSend, MdPerson, MdPhone, MdSubject, MdDownload,
+  MdImage, MdOpenInNew, MdShoppingBag, MdPayment, MdInventory2,
 } from "react-icons/md";
 
 const STATUS_CONFIG = {
@@ -38,6 +39,10 @@ const exportCSV = (list) => {
 const ContactMessages = () => {
   const dispatch = useDispatch();
   const { messages, selectedMessage, status, mutating } = useSelector((s) => s.support);
+  const { role_slug } = useSelector((s) => s.auth);
+  const isEmployee   = role_slug === "employee";
+  const isSuperAdmin = role_slug === "super_admin";
+  const canDelete    = isSuperAdmin;   // only superadmin can delete messages
   const loading = status === "loading";
 
   const [search, setSearch]           = useState("");
@@ -171,9 +176,11 @@ const ContactMessages = () => {
             className="p-1.5 rounded-lg text-orange-600 hover:bg-orange-50 disabled:opacity-30" title="Archive">
             <MdArchive size={16} />
           </button>
-          <button onClick={() => setDeleteId(row._id)} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50" title="Delete">
-            <MdDelete size={16} />
-          </button>
+          {canDelete && (
+            <button onClick={() => setDeleteId(row._id)} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50" title="Delete message">
+              <MdDelete size={16} />
+            </button>
+          )}
         </div>
       ),
     },
@@ -186,7 +193,15 @@ const ContactMessages = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Contact Messages</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage enquiries and messages from the contact form</p>
+          <p className="text-sm text-gray-500 mt-0.5 flex items-center gap-2">
+            Manage enquiries and messages from the contact form
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide
+              ${isSuperAdmin ? "bg-purple-100 text-purple-700"
+              : isEmployee   ? "bg-blue-100 text-blue-700"
+              :                "bg-green-100 text-green-700"}`}>
+              {isSuperAdmin ? "Super Admin" : isEmployee ? "Employee" : "Admin"}
+            </span>
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => load(page)} className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50"><MdRefresh size={18} /></button>
@@ -299,8 +314,10 @@ const ContactMessages = () => {
                   <p className="text-sm font-medium text-gray-800 mt-0.5">{formatDateTime(detail?.createdAt)}</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-400">Source</p>
-                  <p className="text-sm font-medium text-gray-800 capitalize mt-0.5">{(detail?.source || "contact_form").replace("_", " ")}</p>
+                  <p className="text-xs text-gray-400">Department</p>
+                  <p className="text-sm font-medium text-gray-800 capitalize mt-0.5">
+                    {detail?.department || (detail?.source || "contact_form").replace("_", " ")}
+                  </p>
                 </div>
               </div>
 
@@ -313,6 +330,56 @@ const ContactMessages = () => {
                   <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{detail?.message}</p>
                 </div>
               </div>
+
+              {/* Reference — linked order / product / payment */}
+              {detail?.reference_type && detail.reference_type !== "none" && detail?.reference_label && (
+                <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-primary-50 border border-primary-100 rounded-xl">
+                  {detail.reference_type === "order"   && <MdShoppingBag size={16} className="text-primary-500 flex-shrink-0" />}
+                  {detail.reference_type === "payment" && <MdPayment      size={16} className="text-primary-500 flex-shrink-0" />}
+                  {detail.reference_type === "product" && <MdInventory2   size={16} className="text-primary-500 flex-shrink-0" />}
+                  {detail.reference_type === "review"  && <MdImage        size={16} className="text-primary-500 flex-shrink-0" />}
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-primary-500 uppercase font-semibold tracking-wide capitalize">
+                      Related {detail.reference_type}
+                    </p>
+                    <p className="text-sm font-medium text-primary-800 truncate">{detail.reference_label}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Attached Images */}
+              {detail?.images?.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    <MdImage size={14} /> Attachments
+                    <span className="text-gray-400 font-normal">({detail.images.length})</span>
+                  </p>
+                  <div className="flex gap-3 flex-wrap">
+                    {detail.images.map((url, idx) => (
+                      <a
+                        key={idx}
+                        href={getImgUrl(url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="relative group block w-28 h-28 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0 hover:border-primary-400 transition-colors"
+                        title={`View Image ${idx + 1}`}
+                      >
+                        <img
+                          src={getImgUrl(url)}
+                          alt={`Attachment ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                          <MdOpenInNew size={20} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[9px] text-center py-0.5">
+                          Image {idx + 1}
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Admin Reply (if already replied) */}
               {detail?.status === "replied" && detail?.reply_message && (
@@ -392,12 +459,14 @@ const ContactMessages = () => {
               >
                 <MdArchive size={15} className="inline mr-1" /> Archive
               </button>
-              <button
-                onClick={() => { setDeleteId(detail?._id); closeDetail(); }}
-                className="flex-1 text-sm py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-medium"
-              >
-                <MdDelete size={15} className="inline mr-1" /> Delete
-              </button>
+              {canDelete && (
+                <button
+                  onClick={() => { setDeleteId(detail?._id); closeDetail(); }}
+                  className="flex-1 text-sm py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-medium"
+                >
+                  <MdDelete size={15} className="inline mr-1" /> Delete
+                </button>
+              )}
             </div>
           </div>
         </div>

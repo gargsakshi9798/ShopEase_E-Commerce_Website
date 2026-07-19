@@ -6,14 +6,16 @@ import {
   MdStar, MdNotifications, MdSettings, MdArrowForward,
   MdVerified, MdCardGiftcard, MdSecurity,
   MdCheckCircle, MdLocalShipping, MdPendingActions,
-  MdRefresh, MdCancel, MdEdit,
+  MdRefresh, MdCancel, MdEdit, MdHistory, MdThumbUp,
 } from "react-icons/md";
 import AccountLayout from "../../components/public/layout/AccountLayout";
 import { fetchMyOrders } from "../../features/public/publicOrderSlice";
 import { fetchCustomerProfile } from "../../features/public/publicProfileSlice";
 import { fetchCustomerNotifications } from "../../features/public/publicNotificationSlice";
 import { fetchAddresses } from "../../features/public/publicAddressSlice";
-import { formatDate, formatCurrency } from "../../utils/Methods";
+import { fetchHomeData } from "../../features/public/publicHomeSlice";
+import { formatDate, formatCurrency, getImgUrl } from "../../utils/Methods";
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 
 // ── Status badge config ───────────────────────────────────────────────────────
 const statusConfig = {
@@ -35,6 +37,53 @@ const StatusBadge = ({ status }) => {
     <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${cfg.color}`}>
       <Icon size={11} /> {cfg.label}
     </span>
+  );
+};
+
+// ── Shared small product card (used by both sections) ────────────────────────
+const ProductCard = ({ product, showBadge = null }) => {
+  const disc = product.mrp > product.price
+    ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+    : 0;
+  const dest = product.slug ? `/products/${product.slug}` : "/products";
+  return (
+    <Link to={dest}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group flex flex-col overflow-hidden">
+      {/* Image */}
+      <div className="relative h-32 bg-gray-50 flex items-center justify-center overflow-hidden">
+        {product.thumbnail
+          ? <img
+              src={getImgUrl(product.thumbnail)}
+              alt={product.name}
+              className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.parentElement.innerText = "🛒"; }}
+            />
+          : <span className="text-4xl">🛒</span>}
+        {showBadge && (
+          <span className="absolute top-2 left-2 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-primary-600 text-white tracking-wide">
+            {showBadge}
+          </span>
+        )}
+        {disc > 0 && (
+          <span className="absolute top-2 right-2 text-[9px] font-extrabold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">
+            {disc}% off
+          </span>
+        )}
+      </div>
+      {/* Info */}
+      <div className="p-3 flex-1 flex flex-col gap-1">
+        <p className="text-[10px] text-gray-400 font-medium truncate">{product.brand_name || product.brand || ""}</p>
+        <p className="text-xs font-bold text-gray-800 leading-tight line-clamp-2 group-hover:text-primary-600 transition-colors">
+          {product.name}
+        </p>
+        <div className="flex items-baseline gap-1.5 mt-auto pt-1">
+          <span className="text-sm font-extrabold text-gray-900">₹{Number(product.price || 0).toLocaleString("en-IN")}</span>
+          {product.mrp > product.price && (
+            <span className="text-[10px] text-gray-400 line-through">₹{Number(product.mrp).toLocaleString("en-IN")}</span>
+          )}
+        </div>
+      </div>
+    </Link>
   );
 };
 
@@ -63,12 +112,28 @@ const MyAccount = () => {
   const wishlistCount  = useSelector((s) => s.publicWishlist?.count ?? 0);
   const cartCount      = useSelector((s) => s.publicCart?.count ?? 0);
 
+  // Home data for recommendations
+  const { best_sellers, trending, status: homeStatus } = useSelector((s) => s.publicHome);
+
+  // Recently viewed from localStorage
+  const { items: recentlyViewed } = useRecentlyViewed();
+
+  // Recommendations: merge best_sellers + trending, deduplicate, cap at 8
+  const recommended = (() => {
+    const seen = new Set();
+    return [...(best_sellers ?? []), ...(trending ?? [])]
+      .filter((p) => { if (seen.has(p._id)) return false; seen.add(p._id); return true; })
+      .slice(0, 8);
+  })();
+
   // ── Fetch on mount ──────────────────────────────────────────────────────────
   useEffect(() => {
     dispatch(fetchCustomerProfile());
     dispatch(fetchMyOrders({ page: 1, per_page: 5 }));
     dispatch(fetchCustomerNotifications({ page: 1, per_page: 1 }));
     dispatch(fetchAddresses());
+    // Only fetch home data if not already loaded
+    if (homeStatus === "idle") dispatch(fetchHomeData());
   }, [dispatch]);
 
   const displayUser = profile ?? customer;
@@ -255,6 +320,57 @@ const MyAccount = () => {
             ))}
           </div>
         </section>
+
+        {/* ── Recently Viewed ────────────────────────────────────────── */}
+        {recentlyViewed.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                <MdHistory size={16} className="text-primary-500" /> Recently Viewed
+              </h2>
+              <span className="text-[11px] text-gray-400">{recentlyViewed.length} item{recentlyViewed.length !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {recentlyViewed.slice(0, 8).map((p) => (
+                <ProductCard key={p._id} product={p} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── Recommended For You ────────────────────────────────────── */}
+        {(recommended.length > 0 || homeStatus === "loading") && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                <MdThumbUp size={16} className="text-primary-500" /> Recommended For You
+              </h2>
+              <Link to="/products" className="text-xs text-primary-600 font-semibold hover:underline flex items-center gap-1">
+                Browse All <MdArrowForward size={13} />
+              </Link>
+            </div>
+
+            {homeStatus === "loading" && recommended.length === 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-2xl border border-gray-100 h-48 animate-pulse" />
+                ))}
+              </div>
+            )}
+
+            {recommended.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {recommended.map((p, i) => (
+                  <ProductCard
+                    key={p._id}
+                    product={p}
+                    showBadge={i < (best_sellers?.length ?? 0) ? "Best Seller" : "Trending"}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* ── Bottom Row: Security + Loyalty ────────────────────────────── */}
         <div className="grid sm:grid-cols-2 gap-4">

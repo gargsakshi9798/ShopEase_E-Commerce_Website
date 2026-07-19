@@ -20,6 +20,18 @@ const contactMessageSchema = new mongoose.Schema(
     },
     reply_message: { type: String, default: "" },
     replied_at:    { type: Date, default: null },
+    department:    { type: String, default: "" },          // e.g. "Order & Delivery"
+    reference_type: {
+      type: String,
+      enum: ["order", "product", "payment", "review", "none"],
+      default: "none",
+    },
+    reference_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
+    reference_label: { type: String, default: "" },        // human-readable label saved at submission time
+    images: [{ type: String }],                            // Cloudinary URLs — min 1, max 2
     ip_address:    { type: String, default: null },
     source:        { type: String, default: "contact_form" }, // contact_form | chatbot | email
   },

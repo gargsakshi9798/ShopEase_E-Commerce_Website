@@ -44,4 +44,10 @@ router.use("/support", AuthMiddleware, require("./support/index"));
 // Notifications
 router.use("/notifications", AuthMiddleware, require("./notifications/index"));
 
+// Payment (Refunds)
+router.use("/payment", AuthMiddleware, require("./payment/index"));
+
+// Account Deletion Requests
+router.use("/account-deletion", AuthMiddleware, require("./account_deletion/index"));
+
 module.exports = router;

@@ -4,7 +4,7 @@ import {
   fetchTickets, fetchTicketStats, fetchTicketById,
   updateTicketStatus, updateTicketPriority,
   assignTicket, replyToTicket, deleteTicket,
-  clearSelectedTicket,
+  clearSelectedTicket, clearPermissionError,
 } from "../../features/support/supportSlice";
 import { fetchEmployees } from "../../features/users/employeeSlice";
 import DataTable    from "../../components/common/DataTable";
@@ -40,8 +40,15 @@ const CATEGORY_LABELS = {
 
 const SupportTickets = () => {
   const dispatch = useDispatch();
-  const { tickets, ticketStats, selectedTicket, status, mutating } = useSelector((s) => s.support);
+  const { tickets, ticketStats, selectedTicket, status, mutating, permissionError } = useSelector((s) => s.support);
   const { list: employees } = useSelector((s) => s.employee);
+  const { role_slug, data: authData } = useSelector((s) => s.auth);
+  const isEmployee   = role_slug === "employee";
+  const isSuperAdmin = role_slug === "super_admin";
+  const canDelete    = isSuperAdmin;                    // only superadmin deletes
+  const canAssign    = !isEmployee;                     // admin + superadmin
+  const canPriority  = !isEmployee;                     // admin + superadmin
+  const canClose     = !isEmployee;                     // employee cannot close a ticket
   const loading = status === "loading";
 
   const [search, setSearch]         = useState("");
@@ -56,6 +63,14 @@ const SupportTickets = () => {
   const [newStatus, setNewStatus]   = useState("");
   const [newPriority, setNewPriority] = useState("");
 
+  // ── Show permission errors as toasts ────────────────────────────────────
+  useEffect(() => {
+    if (permissionError) {
+      toast.error(`🚫 ${permissionError}`, { duration: 4000, id: "permission-error" });
+      dispatch(clearPermissionError());
+    }
+  }, [permissionError, dispatch]);
+
   // ── Load ──────────────────────────────────────────────────────────────────
   const load = (p = page) => {
     const params = { page: p, per_page: 10 };
@@ -67,7 +82,8 @@ const SupportTickets = () => {
 
   useEffect(() => {
     dispatch(fetchTicketStats());
-    dispatch(fetchEmployees({ per_page: 100 }));
+    // Employees don't have access to the employees list endpoint — skip fetch
+    if (!isEmployee) dispatch(fetchEmployees({ per_page: 100 }));
   }, [dispatch]);
   useEffect(() => { load(page); }, [page, statusFilter, priorityFilter]);
   useEffect(() => { const t = setTimeout(() => { setPage(1); load(1); }, 350); return () => clearTimeout(t); }, [search]);
@@ -184,9 +200,11 @@ const SupportTickets = () => {
           <button onClick={() => openDetail(row)} className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg">
             <MdAssignment size={13} /> View
           </button>
-          <button onClick={() => setDeleteId(row._id)} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50">
-            <MdDelete size={16} />
-          </button>
+          {canDelete && (
+            <button onClick={() => setDeleteId(row._id)} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50" title="Delete ticket">
+              <MdDelete size={16} />
+            </button>
+          )}
         </div>
       ),
     },
@@ -200,8 +218,14 @@ const SupportTickets = () => {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Support Tickets</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage customer support tickets and conversations</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEmployee ? "My Assigned Tickets" : "Support Tickets"}
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {isEmployee
+              ? "Tickets assigned to you — reply and update status"
+              : "Manage all customer support tickets and conversations"}
+          </p>
         </div>
         <button onClick={() => { dispatch(fetchTicketStats()); load(page); }} className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50">
           <MdRefresh size={18} />
@@ -326,37 +350,89 @@ const SupportTickets = () => {
               <div className="space-y-3 border-t border-gray-100 pt-4">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Manage Ticket</p>
 
-                {/* Status */}
-                <div className="grid grid-cols-2 gap-3">
+                {/* Employee restriction notice */}
+                {isEmployee && (() => {
+                  const assignedId = detail?.assigned_to?._id || detail?.assigned_to;
+                  const isAssignedToMe = assignedId && String(assignedId) === String(authData?._id || "");
+                  return isAssignedToMe ? (
+                    <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2.5">
+                      <MdPerson size={15} className="text-blue-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-blue-700">
+                        This ticket is <span className="font-bold">assigned to you</span>. You can update status and reply. Closing, resolving, priority, and assigning are admin-only.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+                      <MdPerson size={15} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-700">
+                        This ticket is <span className="font-bold">not assigned to you</span>. You can view it but cannot reply or update status. Ask admin to assign it to you.
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                {/* Status — all roles can update status on their ticket */}
+                {/* For employee: only if ticket is assigned to them */}
+                {(() => {
+                  const assignedId = detail?.assigned_to?._id || detail?.assigned_to;
+                  const isAssignedToMe = !isEmployee || (assignedId && String(assignedId) === String(authData?._id || ""));
+                  return (
+                    <>
+                <div className={`grid gap-3 ${canPriority ? "grid-cols-2" : "grid-cols-1"}`}>
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Status</label>
-                    <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="input-field text-sm">
-                      {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                    <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)}
+                      disabled={!isAssignedToMe}
+                      className="input-field text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                      {Object.entries(STATUS_CONFIG)
+                        .filter(([k]) => isEmployee ? !["closed", "resolved"].includes(k) : true)
+                        .map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Priority</label>
-                    <select value={newPriority} onChange={(e) => setNewPriority(e.target.value)} className="input-field text-sm">
-                      {Object.entries(PRIORITY_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                    </select>
-                  </div>
+                  {canPriority && (
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Priority</label>
+                      <select value={newPriority} onChange={(e) => setNewPriority(e.target.value)} className="input-field text-sm">
+                        {Object.entries(PRIORITY_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={handleStatusUpdate} disabled={mutating} className="flex-1 btn-secondary text-xs py-1.5 disabled:opacity-50">Update Status</button>
-                  <button onClick={handlePriorityUpdate} disabled={mutating} className="flex-1 btn-secondary text-xs py-1.5 disabled:opacity-50">Update Priority</button>
+                  <button onClick={handleStatusUpdate}
+                    disabled={mutating || !isAssignedToMe || (isEmployee && ["closed","resolved"].includes(newStatus))}
+                    className="flex-1 btn-secondary text-xs py-1.5 disabled:opacity-50">Update Status</button>
+                  {canPriority && (
+                    <button onClick={handlePriorityUpdate} disabled={mutating} className="flex-1 btn-secondary text-xs py-1.5 disabled:opacity-50">Update Priority</button>
+                  )}
                 </div>
+                    </>
+                  );
+                })()}
 
-                {/* Assign */}
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Assign to Employee</label>
-                  <div className="flex gap-2">
-                    <select value={assignEmpId} onChange={(e) => setAssignEmpId(e.target.value)} className="input-field text-sm flex-1">
-                      <option value="">Select employee</option>
-                      {employees.map((e) => <option key={e._id} value={e._id}>{e.name}</option>)}
-                    </select>
-                    <button onClick={handleAssign} disabled={!assignEmpId || mutating} className="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">Assign</button>
+                {/* Assign — Admin/SuperAdmin only */}
+                {canAssign && (
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Assign to Employee</label>
+                    <div className="flex gap-2">
+                      <select value={assignEmpId} onChange={(e) => setAssignEmpId(e.target.value)} className="input-field text-sm flex-1">
+                        <option value="">Select employee</option>
+                        {employees.map((e) => <option key={e._id} value={e._id}>{e.name}</option>)}
+                      </select>
+                      <button onClick={handleAssign} disabled={!assignEmpId || mutating} className="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">Assign</button>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* Employee info — show who is assigned */}
+                {isEmployee && detail?.assigned_to && (
+                  <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2">
+                    <MdPerson size={15} className="text-blue-500 flex-shrink-0" />
+                    <p className="text-xs text-blue-700">
+                      Assigned to: <span className="font-bold">{detail.assigned_to?.name || "You"}</span>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -383,7 +459,7 @@ const SupportTickets = () => {
       )}
 
       <ConfirmDelete isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={handleDelete} loading={deleting}
-        title="Delete Ticket" message="Are you sure you want to delete this support ticket? All replies will be lost." />
+        title="Delete Ticket" message="This will permanently delete the ticket and all its replies. Only super admin can perform this action." />
     </div>
   );
 };

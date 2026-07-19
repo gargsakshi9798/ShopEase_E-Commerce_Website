@@ -165,6 +165,8 @@ const customerAuthSlice = createSlice({
         }
       })
       .addCase(verifyCustomerToken.rejected, (state) => {
+        // Server rejected the token — the token is genuinely invalid/expired.
+        // Clear everything and force re-login.
         state.status  = "idle";
         state.user    = null;
         state.token   = null;

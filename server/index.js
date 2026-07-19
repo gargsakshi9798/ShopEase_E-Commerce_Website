@@ -50,6 +50,16 @@ const limiter = rateLimit({
 });
 app.use("/api", limiter);
 
+// ─── Razorpay Webhook ─────────────────────────────────────────────────────────
+// MUST be mounted BEFORE express.json() so the raw request body is preserved
+// for HMAC-SHA256 signature verification.
+// Razorpay Dashboard → Settings → Webhooks → URL: /api/v1/webhook/razorpay
+app.use(
+  "/api/v1/webhook/razorpay",
+  express.raw({ type: "application/json" }),
+  require("./routes/api/v1/webhook/razorpay.webhook")
+);
+
 // ─── Core Middleware ──────────────────────────────────────────────────────────
 app.use(
   compression({

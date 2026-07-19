@@ -85,47 +85,47 @@ const publicRoutes = [
 
   // ── Fashion ──
   { path: "/fashion",                 element: Fashion },
-  { path: "/fashion/product/:id",     element: <RedirectToProduct /> },
+  { path: "/fashion/product/:id",     element: RedirectToProduct },
 
   // ── Electronics ──
   { path: "/electronics",             element: Electronics },
-  { path: "/electronics/product/:id", element: <RedirectToProduct /> },
+  { path: "/electronics/product/:id", element: RedirectToProduct },
 
   // ── Mobiles ──
   { path: "/mobiles",                 element: Mobiles },
-  { path: "/mobiles/product/:id",     element: <RedirectToProduct /> },
+  { path: "/mobiles/product/:id",     element: RedirectToProduct },
 
   // ── Home & Kitchen ──
   { path: "/home-kitchen",                 element: HomeKitchen },
-  { path: "/home-kitchen/product/:id",     element: <RedirectToProduct /> },
+  { path: "/home-kitchen/product/:id",     element: RedirectToProduct },
 
   // ── Appliances ──
   { path: "/appliances",              element: Appliances },
-  { path: "/appliances/product/:id",  element: <RedirectToProduct /> },
+  { path: "/appliances/product/:id",  element: RedirectToProduct },
 
   // ── Beauty ──
   { path: "/beauty",                  element: Beauty },
-  { path: "/beauty/product/:id",      element: <RedirectToProduct /> },
+  { path: "/beauty/product/:id",      element: RedirectToProduct },
 
   // ── Sports ──
   { path: "/sports",                  element: Sports },
-  { path: "/sports/product/:id",      element: <RedirectToProduct /> },
+  { path: "/sports/product/:id",      element: RedirectToProduct },
 
   // ── Books ──
   { path: "/books",                   element: Books },
-  { path: "/books/product/:id",       element: <RedirectToProduct /> },
+  { path: "/books/product/:id",       element: RedirectToProduct },
 
   // ── Toys ──
   { path: "/toys",                    element: Toys },
-  { path: "/toys/product/:id",        element: <RedirectToProduct /> },
+  { path: "/toys/product/:id",        element: RedirectToProduct },
 
   // ── Grocery ──
   { path: "/grocery",                 element: Grocery },
-  { path: "/grocery/product/:id",     element: <RedirectToProduct /> },
+  { path: "/grocery/product/:id",     element: RedirectToProduct },
 
   // ── Automotive ──
   { path: "/automotive",              element: Automotive },
-  { path: "/automotive/product/:id",  element: <RedirectToProduct /> },
+  { path: "/automotive/product/:id",  element: RedirectToProduct },
 
   // ── Shopping ──
   { path: "/wishlist", element: Wishlist },

@@ -1,6 +1,6 @@
 const Base            = require("../../../../../helper/exception_handling/index.js");
 const { HTTPS }       = require("../../../../../helper/https-status-codes/https-status-codes");
-const { Paginate }    = require("../../../../../helper/common/utils");
+const { Paginate, FileUpload } = require("../../../../../helper/common/utils");
 const SupportTicket   = require("../../../../../models/SupportTicket");
 
 class CustomerSupportController {
@@ -14,6 +14,20 @@ class CustomerSupportController {
       if (!subject?.trim())      return Base.sendError(res, HTTPS.BAD_REQUEST, "Subject is required");
       if (!description?.trim())  return Base.sendError(res, HTTPS.BAD_REQUEST, "Description is required");
 
+      // ── Handle attachment uploads ──────────────────────────────────────────
+      let attachmentUrls = [];
+      if (req.files?.attachments) {
+        const files = Array.isArray(req.files.attachments)
+          ? req.files.attachments
+          : [req.files.attachments];
+
+        // Max 3 attachments, 5 MB each (express-fileupload size is set globally)
+        const allowed = files.slice(0, 3);
+        attachmentUrls = await Promise.all(
+          allowed.map((f) => FileUpload(f, "/support"))
+        );
+      }
+
       const ticket = new SupportTicket({
         user_id:     customerId,
         subject:     subject.trim(),
@@ -22,6 +36,7 @@ class CustomerSupportController {
         priority:    "medium",
         status:      "open",
         order_id:    order_id || null,
+        attachments: attachmentUrls,
       });
 
       await ticket.save();

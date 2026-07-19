@@ -118,6 +118,8 @@ export const APIS = {
       TicketReply:  (id) => `/customer/support/tickets/${id}/reply`,
       TicketClose:  (id) => `/customer/support/tickets/${id}/close`,
     },
+    // Contact form — department-specific options (authenticated customers only)
+    ContactOptions: (department) => `/customer/contact/options?department=${encodeURIComponent(department)}`,
     Wishlist:      "/customer/wishlist",
     // Payment & Checkout
     Payment: {
@@ -127,6 +129,23 @@ export const APIS = {
       CODPlaceOrder:       "/customer/payment/cod/place-order",
       Invoice:             (orderId) => `/customer/payment/invoice/${orderId}`,
     },
+  },
+
+  // Account Deletion Requests (customer)
+  AccountDeletion: {
+    Submit:  "/customer/account-deletion",
+    MyRequest: "/customer/account-deletion",
+    Cancel:  "/customer/account-deletion",
+  },
+
+  // Account Deletion Management (admin/employee/superadmin)
+  AdminAccountDeletion: {
+    List:        "/admin/account-deletion",
+    Stats:       "/admin/account-deletion/stats",
+    ById:        (id) => `/admin/account-deletion/${id}`,
+    Review:      (id) => `/admin/account-deletion/${id}/review`,
+    Decide:      (id) => `/admin/account-deletion/${id}/decide`,
+    ForceDelete: (id) => `/admin/account-deletion/${id}/force-delete`,
   },
 
   // Public contact form (no auth)

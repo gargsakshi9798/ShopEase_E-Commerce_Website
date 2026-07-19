@@ -130,4 +130,17 @@ router.patch("/:id/read", async (req, res) => {
   }
 });
 
+// DELETE /admin/notifications/:id
+router.delete("/:id", async (req, res) => {
+  try {
+    const deleted = await Notification.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      return Base.sendError(res, HTTPS.NOT_FOUND, "Notification not found");
+    }
+    return Base.sendResponse(res, HTTPS.OK, null, "Notification deleted");
+  } catch (e) {
+    return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
+  }
+});
+
 module.exports = router;

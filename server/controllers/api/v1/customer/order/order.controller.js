@@ -130,11 +130,40 @@ class CustomerOrderController {
 
       // Send confirmation email (non-blocking)
       const User = require("../../../../../models/User");
-      const user = await User.findById(userId);
-      if (user) {
+      const user = await User.findById(userId).select("email name contact_no");
+      if (user?.email) {
+        const estimated_delivery = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
         sendOrderConfirmationEmail(user.email, {
           order_number,
           total_amount,
+          subtotal,
+          shipping_charge,
+          coupon_discount,
+          tax,
+          payment_method,
+          payment_status:    payment_method === "cod" ? "cod" : "pending",
+          order_status:      "pending",
+          estimated_delivery: estimated_delivery.toLocaleDateString("en-IN"),
+          customer_name:     user.name,
+          customer_email:    user.email,
+          customer_phone:    user.contact_no || "",
+          delivery_address: {
+            full_name:     address.full_name,
+            address_line1: address.address_line1,
+            address_line2: address.address_line2 || "",
+            city:          address.city,
+            state:         address.state,
+            pincode:       address.pincode,
+            country:       address.country,
+          },
+          items: orderItems.map((i) => ({
+            product_name:  i.product_name,
+            product_image: i.product_image,
+            quantity:      i.quantity,
+            price:         i.price,
+            mrp:           i.mrp,
+            total:         i.total,
+          })),
         }).catch(console.error);
       }
 

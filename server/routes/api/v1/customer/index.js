@@ -30,6 +30,12 @@ router.use("/payment", require("./payment/index"));
 // Support Tickets (customer — view own tickets, create, reply)
 router.use("/support/tickets", CustomerMiddleware, require("./support/index"));
 
+// Contact form options — fetch department-specific items (orders, products, etc.)
+router.use("/contact", CustomerMiddleware, require("./contact/index"));
+
+// Account Deletion Requests
+router.use("/account-deletion", CustomerMiddleware, require("./account_deletion/index"));
+
 // Customer Coupons — browse available public coupons
 router.get("/coupons", CustomerMiddleware, async (req, res) => {
   const Base = require("../../../../helper/exception_handling/index.js");

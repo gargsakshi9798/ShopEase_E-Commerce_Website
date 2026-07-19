@@ -4,7 +4,6 @@ const { Paginate, GenerateInvoiceNumber } = require("../../../../../helper/commo
 const Order   = require("../../../../../models/Order");
 const Product = require("../../../../../models/Product");
 const mongoose = require("mongoose");
-const { sendOrderConfirmationEmail } = require("../../../../../helper/NodeMailer");
 
 class OrderController {
   async getAll(req, res) {

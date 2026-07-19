@@ -17,14 +17,14 @@ const Invoice = require("../../../../../models/Invoice");
 const Notification = require("../../../../../models/Notification");
 const User = require("../../../../../models/User");
 
-// ─── Razorpay instance ────────────────────────────────────────────────────────
+// --- Razorpay instance -----------------------------------------------------------
 const getRazorpay = () =>
   new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
   });
 
-// ─── Shared: validate cart and compute pricing ────────────────────────────────
+// --- Shared: validate cart and compute pricing -----------------------------------
 // clientItems: optional array from request body used as fallback when the DB
 // cart is empty (supports the localStorage-based storefront cart).
 const validateAndPrice = async (userId, clientItems = null) => {
@@ -35,58 +35,79 @@ const validateAndPrice = async (userId, clientItems = null) => {
 
   const dbActiveItems = cart ? cart.items.filter((i) => !i.saved_for_later) : [];
 
-  // ── Decide which items to price ──────────────────────────────────────────
-  // If the DB cart has items, validate them server-side (prevents manipulation).
-  // If the DB cart is empty but client sent items, trust client prices
-  // (storefront still uses local data — full DB migration is a later step).
   let activeItems;
   let useClientFallback = false;
 
   if (dbActiveItems.length > 0) {
-    activeItems = dbActiveItems;
+    activeItems = [];
+    console.log("[validateAndPrice] using DB cart, raw items:", dbActiveItems.length);
 
-    // Server-side price & stock validation for DB items
-    for (const item of activeItems) {
+    for (const item of dbActiveItems) {
       const prod = item.product_id;
-      if (!prod || !prod.status) {
-        throw { status: 400, message: `Product "${prod?.name || "unknown"}" is no longer available` };
+      // Skip items where the product was deleted or is null
+      if (!prod) {
+        console.log("[validateAndPrice] skipping item with null product_id");
+        continue;
+      }
+      // Skip inactive products instead of throwing - just exclude them
+      if (!prod.status) {
+        console.log("[validateAndPrice] skipping inactive product:", prod.name);
+        continue;
       }
       if (item.variant_id) {
         const variant = prod.variants?.id(item.variant_id);
-        if (!variant || !variant.status) {
-          throw { status: 400, message: `Selected variant for "${prod.name}" is unavailable` };
-        }
+        if (!variant || !variant.status) continue;
         if (variant.stock < item.quantity) {
           throw { status: 400, message: `Only ${variant.stock} units of "${prod.name}" (variant) are left` };
         }
-        item.price = variant.price; // enforce server price
+        item.price = variant.price;
       } else {
         if (prod.stock < item.quantity) {
           throw { status: 400, message: `Only ${prod.stock} units of "${prod.name}" are left` };
         }
-        item.price = prod.price; // enforce server price
+        item.price = prod.price;
       }
+      activeItems.push(item);
     }
-  } else if (clientItems && clientItems.length > 0) {
-    // Fallback: use client-sent cart (localStorage-based storefront)
+
+    // If all DB items were filtered out (deleted/inactive products), fall through to client fallback
+    if (activeItems.length === 0) {
+      console.log("[validateAndPrice] all DB items filtered out, trying client fallback");
+      useClientFallback = true;
+    }
+  }
+
+  if ((dbActiveItems.length === 0 || useClientFallback) && clientItems && clientItems.length > 0) {
     useClientFallback = true;
-    activeItems = clientItems.map((i) => ({
-      // Generate a valid placeholder ObjectId — local data uses fake string IDs ("f1", "e1")
-      product_id: {
-        _id: new mongoose.Types.ObjectId(),
-        name: i.name || "Product",
-        thumbnail: i.thumbnail || i.img || "",
-      },
-      variant_id: null,
-      quantity: Number(i.qty || i.quantity || 1),
-      price: Number(i.price),
-      mrp: Number(i.mrp ?? i.price),
-    }));
+    console.log("[validateAndPrice] using client fallback, items:", clientItems.length);
+    activeItems = clientItems
+      .filter((i) => i.price && Number(i.price) > 0) // skip items with no price
+      .map((i) => ({
+        product_id: {
+          _id: (() => {
+            // Try to use the _id as ObjectId; fall back to new ObjectId for local IDs
+            try {
+              return new mongoose.Types.ObjectId(i._id);
+            } catch {
+              return new mongoose.Types.ObjectId();
+            }
+          })(),
+          name:      i.name      || "Product",
+          thumbnail: i.thumbnail || i.img || "",
+        },
+        variant_id: null,
+        quantity:   Number(i.qty || i.quantity || 1),
+        price:      Number(i.price),
+        mrp:        Number(i.mrp ?? i.price),
+      }));
 
     if (activeItems.length === 0) {
-      throw { status: 400, message: "Cart is empty" };
+      throw { status: 400, message: "Cart is empty or has no valid items" };
     }
-  } else {
+  } else if (!useClientFallback && activeItems && activeItems.length === 0) {
+    console.log("[validateAndPrice] no DB items and no clientItems");
+    throw { status: 400, message: "Cart is empty" };
+  } else if (!activeItems || activeItems.length === 0) {
     throw { status: 400, message: "Cart is empty" };
   }
 
@@ -128,25 +149,25 @@ const validateAndPrice = async (userId, clientItems = null) => {
 };
 
 class PaymentController {
-  // ── 1. Validate cart & address before showing order summary ─────────────────
+  // -- 1. Validate cart & address before showing order summary -----------------
   async validateCheckout(req, res) {
     try {
       const userId = req.user.user;
       const { address_id, pincode, cart_items } = req.body;
 
+      console.log("[validateCheckout] userId:", userId, "address_id:", address_id, "cart_items count:", cart_items?.length);
+
       // Validate address
       const address = await Address.findOne({ _id: address_id, user_id: userId, status: true });
-      if (!address) return Base.sendError(res, HTTPS.NOT_FOUND, "Delivery address not found");
-
-      // Simple pincode serviceability check
-      const pincodeStr = String(pincode || address.pincode);
-      if (!/^[1-9][0-9]{5}$/.test(pincodeStr)) {
-        return Base.sendError(res, HTTPS.BAD_REQUEST, "Invalid pincode");
+      if (!address) {
+        console.log("[validateCheckout] address not found for id:", address_id, "userId:", userId);
+        return Base.sendError(res, HTTPS.NOT_FOUND, "Delivery address not found");
       }
 
-      const nonServiceablePrefixes = ["000", "999"];
-      if (nonServiceablePrefixes.some((p) => pincodeStr.startsWith(p))) {
-        return Base.sendError(res, HTTPS.BAD_REQUEST, "Delivery not available at this pincode");
+      // Simple pincode serviceability check - just ensure it's 6 digits
+      const pincodeStr = String(pincode || address.pincode).trim();
+      if (!/^\d{6}$/.test(pincodeStr)) {
+        return Base.sendError(res, HTTPS.BAD_REQUEST, "Invalid pincode - must be 6 digits");
       }
 
       const pricing = await validateAndPrice(userId, cart_items || null);
@@ -163,14 +184,32 @@ class PaymentController {
       }, "Checkout validated");
     } catch (err) {
       if (err.status) return Base.sendError(res, { code: err.status, message: err.message }, err.message);
-      console.error("validateCheckout error:", err);
+      // Mongoose CastError (invalid ObjectId) - treat as bad request
+      if (err.name === "CastError") return Base.sendError(res, HTTPS.BAD_REQUEST, `Invalid ID format: ${err.message}`);
+      console.error("validateCheckout error:", err.message || err);
       return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR, err.message);
     }
   }
 
-  // ── 2. Create Razorpay Order ─────────────────────────────────────────────────
+  // -- 2. Create Razorpay Order -------------------------------------------------
   async createRazorpayOrder(req, res) {
     try {
+      // Guard: ensure Razorpay keys are configured
+      const keyId     = process.env.RAZORPAY_KEY_ID;
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+      if (
+        !keyId || !keySecret ||
+        keyId === "your_razorpay_key_id" ||
+        keySecret === "your_razorpay_key_secret"
+      ) {
+        console.error("[createRazorpayOrder] Razorpay keys are not configured in server/.env");
+        return Base.sendError(
+          res,
+          HTTPS.INTERNAL_SERVER_ERROR,
+          "Payment gateway is not configured. Please add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to server/.env"
+        );
+      }
+
       const userId = req.user.user;
       const { address_id, cart_items } = req.body;
 
@@ -184,21 +223,33 @@ class PaymentController {
       }
 
       const razorpay = getRazorpay();
-      const rzpOrder = await razorpay.orders.create({
-        amount: Math.round(pricing.total_amount * 100), // paise
-        currency: "INR",
-        receipt: `receipt_${Date.now()}`,
-        notes: {
-          user_id: String(userId),
-          address_id: String(address_id),
-        },
-      });
+      let rzpOrder;
+      try {
+        rzpOrder = await razorpay.orders.create({
+          amount: Math.round(pricing.total_amount * 100), // paise
+          currency: "INR",
+          receipt: `receipt_${Date.now()}`,
+          notes: {
+            user_id: String(userId),
+            address_id: String(address_id),
+          },
+        });
+      } catch (rzpErr) {
+        // Razorpay SDK wraps API errors - extract the message
+        const rzpMessage =
+          rzpErr?.error?.description ||
+          rzpErr?.error?.reason ||
+          rzpErr?.message ||
+          "Razorpay order creation failed";
+        console.error("[createRazorpayOrder] Razorpay API error:", rzpErr?.error || rzpErr);
+        return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR, rzpMessage);
+      }
 
       return Base.sendResponse(res, HTTPS.CREATED, {
         razorpay_order_id: rzpOrder.id,
         amount: rzpOrder.amount,
         currency: rzpOrder.currency,
-        key_id: process.env.RAZORPAY_KEY_ID,
+        key_id: keyId,
         // Return pricing summary for display
         subtotal: pricing.subtotal,
         shipping_charge: pricing.shipping_charge,
@@ -213,7 +264,7 @@ class PaymentController {
     }
   }
 
-  // ── 3. Verify Payment & Create Order (no-transaction safe) ─────────────────
+  // -- 3. Verify Payment & Create Order (no-transaction safe) ------------------
   async verifyAndCreateOrder(req, res) {
     // Track created docs for manual rollback if something fails mid-way
     let createdOrderId = null;
@@ -234,7 +285,7 @@ class PaymentController {
         shipping_method = "standard",
       } = req.body;
 
-      // ── Verify Razorpay Signature ─────────────────────────────────────────
+      // Verify Razorpay Signature
       if (payment_method === "razorpay") {
         if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
           return Base.sendError(res, HTTPS.BAD_REQUEST, "Payment verification data missing");
@@ -249,11 +300,11 @@ class PaymentController {
         }
       }
 
-      // ── Validate Address ──────────────────────────────────────────────────
+      // Validate Address
       const address = await Address.findOne({ _id: address_id, user_id: userId, status: true });
       if (!address) return Base.sendError(res, HTTPS.NOT_FOUND, "Delivery address not found");
 
-      // ── Re-validate Cart & Pricing ────────────────────────────────────────
+      // Re-validate Cart & Pricing
       let pricing;
       try {
         pricing = await validateAndPrice(userId, cart_items || null);
@@ -263,7 +314,7 @@ class PaymentController {
 
       const { activeItems, subtotal, shipping_charge, coupon_id, coupon_discount, tax, total_amount, useClientFallback } = pricing;
 
-      // ── Reserve Inventory (DB items only) ────────────────────────────────
+      // Reserve Inventory (DB items only)
       if (!useClientFallback) {
         for (const item of activeItems) {
           const prod = item.product_id;
@@ -317,7 +368,7 @@ class PaymentController {
         }
       }
 
-      // ── Build Order Items ─────────────────────────────────────────────────
+      // Build Order Items
       const orderItems = activeItems.map((item) => ({
         product_id: item.product_id._id || item.product_id,
         variant_id: item.variant_id || null,
@@ -334,7 +385,7 @@ class PaymentController {
       const isOnline = payment_method !== "cod";
       const estimated_delivery = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
 
-      // ── Create Order ──────────────────────────────────────────────────────
+      // Create Order
       const order = await Order.create({
         order_number,
         user_id: userId,
@@ -365,13 +416,13 @@ class PaymentController {
         notes: notes || "",
         estimated_delivery,
         status_history: [
-          { status: "pending",   note: "Order initiated",              changed_at: new Date() },
+          { status: "pending",   note: "Order initiated",                  changed_at: new Date() },
           { status: "confirmed", note: "Payment verified, order confirmed", changed_at: new Date() },
         ],
       });
       createdOrderId = order._id;
 
-      // ── Create Payment Record ─────────────────────────────────────────────
+      // Create Payment Record
       const payment = await Payment.create({
         order_id: order._id,
         user_id: userId,
@@ -385,7 +436,7 @@ class PaymentController {
       });
       createdPaymentId = payment._id;
 
-      // ── Create Invoice ────────────────────────────────────────────────────
+      // Create Invoice
       const invoice = await Invoice.create({
         invoice_number,
         order_id: order._id,
@@ -419,18 +470,18 @@ class PaymentController {
       });
       createdInvoiceId = invoice._id;
 
-      // ── Consume Coupon ────────────────────────────────────────────────────
+      // Consume Coupon
       if (coupon_id) {
         await Coupon.findByIdAndUpdate(coupon_id, { $inc: { used_count: 1 } });
       }
 
-      // ── Clear DB Cart ─────────────────────────────────────────────────────
+      // Clear DB Cart
       await Cart.findOneAndUpdate(
         { user_id: userId },
         { items: [], coupon_id: null, coupon_discount: 0 }
       );
 
-      // ── Post: Notifications & Email (non-blocking) ────────────────────────
+      // Post: Notifications & Email (non-blocking)
       Promise.all([
         Notification.create({
           user_id: userId,
@@ -451,12 +502,40 @@ class PaymentController {
           reference_type: "Order",
         }),
         (async () => {
-          const user = await User.findById(userId).select("email name");
+          const user = await User.findById(userId).select("email name contact_no");
           if (user?.email) {
             return sendOrderConfirmationEmail(user.email, {
-              order_number, total_amount,
-              customer_name: user.name,
+              order_number,
+              invoice_number,
+              total_amount,
+              subtotal,
+              shipping_charge,
+              coupon_discount,
+              tax,
+              payment_method,
+              payment_status: isOnline ? "paid" : "cod",
+              order_status:   "confirmed",
               estimated_delivery: estimated_delivery.toLocaleDateString("en-IN"),
+              customer_name:  user.name,
+              customer_email: user.email,
+              customer_phone: user.contact_no || "",
+              delivery_address: {
+                full_name:     address.full_name,
+                address_line1: address.address_line1,
+                address_line2: address.address_line2 || "",
+                city:          address.city,
+                state:         address.state,
+                pincode:       address.pincode,
+                country:       address.country,
+              },
+              items: orderItems.map((i) => ({
+                product_name:  i.product_name,
+                product_image: i.product_image,
+                quantity:      i.quantity,
+                price:         i.price,
+                mrp:           i.mrp,
+                total:         i.total,
+              })),
             }).catch(console.error);
           }
         })(),
@@ -493,7 +572,7 @@ class PaymentController {
     }
   }
 
-  // ── 4. Place COD Order ───────────────────────────────────────────────────────
+  // -- 4. Place COD Order -------------------------------------------------------
   async placeCODOrder(req, res) {
     let createdOrderId = null;
     let createdPaymentId = null;
@@ -646,12 +725,40 @@ class PaymentController {
           reference_type: "Order",
         }),
         (async () => {
-          const user = await User.findById(userId).select("email name");
+          const user = await User.findById(userId).select("email name contact_no");
           if (user?.email) {
             return sendOrderConfirmationEmail(user.email, {
-              order_number, total_amount,
-              customer_name: user.name,
+              order_number,
+              invoice_number,
+              total_amount,
+              subtotal,
+              shipping_charge,
+              coupon_discount,
+              tax,
+              payment_method:    "cod",
+              payment_status:    "cod",
+              order_status:      "confirmed",
               estimated_delivery: estimated_delivery.toLocaleDateString("en-IN"),
+              customer_name:     user.name,
+              customer_email:    user.email,
+              customer_phone:    user.contact_no || "",
+              delivery_address: {
+                full_name:     address.full_name,
+                address_line1: address.address_line1,
+                address_line2: address.address_line2 || "",
+                city:          address.city,
+                state:         address.state,
+                pincode:       address.pincode,
+                country:       address.country,
+              },
+              items: orderItems.map((i) => ({
+                product_name:  i.product_name,
+                product_image: i.product_image,
+                quantity:      i.quantity,
+                price:         i.price,
+                mrp:           i.mrp,
+                total:         i.total,
+              })),
             }).catch(console.error);
           }
         })(),
@@ -680,7 +787,7 @@ class PaymentController {
     }
   }
 
-  // ── 5. Get Invoice ────────────────────────────────────────────────────────────
+  // -- 5. Get Invoice -----------------------------------------------------------
   async getInvoice(req, res) {
     try {
       const invoice = await Invoice.findOne({

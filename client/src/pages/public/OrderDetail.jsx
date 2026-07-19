@@ -5,7 +5,8 @@ import toast from "react-hot-toast";
 import {
   MdArrowBack, MdShoppingBag, MdLocationOn, MdLocalShipping,
   MdCheckCircle, MdCancel, MdPendingActions, MdRefresh,
-  MdReceipt,
+  MdReceipt, MdCheck, MdHistory, MdInventory, MdOutbox,
+  MdDeliveryDining, MdCelebration,
 } from "react-icons/md";
 import AccountLayout from "../../components/public/layout/AccountLayout";
 import {
@@ -17,14 +18,29 @@ import {
 import { formatDate, formatCurrency } from "../../utils/Methods";
 
 // ── Status helpers ────────────────────────────────────────────────────────────
+const STATUS_STEPS = [
+  { key: "pending",          label: "Order Placed",     icon: MdPendingActions,  emoji: "📦" },
+  { key: "confirmed",        label: "Confirmed",        icon: MdCheckCircle,     emoji: "✅" },
+  { key: "processing",       label: "Processing",       icon: MdRefresh,         emoji: "🔧" },
+  { key: "packed",           label: "Packed",           icon: MdInventory,       emoji: "📫" },
+  { key: "shipped",          label: "Shipped",          icon: MdLocalShipping,   emoji: "🚚" },
+  { key: "out_for_delivery", label: "Out for Delivery", icon: MdDeliveryDining,  emoji: "📍" },
+  { key: "delivered",        label: "Delivered",        icon: MdCelebration,     emoji: "🎉" },
+];
+const STEP_KEYS = STATUS_STEPS.map((s) => s.key);
+
 const statusConfig = {
-  pending:    { label: "Pending",    icon: MdPendingActions, color: "text-amber-600 bg-amber-50 border-amber-200" },
-  confirmed:  { label: "Confirmed",  icon: MdCheckCircle,    color: "text-blue-600 bg-blue-50 border-blue-200" },
-  processing: { label: "Processing", icon: MdRefresh,        color: "text-purple-600 bg-purple-50 border-purple-200" },
-  shipped:    { label: "Shipped",    icon: MdLocalShipping,  color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
-  delivered:  { label: "Delivered",  icon: MdCheckCircle,    color: "text-green-600 bg-green-50 border-green-200" },
-  cancelled:  { label: "Cancelled",  icon: MdCancel,         color: "text-red-600 bg-red-50 border-red-200" },
-  returned:   { label: "Returned",   icon: MdRefresh,        color: "text-gray-600 bg-gray-100 border-gray-200" },
+  pending:          { label: "Pending",          icon: MdPendingActions,  color: "text-amber-600 bg-amber-50 border-amber-200" },
+  confirmed:        { label: "Confirmed",        icon: MdCheckCircle,     color: "text-blue-600 bg-blue-50 border-blue-200" },
+  processing:       { label: "Processing",       icon: MdRefresh,         color: "text-purple-600 bg-purple-50 border-purple-200" },
+  packed:           { label: "Packed",           icon: MdInventory,       color: "text-cyan-600 bg-cyan-50 border-cyan-200" },
+  shipped:          { label: "Shipped",          icon: MdLocalShipping,   color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+  out_for_delivery: { label: "Out for Delivery", icon: MdDeliveryDining,  color: "text-orange-600 bg-orange-50 border-orange-200" },
+  delivered:        { label: "Delivered",        icon: MdCelebration,     color: "text-green-600 bg-green-50 border-green-200" },
+  cancelled:        { label: "Cancelled",        icon: MdCancel,          color: "text-red-600 bg-red-50 border-red-200" },
+  return_requested: { label: "Return Requested", icon: MdOutbox,          color: "text-pink-600 bg-pink-50 border-pink-200" },
+  returned:         { label: "Returned",         icon: MdRefresh,         color: "text-gray-600 bg-gray-100 border-gray-200" },
+  refunded:         { label: "Refunded",         icon: MdCheckCircle,     color: "text-teal-600 bg-teal-50 border-teal-200" },
 };
 
 const StatusBadge = ({ status }) => {
@@ -37,47 +53,106 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// ── Tracking stepper ──────────────────────────────────────────────────────────
-const STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"];
-
-const OrderTracker = ({ status }) => {
+// ── 7-step Tracking Stepper ───────────────────────────────────────────────────
+const OrderTracker = ({ status, statusHistory }) => {
   const s      = status?.toLowerCase() ?? "";
-  const isBad  = s === "cancelled" || s === "returned";
-  const curIdx = STEPS.indexOf(s);
+  const isBad  = ["cancelled", "returned", "return_requested", "refunded"].includes(s);
+  const curIdx = STEP_KEYS.indexOf(s);
+  const cfg    = statusConfig[s];
 
   if (isBad) {
+    const lastNote = statusHistory?.slice().reverse().find((h) => h.note)?.note;
     return (
-      <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 flex items-center gap-3">
-        <MdCancel size={22} className="text-red-500 flex-shrink-0" />
-        <p className="text-sm font-semibold text-red-700 capitalize">Order {s}</p>
+      <div className={`rounded-2xl px-5 py-4 flex items-center gap-3 border ${cfg?.color || "bg-red-50 border-red-200"}`}>
+        {cfg ? <cfg.icon size={24} className="flex-shrink-0" /> : <MdCancel size={24} className="flex-shrink-0" />}
+        <div>
+          <p className="text-sm font-bold capitalize">{cfg?.label || s.replace(/_/g, " ")}</p>
+          {lastNote && <p className="text-xs opacity-70 mt-0.5">{lastNote}</p>}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-0 overflow-x-auto py-2">
-      {STEPS.map((step, i) => {
-        const done    = i <= curIdx;
-        const active  = i === curIdx;
-        return (
-          <div key={step} className="flex items-center flex-shrink-0">
-            <div className="flex flex-col items-center">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+    <div className="overflow-x-auto pb-2 -mx-1">
+      <div className="flex items-start min-w-max gap-0 py-2 px-1">
+        {STATUS_STEPS.map((step, i) => {
+          const done   = i <= curIdx;
+          const active = i === curIdx;
+          const Icon   = step.icon;
+          return (
+            <div key={step.key} className="flex items-center">
+              <div className="flex flex-col items-center gap-1.5 w-[72px]">
+                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center border-2 transition-all shadow-sm ${
                   done
-                    ? "bg-primary-600 border-primary-600 text-white"
-                    : "bg-white border-gray-200 text-gray-300"
-                } ${active ? "ring-4 ring-primary-100" : ""}`}
-              >
-                {done ? <MdCheckCircle size={16} /> : <span className="text-xs font-bold">{i + 1}</span>}
+                    ? active
+                      ? "bg-primary-600 border-primary-600 shadow-primary-200 ring-4 ring-primary-100 scale-110"
+                      : "bg-primary-600 border-primary-600 shadow-primary-100"
+                    : "bg-white border-gray-200"
+                }`}>
+                  {done && !active
+                    ? <MdCheck size={20} className="text-white" />
+                    : <Icon size={18} className={done ? "text-white" : "text-gray-300"} />}
+                </div>
+                <p className={`text-[9px] font-bold text-center leading-tight ${done ? "text-primary-700" : "text-gray-400"}`}>
+                  {step.label}
+                </p>
               </div>
-              <p className={`text-[10px] font-semibold mt-1 capitalize whitespace-nowrap ${done ? "text-primary-600" : "text-gray-400"}`}>
-                {step}
-              </p>
+              {i < STATUS_STEPS.length - 1 && (
+                <div className={`h-0.5 w-8 mb-5 rounded-full transition-all ${i < curIdx ? "bg-primary-500" : "bg-gray-200"}`} />
+              )}
             </div>
-            {i < STEPS.length - 1 && (
-              <div className={`h-0.5 w-12 mx-1 mb-4 rounded ${i < curIdx ? "bg-primary-600" : "bg-gray-200"}`} />
-            )}
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ── Status Timeline ───────────────────────────────────────────────────────────
+const StatusTimeline = ({ history }) => {
+  if (!history?.length) return null;
+  // Show most-recent first
+  const entries = [...history].reverse();
+
+  return (
+    <div className="space-y-0">
+      {entries.map((entry, i) => {
+        const cfg   = statusConfig[entry.status?.toLowerCase()];
+        const Icon  = cfg?.icon ?? MdCheckCircle;
+        const isLast = i === entries.length - 1;
+        const ts = entry.changed_at
+          ? new Date(entry.changed_at).toLocaleString("en-IN", {
+              day: "numeric", month: "short", year: "numeric",
+              hour: "2-digit", minute: "2-digit",
+            })
+          : null;
+
+        return (
+          <div key={i} className="flex gap-3">
+            {/* Spine */}
+            <div className="flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2 ${
+                i === 0
+                  ? (cfg?.color ?? "text-primary-600 bg-primary-50 border-primary-200")
+                  : "bg-gray-50 border-gray-200 text-gray-400"
+              }`}>
+                <Icon size={14} />
+              </div>
+              {!isLast && <div className="w-0.5 flex-1 bg-gray-100 my-1 min-h-[20px]" />}
+            </div>
+            {/* Content */}
+            <div className={`pb-5 flex-1 min-w-0 ${isLast ? "" : ""}`}>
+              <p className={`text-sm font-bold capitalize leading-tight ${i === 0 ? "text-gray-900" : "text-gray-500"}`}>
+                {cfg?.label ?? entry.status?.replace(/_/g, " ")}
+              </p>
+              {entry.note && (
+                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{entry.note}</p>
+              )}
+              {ts && (
+                <p className="text-[11px] text-gray-400 mt-1">{ts}</p>
+              )}
+            </div>
           </div>
         );
       })}
@@ -178,10 +253,21 @@ const OrderDetail = () => {
 
         {detailStatus === "succeeded" && order && (
           <>
-            {/* Tracking */}
+            {/* Tracking stepper + timeline */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <p className="text-sm font-bold text-gray-700 mb-4">Order Progress</p>
-              <OrderTracker status={order.order_status || order.status} />
+              <p className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+                <MdLocalShipping size={16} className="text-primary-500" /> Order Progress
+              </p>
+              <OrderTracker status={order.order_status || order.status} statusHistory={order.status_history} />
+              {order.status_history?.length > 0 && (
+                <>
+                  <div className="border-t border-gray-100 mt-5 mb-4" />
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                    <MdHistory size={13} /> Activity Timeline
+                  </p>
+                  <StatusTimeline history={order.status_history} />
+                </>
+              )}
             </div>
 
             {/* Items */}

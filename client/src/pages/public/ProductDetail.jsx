@@ -15,6 +15,7 @@ import { GET, POST } from "../../utils/Methods";
 import { APIS } from "../../utils/APIS";
 import Cookies from "js-cookie";
 import { useSettings } from "../../hooks/useSettings";
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 
 // ─── Star rating ─────────────────────────────────────────────────────────────
 const StarRating = ({ value = 0, max = 5, size = 16 }) => (
@@ -181,6 +182,8 @@ const ProductDetail = () => {
   const { relatedProducts } = useSelector((s) => s.publicProduct);
   const isWished   = wishlist.some((w) => w._id === detail?._id);
 
+  const { record: recordView } = useRecentlyViewed();
+
   const [selectedImg,   setSelectedImg]   = useState(0);
   const [selectedVar,   setSelectedVar]   = useState(null);
   const [qty,           setQty]           = useState(1);
@@ -194,6 +197,20 @@ const ProductDetail = () => {
   useEffect(() => {
     if (detail?.variants?.length) setSelectedVar(detail.variants[0]);
   }, [detail]);
+
+  // Record this product in Recently Viewed as soon as the detail loads
+  useEffect(() => {
+    if (!detail?._id) return;
+    recordView({
+      _id:        detail._id,
+      name:       detail.name,
+      slug:       detail.slug,
+      thumbnail:  detail.thumbnail,
+      price:      detail.price,
+      mrp:        detail.mrp,
+      brand_name: detail.brand_id?.name ?? "",
+    });
+  }, [detail?._id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (detailStatus === "loading") {
     return (

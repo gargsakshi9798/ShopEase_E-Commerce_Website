@@ -22,22 +22,42 @@ export const injectStore = (store) => { _store = store; };
 // ─── Helper: build a uniform TOKEN_EXPIRED rejection ─────────────────────────
 // Gives every catch block both err.code === "TOKEN_EXPIRED" AND
 // err.response?.data?.message so handlers don't need special-casing.
-const makeExpiredError = (message) =>
+// skipResponseInterceptor: true tells the response interceptor to ignore this
+// error (it was already handled in the request interceptor).
+const makeExpiredError = (message, skipResponseInterceptor = false) =>
   Object.assign(new Error(message), {
     code: "TOKEN_EXPIRED",
-    response: {
-      status: 401,
-      data:   { success: false, message },
-    },
+    // Only include a fake response for non-payment paths so the response
+    // interceptor can recognise the 401. For payment paths we set a flag
+    // instead, so the response interceptor skips it entirely.
+    ...(skipResponseInterceptor
+      ? { _skipResponseInterceptor: true }
+      : {
+          response: {
+            status: 401,
+            data:   { success: false, message },
+          },
+        }),
   });
+
+// URL segments where a token issue should NEVER trigger logout + redirect.
+// The thunk's own error handler will show a toast and keep the user in place.
+const SILENT_FAIL_SEGMENTS = ["/payment/", "/checkout"];
+
+const isPaymentRequest = (url = "") =>
+  SILENT_FAIL_SEGMENTS.some((seg) => url.includes(seg));
 
 // ─── Request Interceptor ──────────────────────────────────────────────────────
 // 1. Picks the right token based on URL prefix.
-// 2. Validates client-side before attaching — expired tokens are cleared and
-//    the request is aborted immediately, saving a round-trip to the server.
+// 2. For normal routes: expired tokens are cleared, Redux is reset, and the
+//    request is aborted before it fires.
+// 3. For payment/checkout routes: if the token is expired the request is still
+//    aborted (can't make an authed API call without a valid token), but we do NOT
+//    dispatch logout or redirect — the thunk's rejectWithValue path handles it.
 axiosClient.interceptors.request.use(
   (config) => {
     const url = config.url || "";
+    const isPayment = isPaymentRequest(url);
 
     if (url.includes("/customer/")) {
       const token = Cookies.get(CUSTOMER_COOKIE);
@@ -45,15 +65,18 @@ axiosClient.interceptors.request.use(
         if (isTokenValid(token)) {
           config.headers["Authorization"] = `Bearer ${token}`;
         } else {
-          // Expired — evict and reject before the request fires
           clearCustomerToken();
-          if (_store) {
+          // Only wipe Redux state + redirect on non-payment routes
+          if (!isPayment && _store) {
             _store.dispatch({ type: "customerAuth/logout/fulfilled" });
             _store.dispatch({ type: "publicCart/clearUserCart" });
             _store.dispatch({ type: "publicWishlist/clearUserWishlist" });
           }
+          // For payment routes: pass skipResponseInterceptor=true so the
+          // response interceptor won't also try to handle this error and
+          // won't dispatch logout (the thunk handles it with a user-visible toast).
           return Promise.reject(
-            makeExpiredError("Session expired. Please log in again.")
+            makeExpiredError("Session expired. Please log in again.", isPayment)
           );
         }
       }
@@ -63,7 +86,6 @@ axiosClient.interceptors.request.use(
         if (isTokenValid(token)) {
           config.headers["Authorization"] = `Bearer ${token}`;
         } else {
-          // Expired — evict and reject before the request fires
           clearAdminToken();
           if (_store) {
             _store.dispatch({ type: "auth/logout" });
@@ -83,29 +105,49 @@ axiosClient.interceptors.request.use(
 
 // ─── Response Interceptor ─────────────────────────────────────────────────────
 // Handles true server-side 401s (tampered / blacklisted token).
-// skipRedirect:true on a request config lets background verify calls fail
-// silently without hard-navigating the user to /login.
+// - skipRedirect:true  → never redirect (used by background verify calls)
+// - payment/checkout URLs → let the thunk handle toast + redirect; we only
+//   clear the cookie here and do NOT dispatch Redux logout (which would flip
+//   isLogin=false synchronously and cause React's <Navigate> to fire before
+//   the thunk's toast can render).
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Errors already fully handled in the request interceptor (client-side
+    // token expiry on payment routes) — skip all processing here.
+    if (error._skipResponseInterceptor) {
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401) {
       const url          = error.config?.url || "";
       const skipRedirect = error.config?.skipRedirect === true;
       const currentPath  = window.location.pathname;
+      const isPayment    = isPaymentRequest(url);
 
       if (url.includes("/customer/")) {
         clearCustomerToken();
-        if (_store) {
-          _store.dispatch({ type: "customerAuth/logout/fulfilled" });
-          _store.dispatch({ type: "publicCart/clearUserCart" });
-          _store.dispatch({ type: "publicWishlist/clearUserWishlist" });
-        }
-        if (
-          !skipRedirect &&
-          !currentPath.startsWith("/login") &&
-          !currentPath.startsWith("/register")
-        ) {
-          window.location.href = "/login";
+
+        if (isPayment || skipRedirect) {
+          // For payment/checkout routes: only clear the cookie.
+          // The thunk catches the 401, sets sessionExpired:true, shows a
+          // toast, dispatches logout and redirects after a short delay.
+          // Dispatching logout here would flip isLogin=false in Redux
+          // synchronously, causing <Navigate to="/login"> to render before
+          // the toast appears and before the thunk can finish.
+        } else {
+          if (_store) {
+            _store.dispatch({ type: "customerAuth/logout/fulfilled" });
+            _store.dispatch({ type: "publicCart/clearUserCart" });
+            _store.dispatch({ type: "publicWishlist/clearUserWishlist" });
+          }
+          if (
+            !currentPath.startsWith("/login") &&
+            !currentPath.startsWith("/register") &&
+            !currentPath.startsWith("/checkout")
+          ) {
+            window.location.href = "/login";
+          }
         }
       } else if (url.includes("/admin/")) {
         clearAdminToken();

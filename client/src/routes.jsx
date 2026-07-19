@@ -21,9 +21,10 @@ const Orders      = React.lazy(() => import("./pages/orders/Orders"));
 const OrderDetail = React.lazy(() => import("./pages/orders/OrderDetail"));
 
 // Users
-const Customers = React.lazy(() => import("./pages/users/Customers"));
-const Employees = React.lazy(() => import("./pages/users/Employees"));
-const AdminUsers = React.lazy(() => import("./pages/users/AdminUsers"));
+const Customers              = React.lazy(() => import("./pages/users/Customers"));
+const Employees              = React.lazy(() => import("./pages/users/Employees"));
+const AdminUsers             = React.lazy(() => import("./pages/users/AdminUsers"));
+const AccountDeletionRequests = React.lazy(() => import("./pages/users/AccountDeletionRequests"));
 
 // Coupons
 const Coupons = React.lazy(() => import("./pages/coupons/Coupons"));
@@ -56,6 +57,9 @@ const ContactMessages = React.lazy(() => import("./pages/support/ContactMessages
 // Profile
 const MyProfile = React.lazy(() => import("./pages/profile/MyProfile"));
 
+// Notifications
+const Notifications = React.lazy(() => import("./pages/notifications/Notifications"));
+
 // 404
 const Page404 = React.lazy(() => import("./pages/Page404"));
 
@@ -83,9 +87,10 @@ const routes = [
   { path: "orders/:id",          element: OrderDetail },
 
   // Users
-  { path: "customers",           element: Customers },
-  { path: "employees",           element: Employees },
-  { path: "admin-users",         element: AdminUsers },
+  { path: "customers",                element: Customers },
+  { path: "employees",                element: Employees },
+  { path: "admin-users",              element: AdminUsers },
+  { path: "account-deletion",         element: AccountDeletionRequests },
 
   // Coupons
   { path: "coupons",             element: Coupons },
@@ -117,6 +122,9 @@ const routes = [
 
   // Profile
   { path: "profile",             element: MyProfile },
+
+  // Notifications
+  { path: "notifications",       element: Notifications },
 
   // 404
   { path: "*",                   element: Page404 },

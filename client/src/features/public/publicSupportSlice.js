@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { GET, POST, PATCH } from "../../utils/Methods";
+import { GET, POST, POST_FORM, PATCH } from "../../utils/Methods";
 import { APIS } from "../../utils/APIS";
 import { IDS } from "../../utils/IDS";
 
@@ -10,7 +10,13 @@ const S = APIS.Customer.Support;
 export const createTicket = createAsyncThunk(
   "publicSupport/create",
   async (data, { rejectWithValue }) => {
-    try { return await POST(S.Tickets, data); }
+    try {
+      // data may be FormData (with attachments) or a plain object
+      if (data instanceof FormData) {
+        return await POST_FORM(S.Tickets, data);
+      }
+      return await POST(S.Tickets, data);
+    }
     catch (e) { return rejectWithValue(e.response?.data); }
   }
 );
