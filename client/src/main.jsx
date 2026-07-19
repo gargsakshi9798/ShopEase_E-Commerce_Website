@@ -6,6 +6,7 @@ import { Toaster } from "react-hot-toast";
 import App from "./App";
 import { store } from "./redux/store";
 import { injectStore } from "./utils/ApiInstance";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import "./index.css";
 
 // Inject Redux store into axios interceptor (avoids circular dependency)

@@ -6,7 +6,7 @@ import { fetchBrands } from "../../features/masters/brandSlice";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../../components/common/DataTable";
 import ConfirmDelete from "../../components/common/ConfirmDelete";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import {
   MdAdd, MdEdit, MdDelete, MdSearch, MdInventory,
   MdStar, MdFilterList, MdRefresh, MdDownload,

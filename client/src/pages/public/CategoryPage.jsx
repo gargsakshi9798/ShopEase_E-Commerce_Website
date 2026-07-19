@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import {
   MdFilterList, MdClose, MdStar, MdFavoriteBorder,
   MdFavorite, MdShoppingCart, MdArrowForward,

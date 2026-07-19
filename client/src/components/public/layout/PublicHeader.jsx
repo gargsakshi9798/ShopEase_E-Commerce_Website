@@ -442,7 +442,7 @@ const PublicHeader = () => {
           <nav className="flex items-center overflow-x-auto">
             <Link
               to="/categories"
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 whitespace-nowrap border-r border-gray-100 transition-colors flex-shrink-0"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-gray-800 hover:text-primary-600 whitespace-nowrap border-r border-gray-100 transition-colors flex-shrink-0"
             >
               <MdMenu size={18} />
               All Categories
@@ -479,8 +479,10 @@ const PublicHeader = () => {
                 <Link
                   key={cat}
                   to={catPath}
-                  className={`px-4 py-2.5 text-sm whitespace-nowrap transition-colors flex-shrink-0 ${
-                    isActive ? "text-primary-600 font-semibold" : "text-gray-600 hover:text-primary-600"
+                  className={`px-4 py-2.5 text-sm font-bold whitespace-nowrap transition-colors flex-shrink-0 ${
+                    isActive
+                      ? "text-primary-600 border-b-2 border-primary-600"
+                      : "text-gray-800 hover:text-primary-600"
                   }`}
                 >
                   {cat}
@@ -530,7 +532,7 @@ const PublicHeader = () => {
                 <Link
                   key={cat}
                   to={catPath}
-                  className="block px-2 py-2.5 text-sm text-gray-700 hover:text-primary-600 border-b border-gray-50 last:border-0 transition-colors"
+                  className="block px-2 py-2.5 text-sm font-semibold text-gray-800 hover:text-primary-600 border-b border-gray-50 last:border-0 transition-colors"
                 >
                   {cat}
                 </Link>

@@ -8,7 +8,7 @@ import {
 import {
   FaTruck, FaUndo, FaShieldAlt, FaTag, FaHeadset,
 } from "react-icons/fa";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import { fetchHomeData } from "../../features/public/publicHomeSlice";
 import { fetchPublicCategories, fetchPublicBrands } from "../../features/public/publicProductSlice";
 import { addToCart } from "../../features/public/publicCartSlice";

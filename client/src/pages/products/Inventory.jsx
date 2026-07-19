@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchAllInventory, updateStock } from "../../features/products/productSlice";
 import DataTable from "../../components/common/DataTable";
 import { formatCurrency, getImgUrl } from "../../utils/Methods";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import {
   MdWarning, MdEdit, MdCheck, MdClose, MdInventory,
   MdRefresh, MdSearch, MdFilterList, MdArrowBack,

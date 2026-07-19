@@ -5,7 +5,7 @@ import DataTable   from "../../components/common/DataTable";
 import Modal       from "../../components/common/Modal";
 import ConfirmDelete from "../../components/common/ConfirmDelete";
 import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import {
   MdAdd, MdEdit, MdDelete, MdSearch, MdLocalOffer,
   MdCheckCircle, MdClose, MdRefresh, MdInfo, MdContentCopy,

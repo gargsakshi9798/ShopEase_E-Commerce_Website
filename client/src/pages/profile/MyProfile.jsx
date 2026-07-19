@@ -4,7 +4,7 @@ import { getAdminDetails } from "../../features/auth/authSlice";
 import { PATCH, POST } from "../../utils/Methods";
 import { APIS } from "../../utils/APIS";
 import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import { formatDateTime } from "../../utils/Methods";
 import {
   MdPerson, MdEmail, MdPhone, MdCalendarToday, MdVpnKey,

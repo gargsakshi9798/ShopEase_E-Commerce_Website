@@ -4,7 +4,7 @@ import { APIS } from "../../utils/APIS";
 import Modal       from "../../components/common/Modal";
 import ConfirmDelete from "../../components/common/ConfirmDelete";
 import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import {
   MdAdd, MdEdit, MdDelete, MdSearch, MdHelpOutline,
   MdRefresh, MdExpandMore, MdExpandLess, MdFilterList,

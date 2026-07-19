@@ -273,7 +273,7 @@ const AllCategories = () => {
           <span className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-xs font-semibold mb-5 backdrop-blur">
             <MdLocalOffer size={14} className="text-yellow-400" /> 12 Categories · 20L+ Products
           </span>
-          <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4 tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4 tracking-tight text-white">
             Shop <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">Everything</span><br />You Love
           </h1>
           <p className="text-white/60 max-w-xl text-sm leading-relaxed mb-8">

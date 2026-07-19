@@ -5,7 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { createProduct, updateProduct, fetchProductById } from "../../features/products/productSlice";
 import { fetchCategories } from "../../features/masters/categorySlice";
 import { fetchBrands }     from "../../features/masters/brandSlice";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import {
   MdArrowBack, MdCloudUpload, MdClose, MdAdd, MdDelete,
 } from "react-icons/md";

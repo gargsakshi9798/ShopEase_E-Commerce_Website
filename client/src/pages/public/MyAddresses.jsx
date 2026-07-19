@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import {
   MdLocationOn, MdAdd, MdEdit, MdDelete,
   MdHome, MdWork, MdPlace, MdCheckCircle, MdClose, MdSave,

@@ -7,7 +7,7 @@ import {
 import { fetchEmployees } from "../../features/users/employeeSlice";
 import { IDS } from "../../utils/IDS";
 import { formatCurrency, formatDateTime, formatDate, getImgUrl } from "../../utils/Methods";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import {
   MdArrowBack, MdLocalShipping, MdCheckCircle, MdPerson,
   MdLocationOn, MdPayment, MdInventory, MdHistory,

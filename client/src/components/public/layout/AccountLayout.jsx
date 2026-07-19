@@ -7,7 +7,7 @@ import {
   MdHelpOutline,
 } from "react-icons/md";
 import { customerLogout } from "../../../features/public/customerAuthSlice";
-import toast from "react-hot-toast";
+import toast from "../../../utils/toast";
 
 const navItems = [
   { to: "/account",         icon: MdPerson,        label: "My Account",       exact: true },

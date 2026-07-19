@@ -133,7 +133,7 @@ const More = () => {
               <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-xs font-semibold mb-4 backdrop-blur">
                 <FaFire className="text-orange-400" size={12} /> Limited Time Offers
               </div>
-              <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4 tracking-tight">
+              <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4 tracking-tight text-white">
                 More Deals.<br />
                 <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
                   More Savings.

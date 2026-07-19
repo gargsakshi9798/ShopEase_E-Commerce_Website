@@ -339,7 +339,7 @@ const ContactMessages = () => {
                   {detail.reference_type === "product" && <MdInventory2   size={16} className="text-primary-500 flex-shrink-0" />}
                   {detail.reference_type === "review"  && <MdImage        size={16} className="text-primary-500 flex-shrink-0" />}
                   <div className="min-w-0">
-                    <p className="text-[10px] text-primary-500 uppercase font-semibold tracking-wide capitalize">
+                    <p className="text-[10px] text-primary-500 font-semibold tracking-wide capitalize">
                       Related {detail.reference_type}
                     </p>
                     <p className="text-sm font-medium text-primary-800 truncate">{detail.reference_label}</p>

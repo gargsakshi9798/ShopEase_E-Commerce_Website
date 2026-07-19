@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, Navigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import {
   MdLocationOn, MdPayment, MdCheckCircle, MdArrowBack,
   MdArrowForward, MdEdit, MdCheck, MdLock, MdSecurity,
