@@ -60,11 +60,14 @@ const MyProfile = React.lazy(() => import("./pages/profile/MyProfile"));
 // Notifications
 const Notifications = React.lazy(() => import("./pages/notifications/Notifications"));
 
+// Gift Cards
+const AdminGiftCards = React.lazy(() => import("./pages/giftcards/AdminGiftCards"));
+
 // 404
 const Page404 = React.lazy(() => import("./pages/Page404"));
 
 /**
- * IMPORTANT: These paths are RELATIVE — they are rendered inside AdminLayout
+ * Route paths are relative to the admin layout router,
  * which is mounted at /admin/*. So "dashboard" matches /admin/dashboard.
  * Do NOT add leading slashes here.
  */
@@ -94,6 +97,9 @@ const routes = [
 
   // Coupons
   { path: "coupons",             element: Coupons },
+
+  // Gift Cards
+  { path: "gift-cards",          element: AdminGiftCards },
 
   // Reviews
   { path: "reviews",             element: Reviews },

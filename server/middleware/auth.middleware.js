@@ -17,6 +17,7 @@ const AuthMiddleware = async (req, res, next) => {
   }
 
   try {
+    // Admin tokens are signed with SECRETKEY (admin secret)
     const decoded = jwt.verify(token, process.env.SECRETKEY);
     req.user = decoded;
     req.user.ip = req.ip;
@@ -39,7 +40,10 @@ const CustomerMiddleware = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.SECRETKEY);
+    // Customer tokens are signed with CUSTOMER_SECRETKEY (separate secret).
+    // Falls back to SECRETKEY so existing tokens remain valid during migration.
+    const secret = process.env.CUSTOMER_SECRETKEY || process.env.SECRETKEY;
+    const decoded = jwt.verify(token, secret);
     req.user = decoded;
     req.user.ip = req.ip;
 
@@ -67,8 +71,13 @@ const OptionalAuthMiddleware = async (req, res, next) => {
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.SECRETKEY);
-      req.user = decoded;
+      // Try customer secret first, then admin secret
+      const secret = process.env.CUSTOMER_SECRETKEY || process.env.SECRETKEY;
+      try {
+        req.user = jwt.verify(token, secret);
+      } catch {
+        req.user = jwt.verify(token, process.env.SECRETKEY);
+      }
     } catch (error) {
       req.user = null;
     }

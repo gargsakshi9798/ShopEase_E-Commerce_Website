@@ -329,10 +329,15 @@ const SummaryStep = ({ addressId, onNext, onBack }) => {
   const { items: cartItems, syncing } = useSelector((s) => s.publicCart);
   const address = addresses.find((a) => a._id === addressId);
   const hasValidated = useRef(false);
+  // Track the last validated addressId so we re-validate if address changes
+  const lastAddressId = useRef(null);
 
   useEffect(() => {
-    if (!addressId || cartItems.length === 0 || syncing || hasValidated.current) return;
+    if (!addressId || cartItems.length === 0 || syncing) return;
+    // Re-validate when address changes or on first mount
+    if (hasValidated.current && lastAddressId.current === addressId) return;
     hasValidated.current = true;
+    lastAddressId.current = addressId;
     dispatch(validateCheckout({ address_id: addressId, cart_items: cartItems }));
   }, [dispatch, addressId, cartItems.length, syncing]);
 
@@ -873,14 +878,14 @@ const Checkout = () => {
 
   const [step,        setStep]        = useState(1);
   const [addressId,   setAddressId]   = useState(null);
-  const [orderResult, setOrderResult] = useState(null);
   const paymentInProgress = useRef(false);
+  const orderPlaced       = useRef(false);  // prevents cart-empty redirect after success
 
   useEffect(() => { dispatch(resetPayment()); }, [dispatch]);
 
   useEffect(() => {
-    if (isLogin && items.length === 0 && step < 4) navigate("/cart");
-  }, [items, isLogin, step, navigate]);
+    if (isLogin && items.length === 0 && !orderPlaced.current) navigate("/cart");
+  }, [items, isLogin, navigate]);
 
   if (!isLogin && !paymentInProgress.current)
     return <Navigate to="/login" state={{ from: "/checkout" }} replace />;
@@ -889,9 +894,8 @@ const Checkout = () => {
   const handleSummaryDone = ()   => { setStep(3); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const handlePaymentSuccess = (result) => {
     paymentInProgress.current = false;
-    setOrderResult(result);
-    dispatch(clearCart());
-    setStep(4);
+    orderPlaced.current = true;         // block the cart-empty redirect
+    navigate(`/order-success/${result.order_id}`, { replace: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -921,7 +925,6 @@ const Checkout = () => {
                 <PaymentStep addressId={addressId} onSuccess={handlePaymentSuccess}
                   onBack={() => setStep(2)} paymentInProgress={paymentInProgress} />
               )}
-              {step === 4 && orderResult && <ConfirmedStep result={orderResult} />}
             </div>
           </div>
 

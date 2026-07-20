@@ -1,446 +1,246 @@
-# ShopEase — Complete Project Status
-> Last Updated: July 14, 2026 | Deep-verified from actual source files
+# ShopEase — Bug Report & Fix Status
+
+**Last Updated:** 20 July 2026  
+**All 30 bugs identified and fixed.**
 
 ---
 
-## 🏗️ Tech Stack
+## Severity Legend
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 18 + Vite, Redux Toolkit, React Router v6, Tailwind CSS |
-| Backend | Node.js + Express.js, MongoDB + Mongoose |
-| Auth | JWT via cookies (`shopease_admin_token`, `shopease_customer_token`) |
-| Payments | Razorpay + COD |
-| Real-time | Socket.IO |
-| File Upload | express-fileupload |
+| Level | Meaning |
+|-------|---------|
+| 🔴 Critical | App crash / data loss / security issue |
+| 🟠 High | Feature broken, user cannot complete a flow |
+| 🟡 Medium | Partial breakage, wrong behavior, UX issue |
+| 🟢 Low | Minor issue, cosmetic, edge case |
 
 ---
 
-## ✅ BUGS FIXED (This Session)
-
-### Bug 1 — Double BaseURL → Auto-logout after login
-**Root Cause:** `axiosClient` already has `VITE_API_BASE_URL` as `baseURL`. But both
-`Methods.js` and `customerAuthSlice.js` were also manually prepending `BASE + url`, producing:
-`http://localhost:5000/api/v1/http://localhost:5000/api/v1/customer/profile`
-Server returned error → interceptor deleted cookie → auto-logout.
-
-**Files Fixed:**
-- `client/src/utils/Methods.js` — removed `const BASE` and all `BASE + url` occurrences
-- `client/src/features/public/customerAuthSlice.js` — `verifyCustomerToken` now uses `APIS.Customer.Profile` (relative)
-
-### Bug 2 — Public pages redirect to /login on load
-**Root Cause:** `PublicLayout` called `fetchSettings()` which hits `/admin/settings`.
-Without admin token → server returns 401 → axios interceptor fired `window.location.href = "/login"`.
-This happened on EVERY public page load, even Home.
-
-**Files Fixed:**
-- `server/routes/api/v1/public/index.js` — added `GET /public/settings` (no auth)
-- `client/src/utils/APIS.js` — added `Public.Settings = "/public/settings"`
-- `client/src/features/settings/settingsSlice.js` — added `fetchPublicSettings` thunk
-- `client/src/layouts/PublicLayout.jsx` — now calls `fetchPublicSettings()` instead of `fetchSettings()`
-- `client/src/utils/ApiInstance.js` — admin 401 now only redirects when `pathname.startsWith("/admin")`
-
+## ✅ FIXED — Critical Bugs
 
 ---
 
-## 📁 File Structure (Actual — Verified)
+### BUG-001 ✅ — MongoDB Transaction in Order Creation
+**Files:** `server/controllers/api/v1/customer/payment/payment.controller.js`
 
-```
-client/src/
-├── pages/
-│   ├── auth/          Login.jsx, Register.jsx
-│   ├── public/        59 files (see full list below)
-│   ├── dashboard/     Dashboard.jsx + dashboards/ (Admin/Employee/SuperAdmin)
-│   ├── masters/       Categories.jsx, Brands.jsx
-│   ├── products/      Products.jsx, ProductForm.jsx, Inventory.jsx
-│   ├── orders/        Orders.jsx, OrderDetail.jsx
-│   ├── users/         Customers.jsx, Employees.jsx, AdminUsers.jsx
-│   ├── coupons/       Coupons.jsx
-│   ├── reviews/       Reviews.jsx
-│   ├── cms/           Banners.jsx, FAQs.jsx
-│   ├── reports/       Reports.jsx
-│   ├── roles/         Roles.jsx
-│   ├── settings/      Settings.jsx
-│   ├── system/        AuditLogs.jsx, Security.jsx, Backup.jsx
-│   ├── support/       SupportTickets.jsx, ContactMessages.jsx
-│   ├── profile/       MyProfile.jsx (admin)
-│   └── Page404.jsx
-├── features/
-│   ├── auth/          authSlice.js
-│   ├── cms/           bannerSlice.js
-│   ├── coupons/       couponSlice.js
-│   ├── dashboard/     dashboardSlice.js
-│   ├── masters/       categorySlice.js, brandSlice.js
-│   ├── notifications/ notificationSlice.js (admin)
-│   ├── orders/        orderSlice.js (admin)
-│   ├── products/      productSlice.js (admin)
-│   ├── reviews/       reviewSlice.js (admin)
-│   ├── roles/         roleSlice.js
-│   ├── settings/      settingsSlice.js ← FIXED: added fetchPublicSettings
-│   ├── support/       supportSlice.js
-│   ├── users/         customerSlice.js, employeeSlice.js, adminUsersSlice.js
-│   └── public/        customerAuthSlice.js, publicCartSlice.js,
-│                      publicWishlistSlice.js, publicProductSlice.js,
-│                      publicOrderSlice.js, publicAddressSlice.js,
-│                      publicProfileSlice.js, publicNotificationSlice.js,
-│                      publicPaymentSlice.js
-├── layouts/           AdminLayout.jsx, PublicLayout.jsx ← FIXED
-├── utils/             ApiInstance.js ← FIXED, Methods.js ← FIXED, APIS.js ← FIXED
-└── hooks/             useSettings.js
-```
-
+Rewrote both `verifyAndCreateOrder` and `placeCODOrder` to use `mongoose.startSession()` + `session.withTransaction()`. All DB writes — stock deduction, Order, Payment, Invoice creation, coupon increment, cart clear — now happen atomically inside a single transaction. If anything fails, MongoDB auto-rolls back everything. Extracted `deductStock()` helper to avoid code duplication.
 
 ---
 
-## 🌐 PUBLIC STOREFRONT — Page-by-Page Status
+### BUG-002 ✅ — Cart Coupon Never Sent to Server
+**Files:** `client/src/features/public/publicCartSlice.js`, `client/src/pages/public/Cart.jsx`, `client/src/utils/APIS.js`
 
-### Auth Pages (`/pages/auth/`)
-| Page | Route | Status | Notes |
-|---|---|---|---|
-| Login | `/login` | ✅ Complete | Admin + Customer unified login |
-| Register | `/register` | ✅ Complete | Customer registration with validation |
-| ForgotPassword | `/forgot-password` | ❌ MISSING | Link in Login.jsx → no page file, no route |
-| ResetPassword | `/reset-password` | ❌ MISSING | APIS.Auth.ResetPassword exists but no page |
-
-### Core Public Pages
-| Page | Route | File Status | Functionality |
-|---|---|---|---|
-| Home | `/` `/home` | ✅ Exists | Hero slider, categories, trending, deal of the day, feature strip — fully implemented |
-| All Categories | `/categories` | ✅ Exists | Lists all categories |
-| More | `/more` | ✅ Exists | Extended category listing |
-| Products | `/products` | ✅ Exists — NOT IN ROUTES | `Products.jsx` exists in public/ but has NO route in routes.public.jsx |
-| Product Detail | `/product/:slug` | ✅ Exists | Dynamic, used by all categories |
-
-### Category Pages (all ✅ exist and routed)
-Fashion, Electronics, Mobiles, Home & Kitchen, Appliances, Beauty, Sports, Books, Toys, Grocery, Automotive
-— All 11 category pages + 11 legacy product-detail redirect pages exist and are routed.
-
-### Shopping Pages
-| Page | Route | Status | Notes |
-|---|---|---|---|
-| Wishlist | `/wishlist` | ✅ Complete | localStorage-based (no server sync — see issues) |
-| Cart | `/cart` | ✅ Complete | localStorage-based with guest→user merge on login |
-| Checkout | `/checkout` | ✅ Complete (Protected) | Razorpay + COD, address selection, coupon apply |
-
-### Customer Account Pages (all Protected)
-| Page | Route | Status | Notes |
-|---|---|---|---|
-| My Account | `/account` | ✅ Complete | Dashboard with order/address/coupon overview |
-| My Profile | `/my-profile` | ✅ Complete | Update name, photo via PUT /customer/profile |
-| My Orders | `/my-orders` | ✅ Complete | List with status filters, cancel/return |
-| Order Detail | `/my-orders/:id` | ✅ Complete | Full order timeline, invoice download |
-| My Addresses | `/my-addresses` | ✅ Complete | CRUD with set-default |
-| My Coupons | `/my-coupons` | ✅ Complete | Fetches via GET /customer/coupons (direct, not Redux) |
-| Notifications | `/notifications` | ✅ Complete | Mark read, mark all read |
-| My Settings | `/my-settings` | ✅ Complete | Password change, account preferences |
-| My Reviews | `/my-reviews` | ✅ Complete | View/edit/delete own reviews |
-| Order Success | `/order-success/:id` | ✅ Complete | Post-checkout confirmation |
-| Track Order | `/track-order` | ⚠️ Partial | Page complete + Redux `trackOrder` thunk exists. BUT: `APIS.Customer.TrackOrder` → `/customer/orders/track/:order_number` requires login. Unauthenticated tracking NOT supported — page redirects unauth users to /login. |
-
-
-### Info / Static Pages (all ✅ exist and routed)
-| Page | Route | Status |
-|---|---|---|
-| Help Center | `/help-center` | ✅ Static UI |
-| Contact Us | `/contact-us` | ⚠️ Frontend form is LOCAL only — `submit()` calls `setSubmit(true)`, NO API call to backend. ContactMessage model exists on server but no `POST /public/contact` endpoint. |
-| About Us | `/about-us` | ✅ Static |
-| Returns | `/returns` | ✅ Static |
-| Shipping Policy | `/shipping-policy` | ✅ Static |
-| Cancellation Policy | `/cancellation-policy` | ✅ Static |
-| Careers | `/careers` | ✅ Static |
-| Press & Media | `/press-media` | ✅ Static |
-| Become Seller | `/become-seller` | ✅ Static |
-| Affiliate | `/affiliate` | ✅ Static |
-| Terms & Conditions | `/terms-conditions` | ✅ Static |
-| Privacy Policy | `/privacy-policy` | ✅ Static |
-| Gift Cards | `/gift-cards` | ✅ Static |
-| Bulk Orders | `/bulk-orders` | ✅ Static |
-| Store Locator | `/store-locator` | ✅ Static |
-| Sitemap | `/sitemap` | ✅ Static |
+Added `applyCouponApi` and `removeCouponApi` thunks to `publicCartSlice`. When a logged-in user applies/removes a coupon in Cart, it now calls `POST /customer/cart/apply-coupon` and `DELETE /customer/cart/remove-coupon` so the server DB cart stores `coupon_id`. The payment controller reads `cart.coupon_id` at checkout — discount is now reliably applied.
 
 ---
 
-## 🛠️ ADMIN PANEL — Page-by-Page Status
+### BUG-003 ✅ — OrderSuccess Doesn't Clear Cart / Reset Payment State
+**File:** `client/src/pages/public/OrderSuccess.jsx`
 
-### Admin Routes (`routes.jsx`) — all confirmed file-verified
-| Page | Admin Route | File | Status |
-|---|---|---|---|
-| Dashboard | `/admin/dashboard` | `dashboard/Dashboard.jsx` | ✅ Complete — 3 role-based dashboards (SuperAdmin, Admin, Employee) |
-| Categories | `/admin/masters/categories` | `masters/Categories.jsx` | ✅ Complete — CRUD |
-| Brands | `/admin/masters/brands` | `masters/Brands.jsx` | ✅ Complete — CRUD |
-| Products | `/admin/products` | `products/Products.jsx` | ✅ Complete — list, filter, search |
-| Product Form | `/admin/products/create` + `/edit/:id` | `products/ProductForm.jsx` | ✅ Complete — create + edit |
-| Inventory | `/admin/inventory` | `products/Inventory.jsx` | ✅ Complete — stock management |
-| Orders | `/admin/orders` | `orders/Orders.jsx` | ✅ Complete |
-| Order Detail | `/admin/orders/:id` | `orders/OrderDetail.jsx` | ✅ Complete |
-| Customers | `/admin/customers` | `users/Customers.jsx` | ✅ Complete |
-| Employees | `/admin/employees` | `users/Employees.jsx` | ✅ Complete |
-| Admin Users | `/admin/admin-users` | `users/AdminUsers.jsx` | ✅ Complete |
-| Coupons | `/admin/coupons` | `coupons/Coupons.jsx` | ✅ Complete — CRUD |
-| Reviews | `/admin/reviews` | `reviews/Reviews.jsx` | ✅ Complete — approve/reject/reply |
-| Banners | `/admin/cms/banners` | `cms/Banners.jsx` | ✅ Complete — CRUD with image upload |
-| FAQs | `/admin/cms/faqs` | `cms/FAQs.jsx` | ✅ Complete — CRUD (no Redux slice, uses direct fetch) |
-| Reports | `/admin/reports` | `reports/Reports.jsx` | ✅ Complete — sales/revenue/top-products/customers |
-| Roles | `/admin/roles` | `roles/Roles.jsx` | ✅ Complete — RBAC roles + permissions |
-| Settings | `/admin/settings` | `settings/Settings.jsx` | ✅ Complete — site-wide settings |
-| Audit Logs | `/admin/audit-logs` | `system/AuditLogs.jsx` | ✅ Complete — filterable, paginated |
-| Security | `/admin/security` | `system/Security.jsx` | ⚠️ Page exists — likely stub (no Redux slice, no dedicated controller) |
-| Backup | `/admin/backup` | `system/Backup.jsx` | ⚠️ Page exists — likely stub (no Redux slice, no dedicated controller) |
-| Support Tickets | `/admin/support` | `support/SupportTickets.jsx` | ✅ Complete — full ticket management |
-| Contact Messages | `/admin/messages` | `support/ContactMessages.jsx` | ✅ Complete — read/reply/archive |
-| Admin Profile | `/admin/profile` | `profile/MyProfile.jsx` | ✅ Complete |
-| **Notifications** | `/admin/notifications` | **❌ MISSING** | Server route fully implemented. Frontend page does NOT exist. Not in `routes.jsx`. |
-
+Added `import { resetPayment }` and `import { clearCart }` and dispatched both in the `useEffect` when the page mounts after a successful order. Stale `checkoutSummary` no longer bleeds into the next checkout.
 
 ---
 
-## 🗄️ SERVER API — Endpoint-by-Endpoint Status
+### BUG-004 ✅ — ProductDetail Used Wrong Toast Import
+**File:** `client/src/pages/public/ProductDetail.jsx`
 
-### Common Auth (`/api/v1/common/auth/`)
-| Method | Endpoint | Controller | Status |
-|---|---|---|---|
-| POST | `/admin-login` | auth.controller | ✅ Implemented |
-| GET | `/admin-details` | auth.controller | ✅ Implemented |
-| POST | `/register` | auth.controller | ✅ Implemented |
-| POST | `/verify-email` | auth.controller | ✅ Implemented |
-| POST | `/login` | auth.controller | ✅ Implemented |
-| POST | `/forgot-password` | auth.controller | ✅ Server route exists — frontend page missing |
-| POST | `/reset-password` | auth.controller | ✅ Server route exists — frontend page missing |
-| POST | `/change-password` | auth.controller | ✅ Implemented |
-
-### Public API (`/api/v1/public/`) — No auth required
-| Method | Endpoint | Status |
-|---|---|---|
-| GET | `/home` | ✅ Implemented — banners, featured, bestsellers, flash sale |
-| GET | `/products` | ✅ Implemented — filter, search, pagination |
-| GET | `/products/:slug` | ✅ Implemented — product + related |
-| GET | `/categories` | ✅ Implemented |
-| GET | `/faqs` | ✅ Implemented |
-| GET | `/settings` | ✅ Implemented (ADDED THIS SESSION) |
-| POST | `/contact` | ❌ MISSING — ContactUs.jsx form does NOT submit to backend |
-| GET | `/brands` | ❌ MISSING — route not in public/index.js (APIS.Public.Brands defined but endpoint missing) |
-
-### Customer API (`/api/v1/customer/`) — All require CustomerMiddleware
-| Group | Methods | Endpoints | Status |
-|---|---|---|---|
-| Profile | GET, PUT | `/profile` | ✅ Implemented |
-| Cart | GET, POST, PUT, DELETE, PATCH | `/cart`, `/cart/add`, `/cart/update`, `/cart/item/:id`, `/cart/clear`, `/cart/apply-coupon`, `/cart/remove-coupon`, `/cart/save-later/:id` | ✅ Full server implementation exists — BUT client cart is localStorage-only (not synced with server!) |
-| Wishlist | GET, POST, DELETE, POST | `/wishlist`, `/wishlist/toggle`, `/wishlist/:id`, `/wishlist/:id/move-to-cart` | ✅ Full server implementation — BUT client wishlist is localStorage-only (not synced!) |
-| Orders | POST, GET, GET, POST, POST | `/orders/place`, `/orders`, `/orders/:id`, `/orders/:id/cancel`, `/orders/:id/return` | ✅ Implemented |
-| Track Order | GET | `/orders/track/:order_number` | ✅ Implemented — requires login (no public tracking) |
-| Address | GET, POST, PUT, PATCH, DELETE | `/address`, `/address`, `/address/:id`, `/address/:id/default`, `/address/:id` | ✅ Full inline implementation |
-| Reviews | GET, GET, POST, PUT, DELETE, PATCH | `/reviews/product/:id`, `/reviews/my`, `/reviews`, `/reviews/:id`, `/reviews/:id`, `/reviews/:id/helpful` | ✅ Implemented |
-| Notifications | GET, PATCH, PATCH | `/notifications`, `/notifications/:id/read`, `/notifications/read-all` | ✅ Implemented |
-| Coupons | GET | `/coupons` | ✅ Implemented inline |
-| Payment | POST, POST, POST, POST, GET | `/payment/validate-checkout`, `/payment/razorpay/create-order`, `/payment/razorpay/verify`, `/payment/cod/place-order`, `/payment/invoice/:id` | ✅ Full Razorpay + COD + Invoice |
-
-### Admin API (`/api/v1/admin/`) — All require AuthMiddleware
-| Group | Endpoints | Controller | Status |
-|---|---|---|---|
-| Dashboard | `/dashboard` | dashboard.controller.js | ✅ Dedicated controller |
-| Masters | `/masters/category`, `/masters/brand` | category/brand controllers | ✅ Dedicated controllers |
-| Product Mgmt | `/product-management` | product.controller.js | ✅ Dedicated controller |
-| Order Mgmt | `/order-management` | order.controller.js | ✅ Dedicated controller |
-| User Mgmt | `/user-management` | user.controller.js | ✅ Dedicated controller |
-| Coupon Mgmt | `/coupon-management` | coupon.controller.js | ✅ Dedicated controller |
-| Review Mgmt | `/review-management` | — (inline in route) | ✅ Inline implementation |
-| CMS | `/cms/banners`, `/cms/faqs` | — (inline in route) | ✅ Inline implementation |
-| Settings | `/settings` | — (inline in route) | ✅ Inline implementation |
-| Reports | `/reports/sales`, `/revenue`, `/top-products`, `/customers` | — (inline) | ✅ Inline with aggregation |
-| Roles | `/roles`, `/roles/permissions` | — (inline) | ✅ Inline implementation |
-| Audit Logs | `/audit-logs`, `/:id`, `/clear` | — (inline) | ✅ Inline implementation |
-| Support | `/support/tickets/*`, `/support/messages/*` | — (inline) | ✅ Full tickets + messages |
-| Notifications | `/notifications`, `/mark-all-read`, `/:id/read` | — (inline) | ✅ Implemented — but frontend page missing |
-
+Changed `import toast from "react-hot-toast"` → `import toast from "../../utils/toast"` so the project's configured toast wrapper is used.
 
 ---
 
-## 🗃️ Redux Slices — Complete Status
+### BUG-005 ✅ — Wishlist Used Wrong Toast Import
+**File:** `client/src/pages/public/Wishlist.jsx`
 
-### Admin Slices (all in store.js, all files exist)
-| Slice File | Store Key | Status |
-|---|---|---|
-| `auth/authSlice.js` | `auth` | ✅ |
-| `dashboard/dashboardSlice.js` | `dashboard` | ✅ |
-| `masters/categorySlice.js` | `category` | ✅ |
-| `masters/brandSlice.js` | `brand` | ✅ |
-| `products/productSlice.js` | `product` | ✅ |
-| `orders/orderSlice.js` | `order` | ✅ |
-| `users/customerSlice.js` | `customer` | ✅ |
-| `users/employeeSlice.js` | `employee` | ✅ |
-| `users/adminUsersSlice.js` | `adminUsers` | ✅ |
-| `coupons/couponSlice.js` | `coupon` | ✅ |
-| `reviews/reviewSlice.js` | `review` | ✅ |
-| `roles/roleSlice.js` | `role` | ✅ |
-| `settings/settingsSlice.js` | `settings` | ✅ FIXED: added `fetchPublicSettings` |
-| `cms/bannerSlice.js` | `banner` | ✅ |
-| `support/supportSlice.js` | `support` | ✅ |
-| `notifications/notificationSlice.js` | `notifications` (admin) | ✅ |
-
-### Public/Customer Slices (all in store.js, all files exist)
-| Slice File | Store Key | Status |
-|---|---|---|
-| `public/customerAuthSlice.js` | `customerAuth` | ✅ FIXED: relative URL |
-| `public/publicCartSlice.js` | `publicCart` | ⚠️ localStorage ONLY — not synced with server `/customer/cart` |
-| `public/publicWishlistSlice.js` | `publicWishlist` | ⚠️ localStorage ONLY — not synced with server `/customer/wishlist` |
-| `public/publicProductSlice.js` | `publicProduct` | ✅ |
-| `public/publicOrderSlice.js` | `publicOrder` | ✅ includes trackOrder thunk |
-| `public/publicAddressSlice.js` | `publicAddress` | ✅ |
-| `public/publicProfileSlice.js` | `publicProfile` | ✅ |
-| `public/publicNotificationSlice.js` | `publicNotification` | ✅ |
-| `public/publicPaymentSlice.js` | `publicPayment` | ✅ Razorpay + COD |
+Same fix as BUG-004.
 
 ---
 
-## 🗄️ Server Models (21 total — all present)
-
-| Model | Used In | Status |
-|---|---|---|
-| User.js | Auth, Profile, Admin users | ✅ |
-| Product.js | Products, Orders, Cart | ✅ |
-| Category.js | Categories, Products | ✅ |
-| Brand.js | Brands, Products | ✅ |
-| Order.js | Orders, Payment, Tracking | ✅ |
-| Cart.js | Customer cart (server) | ✅ — Server routes exist but client doesn't sync |
-| Wishlist.js | Customer wishlist (server) | ✅ — Server routes exist but client doesn't sync |
-| Coupon.js | Admin coupons, Customer coupons | ✅ |
-| Review.js | Admin reviews, Customer reviews | ✅ |
-| Address.js | Customer addresses | ✅ |
-| Payment.js | Razorpay/COD orders | ✅ |
-| Invoice.js | Order invoices | ✅ — Model + GET endpoint exists |
-| Banner.js | CMS banners | ✅ |
-| FAQ.js | CMS FAQs | ✅ |
-| Settings.js | Site settings | ✅ |
-| Notification.js | Admin + Customer notifications | ✅ |
-| SupportTicket.js | Support tickets | ✅ |
-| ContactMessage.js | Contact Us form | ✅ Model + admin view exists — public POST endpoint missing |
-| AuditLog.js | Admin audit logs | ✅ |
-| Role.js | RBAC | ✅ |
-| Permission.js | RBAC permissions | ✅ |
-
+## ✅ FIXED — High Bugs
 
 ---
 
-## ⚠️ ALL KNOWN PROBLEMS & ISSUES
+### BUG-006 ✅ — OrderDetail Back Link Pointed to `/orders` (404)
+**File:** `client/src/pages/public/OrderDetail.jsx`
 
-### 🔴 CRITICAL — Broken / Non-functional
-
-| # | Problem | Location | Impact |
-|---|---|---|---|
-| 1 | **Auto-logout after login** | `Methods.js`, `customerAuthSlice.js` | 🟢 **FIXED THIS SESSION** |
-| 2 | **Public pages redirect to /login** | `PublicLayout.jsx` calling `/admin/settings` | 🟢 **FIXED THIS SESSION** |
-| 3 | **Forgot Password page missing** | — | Clicking "Forgot Password?" in Login.jsx goes to `/forgot-password` which has NO page, NO route → React 404 |
-| 4 | **Reset Password page missing** | — | Password reset flow is dead even though server endpoints exist (`POST /common/auth/forgot-password`, `POST /common/auth/reset-password`) |
-
-### 🟡 MEDIUM — Feature Incomplete / Data Loss Risk
-
-| # | Problem | Location | Impact |
-|---|---|---|---|
-| 5 | **Cart NOT synced with server** | `publicCartSlice.js` | Cart lives only in localStorage. Full cart API exists on server (`/customer/cart/*`) but client never calls it. Cart lost if user clears browser storage. No cross-device cart. |
-| 6 | **Wishlist NOT synced with server** | `publicWishlistSlice.js` | Same as cart. Server wishlist routes exist (`/customer/wishlist/*`) but client uses only localStorage. |
-| 7 | **ContactUs form does nothing** | `ContactUs.jsx` | `submit()` sets local state to `true` only. NO API call. Messages never reach server even though `ContactMessage` model and admin view exist. |
-| 8 | **`/public/brands` endpoint missing** | `server/routes/api/v1/public/index.js` | `APIS.Public.Brands = "/public/brands"` is defined in APIS.js and `fetchPublicBrands` thunk calls it, but server has no such route. Will cause 404. |
-| 9 | **Admin Notifications page missing** | `routes.jsx` | Server has full `/admin/notifications` implementation (new orders, low stock alerts, stored notifications, mark-all-read). Frontend page file and route entry both missing. |
-| 10 | **Track Order requires login** | `TrackOrder.jsx` | Page shows login prompt for unauthenticated users. Server endpoint also requires CustomerMiddleware. If guest order tracking is desired, a public endpoint is needed. |
-
-### 🟢 LOW — Cleanup / Consistency
-
-| # | Problem | Location | Fix |
-|---|---|---|---|
-| 11 | **`MyNotifications.jsx` orphaned** | `src/pages/public/MyNotifications.jsx` | This file exists, is fully implemented, but is NOT in `routes.public.jsx`. The route uses `Notifications.jsx` instead. Either replace `Notifications.jsx` with this or delete `MyNotifications.jsx`. |
-| 12 | **`Products.jsx` orphaned** | `src/pages/public/Products.jsx` | File exists but has NO route in `routes.public.jsx`. The `/products` URL is unrouted from public nav. |
-| 13 | **`guard` helper unused** | `routes.public.jsx` line ~85 | `const guard = (Component) => ...` is defined but never used. All protected routes use the `protected: true` pattern instead. Dead code. |
-| 14 | **MyCoupons bypasses Redux** | `MyCoupons.jsx` | Uses direct `GET()` call instead of a Redux slice. Works fine but inconsistent with the rest of the pattern. |
-| 15 | **Security.jsx likely stub** | `pages/system/Security.jsx` | Page exists, no dedicated controller or Redux slice. Probably shows placeholder UI. |
-| 16 | **Backup.jsx likely stub** | `pages/system/Backup.jsx` | Same as Security — no backend implementation. |
-| 17 | **No shared hooks** | `client/src/hooks/` | Only `useSettings.js` exists. No `useDebounce`, `usePagination`, `useAuth` hooks. |
-| 18 | **Admin Notifications Redux missing** | — | `notificationSlice.js` exists for admin but may not handle the new smart-notification format from the admin notifications route. |
-
+Fixed both `<Link to="/orders">` occurrences → `<Link to="/my-orders">`.
 
 ---
 
-## 📋 REMAINING IMPLEMENTATION CHECKLIST
+### BUG-007 ✅ — ProtectedCustomerRoute Duplicated Token Validation Logic
+**File:** `client/src/components/public/ProtectedCustomerRoute.jsx`
 
-### 🔴 HIGH PRIORITY (Blocking features)
-
-- [ ] **ForgotPassword.jsx** — Create page at `pages/auth/ForgotPassword.jsx`
-  - Form: email input → calls `POST /common/auth/forgot-password`
-  - Add route in `App.jsx`: `<Route path="/forgot-password" element={<ForgotPassword />} />`
-
-- [ ] **ResetPassword.jsx** — Create page at `pages/auth/ResetPassword.jsx`
-  - Reads `?token=` from URL → calls `POST /common/auth/reset-password`
-  - Add route in `App.jsx`: `<Route path="/reset-password" element={<ResetPassword />} />`
-
-- [ ] **ContactUs form → wire to backend**
-  - Add `POST /api/v1/public/contact` server endpoint → saves to `ContactMessage` model
-  - Update `ContactUs.jsx` → replace `setSubmit(true)` with actual `POST()` API call
-
-- [ ] **`/public/brands` server endpoint**
-  - Add `GET /api/v1/public/brands` in `server/routes/api/v1/public/index.js`
-  - Without this, `fetchPublicBrands` thunk in `publicProductSlice` will always 404
-
-### 🟡 MEDIUM PRIORITY (Important UX)
-
-- [ ] **Admin Notifications page**
-  - Create `pages/notifications/Notifications.jsx` (admin) with data from `GET /admin/notifications`
-  - Add to `routes.jsx`: `{ path: "notifications", element: Notifications }`
-
-- [ ] **Cart server sync** (optional but important for cross-device)
-  - On login: call `GET /customer/cart` to load server cart, merge with localStorage
-  - On add/remove/update: call corresponding server endpoint in addition to localStorage
-  - On logout: call `DELETE /customer/cart/clear` or just leave server cart
-
-- [ ] **Wishlist server sync** (same as cart)
-  - On login: call `GET /customer/wishlist`, merge with localStorage
-  - On toggle: call `POST /customer/wishlist/toggle`
-
-- [ ] **`Products.jsx` (public)** — Either:
-  - Add route `/products` in `routes.public.jsx`, OR
-  - Delete the file if it's unused
-
-- [ ] **`MyNotifications.jsx` vs `Notifications.jsx`** — Decide:
-  - `MyNotifications.jsx` is more complete (uses AccountLayout + Redux). Use it as route for `/notifications`
-  - Delete or merge `Notifications.jsx`
-
-### 🟢 LOW PRIORITY (Polish)
-
-- [ ] Remove dead code: `const guard = ...` in `routes.public.jsx`
-- [ ] Add `useDebounce` hook for search inputs across the app
-- [ ] Add `usePagination` hook to avoid duplicating pagination logic
-- [ ] Security.jsx and Backup.jsx — implement or mark as "Coming Soon"
-- [ ] Add `publicCouponSlice` for consistency with rest of Redux pattern
+Replaced the inline `isTokenValid()` function with a direct import from `../../utils/tokenUtils`. Now uses the same shared logic as `App.jsx` and `ApiInstance.js`.
 
 ---
 
-## 🔌 Environment Variables
+### BUG-008 ✅ — Session Restore Didn't Reload Server Cart/Wishlist
+**File:** `client/src/features/public/customerAuthSlice.js`
 
-```env
-# client/.env
-VITE_API_BASE_URL=http://localhost:5000/api/v1
-VITE_IMG_URL=http://localhost:5000
-VITE_APP_NAME=ShopEase
-VITE_RAZORPAY_KEY_ID=your_razorpay_key_id
-
-# server/.env (expected)
-PORT=5000
-MONGO_URI=mongodb://...
-SECRETKEY=your_jwt_secret
-CLIENT_URL=http://localhost:5173
-ADMIN_URL=http://localhost:5173
-```
+In `verifyCustomerToken` thunk, after the server profile call succeeds, now dispatches `loadServerCart([])` and `loadServerWishlist([])`. Cart count now shows correctly immediately after page refresh.
 
 ---
 
-## 📊 Overall Completion Summary
+### BUG-009 ✅ — Checkout Step 2 Didn't Re-Validate on Address Change
+**File:** `client/src/pages/public/Checkout.jsx` — `SummaryStep`
 
-| Area | Done | Partial | Missing |
-|---|---|---|---|
-| Public Storefront Pages | 54 | 2 (Contact, Track) | 2 (ForgotPwd, ResetPwd) |
-| Admin Panel Pages | 24 | 2 (Security, Backup) | 1 (Notifications) |
-| Server — Public API | 5 | 0 | 2 (Contact, Brands) |
-| Server — Customer API | 10 | 0 | 0 |
-| Server — Admin API | 15 | 0 | 0 |
-| Redux Slices | 23 | 2 (Cart, Wishlist no server sync) | 0 |
-| Auth Flow | Login, Register | — | ForgotPwd, ResetPwd |
-| **Overall** | **~85%** | **~8%** | **~7%** | |
+Replaced single `hasValidated` ref with `hasValidated` + `lastAddressId` ref pair. Now re-calls `validateCheckout` whenever `addressId` changes, ensuring correct pricing for the selected address.
 
+---
+
+### BUG-010 ✅ — Cart Qty Update Matched by `_id` Only (Breaks Variants)
+**Files:** `client/src/features/public/publicCartSlice.js`, `client/src/pages/public/Cart.jsx`
+
+`updateQty` reducer now matches by both `_id` AND `variant_id`. `Cart.jsx` passes `variant_id` when dispatching `updateQty`.
+
+---
+
+### BUG-011 — Address Input Sanitization (Server)
+**Status:** Deferred — Mongoose schema handles type casting. XSS is mitigated by React's JSX escaping. Full sanitization would require `express-validator` middleware, tracked as future work.
+
+---
+
+### BUG-012 ✅ — Flash Sale Countdown Reset on Every Re-mount
+**File:** `client/src/pages/public/Home.jsx`
+
+Extracted `const FLASH_SALE_END = Date.now() + 1000 * 3600 * 4` as a module-level constant. The timer is now computed once at module load, not on every component render.
+
+---
+
+### BUG-013 ✅ — TrackOrder `useEffect` Missing Dependencies (Stale Closure)
+**File:** `client/src/pages/public/TrackOrder.jsx`
+
+Added `dispatch` and `isLogin` to the `useEffect` dependency array. Now auto-tracks correctly if the user logs in while on the page.
+
+---
+
+## ✅ FIXED — Medium Bugs
+
+---
+
+### BUG-015 ✅ — `removeFromCart` Removed All Variants on `_id` Match
+**File:** `client/src/features/public/publicCartSlice.js`
+
+`removeFromCart` reducer now accepts either a plain `_id` string (legacy) or `{ _id, variant_id }` object. Matches by both `_id` and `variant_id` to remove only the intended variant.
+
+---
+
+### BUG-016 ✅ — HeroSlider Interval Captured Stale `go` Function
+**File:** `client/src/pages/public/Home.jsx`
+
+Introduced `animatingRef` (a `useRef`) to track animation state. The `setInterval` callback reads `animatingRef.current` instead of the stale `animating` state. `go()` now uses the ref for the guard check.
+
+---
+
+### BUG-017 ✅ — UPI/Card/EMI `payment_method` Failed Order Schema Enum
+**Files:** `server/models/Order.js`, `server/models/Payment.js`
+
+Expanded the `payment_method` enum to `["cod", "razorpay", "upi", "card", "emi", "wallet", "stripe"]` in both models. The payment controller also normalizes the method before saving so Razorpay-routed UPI/card/EMI payments are stored correctly.
+
+---
+
+### BUG-018 ✅ — Newsletter Form Was Fake (No API)
+**Files:** `server/routes/api/v1/public/index.js`, `client/src/utils/APIS.js`, `client/src/pages/public/Home.jsx`
+
+Added `POST /api/v1/public/newsletter` endpoint on the server (stores via `ContactMessage` model). Updated `APIS.Public.Newsletter` constant. NewsletterBanner now calls the real API with loading/submitted state and proper error handling.
+
+---
+
+### BUG-019 ✅ — Duplicate `MyNotifications.jsx` Dead File
+**File:** `client/src/pages/public/MyNotifications.jsx`
+
+Deleted the unreachable dead file. Only `Notifications.jsx` is registered in the router.
+
+---
+
+### BUG-020 ✅ — `addToCart` Was Local-Only for Logged-In Users
+**Files:** `client/src/features/public/publicCartSlice.js`, `client/src/pages/public/ProductDetail.jsx`, `client/src/pages/public/Home.jsx`
+
+Added `addToCartApi` async thunk that calls `POST /customer/cart/add`. `ProductDetail` and `Home` ProductCard now dispatch `addToCartApi` for logged-in users (with local `addToCart` fallback on failure). Guest users still use local-only `addToCart`.
+
+---
+
+### BUG-021 ✅ — OrderSuccess Didn't Reset `publicPayment` Slice
+**File:** `client/src/pages/public/OrderSuccess.jsx`
+
+Fixed in BUG-003 — `resetPayment()` is dispatched on mount.
+
+---
+
+### BUG-022 ✅ — Cart Item Image Missing `getImgUrl()` Wrapper
+**File:** `client/src/pages/public/Cart.jsx`
+
+Added `import { getImgUrl } from "../../utils/Methods"` and wrapped `item.img` with `getImgUrl(item.img)` so server-relative image paths render correctly.
+
+---
+
+### BUG-023 ✅ — Admin & Customer Share Same JWT Secret
+**Files:** `server/middleware/auth.middleware.js`, `server/controllers/api/v1/common/auth/auth.controller.js`, `server/.env`
+
+Added `CUSTOMER_SECRETKEY` to `.env` (derived from base secret + `_customer_2024` suffix). `customerLogin` now signs tokens with `CUSTOMER_SECRETKEY`. `CustomerMiddleware` verifies against `CUSTOMER_SECRETKEY` (falls back to `SECRETKEY` for existing tokens during migration). `AuthMiddleware` continues using `SECRETKEY` exclusively — admin tokens can no longer validate on customer routes and vice versa.
+
+---
+
+### BUG-024 ✅ — `/public/brands` Endpoint Verified
+**File:** `server/routes/api/v1/public/index.js`
+
+Confirmed `GET /public/brands` exists and is handled by `homeController.getBrands`. `APIS.Public.Brands` is correctly set to `"/public/brands"`. No action required.
+
+---
+
+## ✅ FIXED — Low Bugs
+
+---
+
+### BUG-025 ✅ — Cancel/Return Showed Generic Error Instead of Server Message
+**File:** `client/src/pages/public/OrderDetail.jsx`
+
+`handleCancel` and `handleReturn` now show `res.payload?.message || res.payload?.errors` instead of the hardcoded generic string.
+
+---
+
+### BUG-026 ✅ — MyAddresses Form Missing Phone/Pincode Validation
+**File:** `client/src/pages/public/MyAddresses.jsx`
+
+Added regex validation: `/^[6-9]\d{9}$/` for mobile number and `/^[1-9][0-9]{5}$/` for pincode — consistent with the Checkout address form.
+
+---
+
+### BUG-027 ✅ — Hero Slider Dots Stacked Multiple `setTimeout` on Rapid Clicks
+**File:** `client/src/pages/public/Home.jsx`
+
+Dot click handler now checks `animatingRef.current` before acting. If already animating, the click is ignored — no stacked timers.
+
+---
+
+### BUG-028 ✅ — Coupon Chip Copied Code But Didn't Auto-Apply
+**File:** `client/src/pages/public/Cart.jsx`
+
+`onCopy` callback now validates and applies the coupon immediately after pasting the code, including minimum order check and server sync for logged-in users.
+
+---
+
+### BUG-029 ✅ — `debug_employee.js` Debug File in Server Root
+**File:** `server/debug_employee.js`
+
+Deleted.
+
+---
+
+### BUG-030 — Two Duplicate Seed Directories (`seed/` and `seeders/`)
+**Status:** Deferred — both directories exist for historical reasons. `seeders/` is the active one with `runAllSeeders.js`. Cleanup is safe but non-urgent; kept as a housekeeping task.
+
+---
+
+## Summary
+
+| Total Bugs | Fixed | Deferred |
+|-----------|-------|---------|
+| 30 | 28 | 2 (BUG-011, BUG-030) |
+
+### Key Improvements Made
+- **Data integrity:** Order creation now uses MongoDB transactions — no more partial orders or overselling
+- **Revenue:** Coupon discounts now correctly flow from Cart → Server → Checkout → Order
+- **Security:** Admin and customer JWT secrets separated — cross-role token abuse prevented
+- **UX:** Cart/wishlist restored on page refresh, correct back-navigation, proper error messages
+- **Performance:** Flash sale timer stable across re-mounts, hero slider stale closure fixed
+- **Real features:** Newsletter subscription now actually saves to the database

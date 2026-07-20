@@ -439,7 +439,7 @@ const PublicHeader = () => {
       {/* ── Category nav bar (Desktop) ── */}
       <div className="hidden md:block border-t border-gray-100 bg-white">
         <div className="max-w-[1280px] mx-auto px-4">
-          <nav className="flex items-center overflow-x-auto">
+          <nav className="flex items-center overflow-x-auto no-scrollbar">
             <Link
               to="/categories"
               className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-gray-800 hover:text-primary-600 whitespace-nowrap border-r border-gray-100 transition-colors flex-shrink-0"

@@ -142,6 +142,57 @@ export const clearCartApi = createAsyncThunk(
   }
 );
 
+/**
+ * #0 Add To Cart API — for logged-in users, syncs to server immediately.
+ * Falls back to local addToCart action if the API call fails.
+ */
+export const addToCartApi = createAsyncThunk(
+  "publicCart/addToCartApi",
+  async ({ product, qty = 1 }, { dispatch, rejectWithValue }) => {
+    try {
+      const res = await axiosClient.post(`${APIS.Customer.Cart}/add`, {
+        product_id: product._id,
+        variant_id: product.variant_id ?? null,
+        quantity:   qty,
+      });
+      return res.data?.data ?? res.data;
+    } catch (err) {
+      // Fallback — add locally so the UI doesn't freeze
+      dispatch({ type: "publicCart/addToCart", payload: { product, qty } });
+      return rejectWithValue(err.response?.data || { message: "Failed to sync cart" });
+    }
+  }
+);
+
+/**
+ * #8 Apply Coupon API — saves coupon on server cart so checkout picks it up
+ */export const applyCouponApi = createAsyncThunk(
+  "publicCart/applyCouponApi",
+  async (code, { rejectWithValue }) => {
+    try {
+      const res = await axiosClient.post(APIS.Customer.CartApplyCoupon, { code });
+      return res.data?.data ?? res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || { message: "Failed to apply coupon" });
+    }
+  }
+);
+
+/**
+ * #9 Remove Coupon API
+ */
+export const removeCouponApi = createAsyncThunk(
+  "publicCart/removeCouponApi",
+  async (_, { rejectWithValue }) => {
+    try {
+      await axiosClient.delete(APIS.Customer.CartRemoveCoupon);
+      return null;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || { message: "Failed to remove coupon" });
+    }
+  }
+);
+
 // ─── Slice ────────────────────────────────────────────────────────────────────
 const initItems = loadLocalCart(initUserId);
 
@@ -211,18 +262,32 @@ const publicCartSlice = createSlice({
       saveLocalCart(state.items, state.userId);
     },
 
-    // Local-only qty change (guest) — also used as optimistic update for logged-in
+    // Local-only qty change (guest) — match by _id AND variant_id
     updateQty(state, action) {
-      const { id, qty } = action.payload;
-      const item = state.items.find((i) => i._id === id);
+      const { id, qty, variant_id = null } = action.payload;
+      const item = state.items.find(
+        (i) => i._id === id && (i.variant_id ?? null) === variant_id
+      );
       if (item) item.qty = qty;
       state.count = calcCount(state.items);
       saveLocalCart(state.items, state.userId);
     },
 
-    // Local-only remove (guest) — also used as optimistic update for logged-in
+    // Local-only remove (guest) — match by both _id AND variant_id to avoid
+    // removing all variants of the same product when only one is removed
     removeFromCart(state, action) {
-      state.items = state.items.filter((i) => i._id !== action.payload);
+      // action.payload can be a product _id string (legacy) or { _id, variant_id }
+      const payload = action.payload;
+      const id        = typeof payload === "object" ? payload._id        : payload;
+      const variantId = typeof payload === "object" ? (payload.variant_id ?? null) : null;
+
+      state.items = state.items.filter((i) => {
+        if (i._id !== id) return true;
+        // If caller specified a variant, only remove that specific variant
+        if (variantId !== null) return (i.variant_id ?? null) !== variantId;
+        // No variant specified — remove the first unvariated match only once
+        return false;
+      });
       state.count = calcCount(state.items);
       saveLocalCart(state.items, state.userId);
     },
@@ -236,6 +301,23 @@ const publicCartSlice = createSlice({
   },
 
   extraReducers: (builder) => {
+    // ── #0 addToCartApi ───────────────────────────────────────────────────────
+    builder
+      .addCase(addToCartApi.pending, (state) => { state.syncing = true; })
+      .addCase(addToCartApi.fulfilled, (state, action) => {
+        state.syncing = false;
+        const serverCart = action.payload;
+        if (serverCart?.items) {
+          state.items = serverCart.items.map(normaliseServerItem);
+          state.count = calcCount(state.items);
+          saveLocalCart(state.items, state.userId);
+        }
+      })
+      .addCase(addToCartApi.rejected, (state) => {
+        // Local fallback was already dispatched inside the thunk
+        state.syncing = false;
+      });
+
     // ── #2 loadServerCart ─────────────────────────────────────────────────────
     builder
       .addCase(loadServerCart.pending, (state) => { state.syncing = true; })
@@ -245,14 +327,12 @@ const publicCartSlice = createSlice({
         if (serverCart?.items) {
           state.items = serverCart.items.map(normaliseServerItem);
           state.count = calcCount(state.items);
-          // Persist locally as a cache (helps on offline / re-render)
           saveLocalCart(state.items, state.userId);
         }
       })
       .addCase(loadServerCart.rejected, (state, action) => {
         state.syncing = false;
         state.error   = action.payload;
-        // Keep whatever localStorage had — don't wipe
       });
 
     // ── #4 updateQtyApi ───────────────────────────────────────────────────────
@@ -316,6 +396,32 @@ const publicCartSlice = createSlice({
         saveLocalCart([], state.userId);
       })
       .addCase(clearCartApi.rejected, (state, action) => {
+        state.syncing = false;
+        state.error   = action.payload;
+      });
+
+    // ── #8 applyCouponApi ─────────────────────────────────────────────────────
+    builder
+      .addCase(applyCouponApi.pending, (state) => { state.syncing = true; })
+      .addCase(applyCouponApi.fulfilled, (state, action) => {
+        state.syncing = false;
+        const serverCart = action.payload;
+        if (serverCart?.items) {
+          state.items = serverCart.items.map(normaliseServerItem);
+          state.count = calcCount(state.items);
+          saveLocalCart(state.items, state.userId);
+        }
+      })
+      .addCase(applyCouponApi.rejected, (state, action) => {
+        state.syncing = false;
+        state.error   = action.payload;
+      });
+
+    // ── #9 removeCouponApi ────────────────────────────────────────────────────
+    builder
+      .addCase(removeCouponApi.pending, (state) => { state.syncing = true; })
+      .addCase(removeCouponApi.fulfilled, (state) => { state.syncing = false; })
+      .addCase(removeCouponApi.rejected, (state, action) => {
         state.syncing = false;
         state.error   = action.payload;
       });

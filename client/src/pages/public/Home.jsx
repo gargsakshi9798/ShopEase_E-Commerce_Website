@@ -1,5 +1,4 @@
-import { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   MdChevronLeft, MdChevronRight, MdArrowForward, MdStar,
@@ -11,9 +10,10 @@ import {
 import toast from "../../utils/toast";
 import { fetchHomeData } from "../../features/public/publicHomeSlice";
 import { fetchPublicCategories, fetchPublicBrands } from "../../features/public/publicProductSlice";
-import { addToCart } from "../../features/public/publicCartSlice";
+import { addToCart, addToCartApi } from "../../features/public/publicCartSlice";
 import { toggleWishlist } from "../../features/public/publicWishlistSlice";
-import { getImgUrl } from "../../utils/Methods";
+import { getImgUrl, POST } from "../../utils/Methods";
+import { APIS } from "../../utils/APIS";
 import { useSettings } from "../../hooks/useSettings";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -112,6 +112,7 @@ const SmartImg = ({ src, alt, fallback = "🛒", className = "w-full h-full obje
 const ProductCard = ({ product, size = "md" }) => {
   const dispatch = useDispatch();
   const wishlist = useSelector((s) => s.publicWishlist.items);
+  const isLoggedIn = useSelector((s) => s.customerAuth?.isLogin);
   const isWished = wishlist.some((w) => w._id === product._id);
   const price = product.price ?? 0;
   const mrp   = product.mrp   ?? price;
@@ -119,10 +120,12 @@ const ProductCard = ({ product, size = "md" }) => {
 
   const onCart = (e) => {
     e.preventDefault();
-    dispatch(addToCart({
-      product: { _id: product._id, name: product.name, price, mrp, img: product.thumbnail || "", brand: product.brand_id?.name ?? "" },
-      qty: 1,
-    }));
+    const cartProduct = { _id: product._id, name: product.name, price, mrp, img: product.thumbnail || "", brand: product.brand_id?.name ?? "" };
+    if (isLoggedIn) {
+      dispatch(addToCartApi({ product: cartProduct, qty: 1 })).unwrap().catch(() => {});
+    } else {
+      dispatch(addToCart({ product: cartProduct, qty: 1 }));
+    }
     toast.success("Added to cart!");
   };
   const onWish = (e) => {
@@ -232,19 +235,25 @@ const ScrollRow = ({ children, className = "" }) => {
 const HeroSlider = ({ banners, dealProduct }) => {
   const [idx, setIdx] = useState(0);
   const [animating, setAnimating] = useState(false);
+  const animatingRef = useRef(false);
   const countdown = useCountdown(dealProduct?.flash_end_time ? new Date(dealProduct.flash_end_time).getTime() : null);
 
-  useEffect(() => {
-    const id = setInterval(() => go(1), 5000);
-    return () => clearInterval(id);
-  }, [banners.length]);
-
   const go = (dir) => {
-    if (animating) return;
+    if (animatingRef.current) return;
+    animatingRef.current = true;
     setAnimating(true);
     setIdx((i) => (i + dir + banners.length) % banners.length);
-    setTimeout(() => setAnimating(false), 350);
+    setTimeout(() => { animatingRef.current = false; setAnimating(false); }, 350);
   };
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!animatingRef.current) go(1);
+    }, 5000);
+    return () => clearInterval(id);
+  // go is stable via animatingRef — only re-run if banners length changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [banners.length]);
 
   const b = banners[idx] || FALLBACK_BANNERS[0];
   const imgIsUrl = b.img && (b.img.startsWith("http") || b.img.startsWith("/"));
@@ -304,7 +313,7 @@ const HeroSlider = ({ banners, dealProduct }) => {
         {/* Dots */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
           {banners.map((_, i) => (
-            <button key={i} onClick={() => { setAnimating(true); setIdx(i); setTimeout(() => setAnimating(false), 350); }}
+            <button key={i} onClick={() => { if (!animatingRef.current) { animatingRef.current = true; setAnimating(true); setIdx(i); setTimeout(() => { animatingRef.current = false; setAnimating(false); }, 350); } }}
               className={`h-2 rounded-full transition-all duration-300 ${i === idx ? "bg-primary-600 w-6" : "bg-gray-300 w-2"}`} />
           ))}
         </div>
@@ -367,9 +376,13 @@ const HeroSlider = ({ banners, dealProduct }) => {
   );
 };
 
+// Stable flash-sale end time — computed once at module load, not on every render.
+// This prevents the countdown from resetting when the component re-mounts.
+const FLASH_SALE_END = Date.now() + 1000 * 3600 * 4;
+
 // ─── Flash Sale Strip ─────────────────────────────────────────────────────────
 const FlashSaleSection = ({ products }) => {
-  const countdown = useCountdown(Date.now() + 1000 * 3600 * 4);
+  const countdown = useCountdown(FLASH_SALE_END);
   if (!products?.length) return null;
   return (
     <div className="max-w-[1280px] mx-auto px-4 py-4">
@@ -541,12 +554,27 @@ const PromoBanners = () => (
 
 // ─── Newsletter Banner ────────────────────────────────────────────────────────
 const NewsletterBanner = () => {
-  const [email, setEmail] = useState("");
-  const handleSubmit = (e) => {
+  const [email,     setEmail]     = useState("");
+  const [loading,   setLoading]   = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email.includes("@")) { toast.error("Enter a valid email"); return; }
-    toast.success("You're subscribed! 🎉");
-    setEmail("");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Enter a valid email address");
+      return;
+    }
+    setLoading(true);
+    try {
+      await POST(APIS.Public.Newsletter, { email });
+      toast.success("You're subscribed! 🎉");
+      setSubmitted(true);
+      setEmail("");
+    } catch {
+      toast.error("Subscription failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <div className="max-w-[1280px] mx-auto px-4 py-6">
@@ -555,17 +583,33 @@ const NewsletterBanner = () => {
           <h3 className="text-2xl font-extrabold text-white">Stay in the loop</h3>
           <p className="text-primary-200 mt-1 text-sm">Get exclusive deals, new arrivals &amp; offers directly in your inbox.</p>
         </div>
-        <form onSubmit={handleSubmit} className="flex gap-2 w-full max-w-md">
-          <input
-            type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email address"
-            className="flex-1 px-4 py-3 rounded-xl text-sm outline-none bg-white/90 placeholder-gray-400 focus:bg-white transition-colors"
-          />
-          <button type="submit"
-            className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-3 rounded-xl text-sm transition-colors whitespace-nowrap">
-            Subscribe
-          </button>
-        </form>
+        {submitted ? (
+          <div className="flex items-center gap-3 bg-white/20 rounded-2xl px-6 py-4 w-full max-w-md justify-center">
+            <span className="text-2xl">✅</span>
+            <p className="text-white font-bold text-sm">You're subscribed! Watch your inbox for deals.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex gap-2 w-full max-w-md">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
+              disabled={loading}
+              className="flex-1 px-4 py-3 rounded-xl text-sm outline-none bg-white/90 placeholder-gray-400 focus:bg-white transition-colors disabled:opacity-60"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-bold px-5 py-3 rounded-xl text-sm transition-colors whitespace-nowrap flex items-center gap-2"
+            >
+              {loading ? (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : null}
+              {loading ? "Subscribing…" : "Subscribe"}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

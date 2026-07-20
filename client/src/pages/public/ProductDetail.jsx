@@ -7,9 +7,9 @@ import {
   MdSecurity, MdUndo, MdShare, MdExpandMore, MdExpandLess,
   MdVerified, MdThumbUp,
 } from "react-icons/md";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import { fetchProductDetail, clearDetail } from "../../features/public/publicProductSlice";
-import { addToCart } from "../../features/public/publicCartSlice";
+import { addToCart, addToCartApi } from "../../features/public/publicCartSlice";
 import { toggleWishlist } from "../../features/public/publicWishlistSlice";
 import { GET, POST } from "../../utils/Methods";
 import { APIS } from "../../utils/APIS";
@@ -179,6 +179,7 @@ const ProductDetail = () => {
 
   const { detail, detailStatus } = useSelector((s) => s.publicProduct);
   const wishlist   = useSelector((s) => s.publicWishlist.items);
+  const isLoggedIn = useSelector((s) => s.customerAuth?.isLogin);
   const { relatedProducts } = useSelector((s) => s.publicProduct);
   const isWished   = wishlist.some((w) => w._id === detail?._id);
 
@@ -246,30 +247,28 @@ const ProductDetail = () => {
   const disc    = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
   const handleAddToCart = () => {
-    // #3 Stock validation — button is disabled when stock=0 but guard here too
-    if (stock <= 0) {
-      toast.error("This product is out of stock");
-      return;
+    if (stock <= 0) { toast.error("This product is out of stock"); return; }
+    if (!detail.status) { toast.error("This product is no longer available"); return; }
+
+    const cartProduct = {
+      _id:        detail._id,
+      name:       detail.name,
+      price,
+      mrp,
+      img:        images[0] ?? "",
+      brand:      detail.brand_id?.name ?? "",
+      variant_id: selectedVar?._id ?? null,
+      stock,
+      status:     detail.status,
+    };
+
+    if (isLoggedIn) {
+      dispatch(addToCartApi({ product: cartProduct, qty }))
+        .unwrap()
+        .catch(() => {}); // fallback already handled inside thunk
+    } else {
+      dispatch(addToCart({ product: cartProduct, qty }));
     }
-    // #1 Validate product is still active
-    if (!detail.status) {
-      toast.error("This product is no longer available");
-      return;
-    }
-    dispatch(addToCart({
-      product: {
-        _id:        detail._id,
-        name:       detail.name,
-        price,
-        mrp,
-        img:        images[0] ?? "",
-        brand:      detail.brand_id?.name ?? "",
-        variant_id: selectedVar?._id ?? null,
-        stock,                               // pass stock so reducer can cap qty
-        status:     detail.status,
-      },
-      qty,
-    }));
     toast.success("Added to cart!");
   };
 

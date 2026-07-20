@@ -29,6 +29,8 @@ import publicPaymentReducer from "../features/public/publicPaymentSlice";
 import publicSupportReducer from "../features/public/publicSupportSlice";
 import publicHomeReducer from "../features/public/publicHomeSlice";
 import publicAccountDeletionReducer from "../features/public/publicAccountDeletionSlice";
+import publicGiftCardReducer from "../features/public/publicGiftCardSlice";
+import adminGiftCardReducer from "../features/giftcards/adminGiftCardSlice";
 
 export const store = configureStore({
   reducer: {
@@ -63,5 +65,7 @@ export const store = configureStore({
     publicSupport:           publicSupportReducer,
     publicHome:              publicHomeReducer,
     publicAccountDeletion:   publicAccountDeletionReducer,
+    publicGiftCard:          publicGiftCardReducer,
+    adminGiftCard:           adminGiftCardReducer,
   },
 });

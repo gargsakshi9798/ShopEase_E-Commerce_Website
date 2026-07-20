@@ -12,9 +12,11 @@ import { MdFavoriteBorder, MdFavorite } from "react-icons/md";
 import {
   addToCart, updateQty, removeFromCart, clearCart,
   updateQtyApi, removeItemApi, saveForLaterApi, clearCartApi,
+  applyCouponApi, removeCouponApi,
 } from "../../features/public/publicCartSlice";
 import { toggleWishlist } from "../../features/public/publicWishlistSlice";
 import { GET } from "../../utils/Methods";
+import { getImgUrl } from "../../utils/Methods";
 import { APIS } from "../../utils/APIS";
 import { useSettings } from "../../hooks/useSettings";
 
@@ -56,7 +58,7 @@ const CartItem = ({ item, isLoggedIn }) => {
         .unwrap()
         .catch(() => toast.error("Failed to update quantity"));
     } else {
-      dispatch(updateQty({ id: item._id, qty: newQty }));
+      dispatch(updateQty({ id: item._id, qty: newQty, variant_id: item.variant_id ?? null }));
     }
   }, [dispatch, isLoggedIn, item]);
 
@@ -94,7 +96,7 @@ const CartItem = ({ item, isLoggedIn }) => {
       <Link to={`/product/${item._id}`}
         className="w-24 h-24 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 hover:opacity-90 transition-opacity overflow-hidden">
         {item.img
-          ? <img src={item.img} alt={item.name} className="w-full h-full object-contain p-1" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          ? <img src={getImgUrl(item.img)} alt={item.name} className="w-full h-full object-contain p-1" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           : <span className="text-4xl">🛒</span>}
       </Link>
 
@@ -226,6 +228,10 @@ const Cart = () => {
       }
       setAppliedCoupon(found);
       toast.success(`Coupon "${found.code}" applied!`);
+      // Also persist to server cart so checkout picks it up automatically
+      if (isLoggedIn) {
+        dispatch(applyCouponApi(found.code)).unwrap().catch(() => {});
+      }
     } else {
       setCouponError("Invalid or expired coupon code");
     }
@@ -365,14 +371,32 @@ const Cart = () => {
                   <p className="text-xs text-green-700 font-semibold">
                     ✅ "{appliedCoupon.code}" — You save ₹{couponDiscount.toLocaleString()}
                   </p>
-                  <button onClick={() => { setAppliedCoupon(null); setCouponInput(""); }}
+                  <button onClick={() => {
+                      setAppliedCoupon(null);
+                      setCouponInput("");
+                      if (isLoggedIn) dispatch(removeCouponApi()).unwrap().catch(() => {});
+                    }}
                     className="text-xs text-red-500 font-semibold hover:underline ml-2">Remove</button>
                 </div>
               )}
               <div className="space-y-2">
                 {liveCoupons.slice(0, 4).map((c) => (
                   <CouponChip key={c._id || c.code} coupon={c}
-                    onCopy={(code) => { setCouponInput(code); toast.success(`Code "${code}" pasted!`); }} />
+                    onCopy={(code) => {
+                      setCouponInput(code);
+                      // Auto-apply on click
+                      setCouponError("");
+                      const found = liveCoupons.find((lc) => lc.code.toLowerCase() === code.toLowerCase());
+                      if (found) {
+                        const minOrder = found.min_order_amount || 0;
+                        if (subtotal < minOrder) {
+                          setCouponError(`Min. order ₹${minOrder.toLocaleString()} required for this coupon`);
+                        } else {
+                          setAppliedCoupon(found);
+                          toast.success(`Coupon "${found.code}" applied!`);
+                        }
+                      }
+                    }} />
                 ))}
                 {liveCoupons.length === 0 && (
                   <p className="text-xs text-gray-400 text-center py-2">

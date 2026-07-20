@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import toast from "../../utils/toast";
 import {
   MdFavorite, MdDelete, MdShoppingCart,
   MdArrowBack, MdFavoriteBorder,

@@ -236,7 +236,8 @@ class AuthController {
           role: user.role_id?.slug,
           user_type: "customer",
         },
-        process.env.SECRETKEY,
+        // Customer tokens use CUSTOMER_SECRETKEY so they can't be used on admin routes
+        process.env.CUSTOMER_SECRETKEY || process.env.SECRETKEY,
         { expiresIn: process.env.JWT_EXPIRE || "365d" }
       );
 

@@ -38,6 +38,17 @@ export default {
         card: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
         "card-hover": "0 10px 15px -3px rgb(0 0 0 / 0.1)",
       },
+      animation: {
+        "bounce-once": "bounceOnce 0.6s ease-out",
+      },
+      keyframes: {
+        bounceOnce: {
+          "0%":   { transform: "scale(0.3)", opacity: "0" },
+          "50%":  { transform: "scale(1.15)", opacity: "1" },
+          "75%":  { transform: "scale(0.92)" },
+          "100%": { transform: "scale(1)" },
+        },
+      },
     },
   },
   plugins: [],

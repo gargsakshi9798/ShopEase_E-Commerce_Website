@@ -38,6 +38,14 @@ const AddressForm = ({ initial, onSave, onCancel, saving }) => {
     for (const k of required) {
       if (!form[k]?.trim()) { toast.error(`${k.replace(/_/g, " ")} is required`); return; }
     }
+    if (!/^[6-9]\d{9}$/.test(form.contact_no)) {
+      toast.error("Enter a valid 10-digit mobile number starting with 6-9");
+      return;
+    }
+    if (!/^[1-9][0-9]{5}$/.test(form.pincode)) {
+      toast.error("Enter a valid 6-digit pincode");
+      return;
+    }
     onSave(form);
   };
 

@@ -298,7 +298,8 @@ const TrackOrder = () => {
       dispatch(trackOrder(orderParam.trim().toUpperCase()));
     }
     return () => { dispatch(clearTracked()); };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, isLogin]);
 
   const handleTrack = () => {
     const val = input.trim().toUpperCase();

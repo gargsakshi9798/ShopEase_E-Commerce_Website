@@ -36,6 +36,9 @@ router.use("/contact", CustomerMiddleware, require("./contact/index"));
 // Account Deletion Requests
 router.use("/account-deletion", CustomerMiddleware, require("./account_deletion/index"));
 
+// Gift Cards
+router.use("/gift-cards", CustomerMiddleware, require("./giftcard/index"));
+
 // Customer Coupons — browse available public coupons
 router.get("/coupons", CustomerMiddleware, async (req, res) => {
   const Base = require("../../../../helper/exception_handling/index.js");

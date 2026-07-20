@@ -50,4 +50,7 @@ router.use("/payment", AuthMiddleware, require("./payment/index"));
 // Account Deletion Requests
 router.use("/account-deletion", AuthMiddleware, require("./account_deletion/index"));
 
+// Gift Card Management
+router.use("/gift-cards", AuthMiddleware, require("./gift_card_management/index"));
+
 module.exports = router;

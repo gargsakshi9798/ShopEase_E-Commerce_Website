@@ -16,7 +16,7 @@ const paymentSchema = new mongoose.Schema(
     currency: { type: String, default: "INR" },
     payment_method: {
       type: String,
-      enum: ["cod", "razorpay", "stripe", "wallet"],
+      enum: ["cod", "razorpay", "upi", "card", "emi", "wallet", "stripe"],
       required: true,
     },
     payment_status: {

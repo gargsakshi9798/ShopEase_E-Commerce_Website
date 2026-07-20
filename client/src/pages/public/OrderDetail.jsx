@@ -186,7 +186,7 @@ const OrderDetail = () => {
         setShowCancel(false);
         setCancelReason("");
       } else {
-        toast.error("Failed to cancel order");
+        toast.error(res.payload?.message || res.payload?.errors || "Failed to cancel order");
       }
     });
   };
@@ -199,7 +199,7 @@ const OrderDetail = () => {
         setShowReturn(false);
         setReturnReason("");
       } else {
-        toast.error("Failed to submit return request");
+        toast.error(res.payload?.message || res.payload?.errors || "Failed to submit return request");
       }
     });
   };
@@ -216,7 +216,7 @@ const OrderDetail = () => {
         {/* Header */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Link to="/orders"
+            <Link to="/my-orders"
               className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
               <MdArrowBack size={18} className="text-gray-600" />
             </Link>
@@ -245,7 +245,7 @@ const OrderDetail = () => {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 flex flex-col items-center gap-3 text-center">
             <MdShoppingBag size={48} className="text-gray-200" />
             <p className="text-gray-500 font-semibold">Order not found</p>
-            <Link to="/orders" className="text-sm text-primary-600 font-semibold hover:underline">
+            <Link to="/my-orders" className="text-sm text-primary-600 font-semibold hover:underline">
               Go back to Orders
             </Link>
           </div>

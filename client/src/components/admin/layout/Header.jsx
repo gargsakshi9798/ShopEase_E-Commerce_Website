@@ -24,6 +24,7 @@ const pageTitles = {
   "/admin/employees":          "Employees",
   "/admin/admin-users":        "Admins & Users",
   "/admin/coupons":            "Coupons & Offers",
+  "/admin/gift-cards":         "Gift Card Management",
   "/admin/reviews":            "Reviews",
   "/admin/masters/categories": "Categories",
   "/admin/masters/brands":     "Brands",

@@ -98,6 +98,7 @@ export const APIS = {
     Brands:        "/public/brands",
     FAQs:          "/public/faqs",
     Settings:      "/public/settings",
+    Newsletter:    "/public/newsletter",
   },
 
   // Customer (authenticated — requires shopease_customer_token)
@@ -105,6 +106,8 @@ export const APIS = {
     Profile:       "/customer/profile",
     Address:       "/customer/address",
     Cart:          "/customer/cart",
+    CartApplyCoupon:  "/customer/cart/apply-coupon",
+    CartRemoveCoupon: "/customer/cart/remove-coupon",
     Orders:        "/customer/orders",
     TrackOrder:    (orderNumber) => `/customer/orders/track/${orderNumber}`,
     Coupons:       "/customer/coupons",
@@ -129,6 +132,14 @@ export const APIS = {
       CODPlaceOrder:       "/customer/payment/cod/place-order",
       Invoice:             (orderId) => `/customer/payment/invoice/${orderId}`,
     },
+    // Gift Cards
+    GiftCards: {
+      InitiatePayment: "/customer/gift-cards/initiate-payment",
+      VerifyPayment:   "/customer/gift-cards/verify-payment",
+      MyCards:         "/customer/gift-cards",
+      Balance:         (code) => `/customer/gift-cards/balance/${code}`,
+      Redeem:          "/customer/gift-cards/redeem",
+    },
   },
 
   // Account Deletion Requests (customer)
@@ -138,9 +149,20 @@ export const APIS = {
     Cancel:  "/customer/account-deletion",
   },
 
+  // Gift Card Management (admin)
+  AdminGiftCards: {
+    List:    "/admin/gift-cards",
+    Stats:   "/admin/gift-cards/stats",
+    ById:    (id) => `/admin/gift-cards/${id}`,
+    Issue:   "/admin/gift-cards/issue",
+    Review:  (id) => `/admin/gift-cards/${id}/review`,
+    Approve: (id) => `/admin/gift-cards/${id}/approve`,
+    Reject:  (id) => `/admin/gift-cards/${id}/reject`,
+    Cancel:  (id) => `/admin/gift-cards/${id}/cancel`,
+  },
+
   // Account Deletion Management (admin/employee/superadmin)
-  AdminAccountDeletion: {
-    List:        "/admin/account-deletion",
+  AdminAccountDeletion: {    List:        "/admin/account-deletion",
     Stats:       "/admin/account-deletion/stats",
     ById:        (id) => `/admin/account-deletion/${id}`,
     Review:      (id) => `/admin/account-deletion/${id}/review`,

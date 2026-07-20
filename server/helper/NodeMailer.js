@@ -703,6 +703,216 @@ const sendAccountDeletionStatusEmail = async (userEmail, data) => {
   }
 };
 
+// ── Gift Card Email ───────────────────────────────────────────────────────────
+/**
+ * type:
+ *  "purchase_confirmation" → to buyer: "your purchase is received / activated"
+ *  "gift_received"         → to recipient: "you received a gift card"
+ *  "activated"             → to buyer: "your gift card is now active"
+ *  "rejected"              → to buyer: "your gift card request was rejected"
+ */
+const sendGiftCardEmail = async (toEmail, data = {}) => {
+  if (!transporter) { console.warn("[NodeMailer] SMTP not configured — skipping gift card email"); return false; }
+  try {
+    const {
+      type             = "gift_received",
+      customer_name    = "Valued Customer",
+      gift_card_code   = "",
+      amount           = 0,
+      recipient_name   = "",
+      recipient_email  = "",
+      sender_name      = "ShopEase",
+      message          = "",
+      status           = "pending_review",
+      expiry_date      = null,
+      is_active        = false,
+    } = data;
+
+    const fmt        = (n) => `&#8377;${Number(n || 0).toLocaleString("en-IN")}`;
+    const CLIENT     = process.env.CLIENT_URL || "http://localhost:3000";
+    const expiryStr  = expiry_date
+      ? new Date(expiry_date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+      : "1 year from purchase";
+
+    let subject, heroGradient, heroIcon, heroTitle, heroSubtext, bodyContent;
+
+    if (type === "gift_received") {
+      subject      = `🎁 ${sender_name} sent you a ₹${amount} ShopEase Gift Card!`;
+      heroGradient = "linear-gradient(135deg,#be185d,#9333ea)";
+      heroIcon     = "🎁";
+      heroTitle    = `You received a Gift Card!`;
+      heroSubtext  = `${sender_name} sent you a special gift worth ${fmt(amount)}`;
+      bodyContent  = `
+        ${message ? `
+        <tr><td style="padding-bottom:20px;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+            style="background:#fdf2f8;border:1px solid #f9a8d4;border-radius:12px;">
+            <tr><td style="padding:16px 20px;">
+              <p style="font-family:Inter,Arial,sans-serif;margin:0 0 6px;font-size:11px;font-weight:700;color:#be185d;text-transform:uppercase;letter-spacing:1.5px;">💌 Personal Message</p>
+              <p style="font-family:Inter,Arial,sans-serif;margin:0;color:#4a044e;font-size:14px;font-style:italic;line-height:1.7;">"${message}"</p>
+              <p style="font-family:Inter,Arial,sans-serif;margin:8px 0 0;font-size:12px;color:#9d174d;font-weight:600;">— ${sender_name}</p>
+            </td></tr>
+          </table>
+        </td></tr>` : ""}
+        <tr><td align="center" style="padding-bottom:20px;">
+          <table cellpadding="0" cellspacing="0" role="presentation"
+            style="background:linear-gradient(135deg,#be185d,#9333ea);border-radius:16px;padding:28px 40px;text-align:center;">
+            <tr><td>
+              <p style="font-family:Inter,Arial,sans-serif;color:rgba(255,255,255,0.8);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 10px;font-weight:600;">Your Gift Card Code</p>
+              <p style="font-family:'Courier New',Courier,monospace;color:#ffffff;font-size:28px;font-weight:900;letter-spacing:6px;margin:0;">${gift_card_code}</p>
+              <p style="font-family:Inter,Arial,sans-serif;color:rgba(255,255,255,0.7);font-size:12px;margin:10px 0 0;">Value: <strong style="color:#fff;">${fmt(amount)}</strong> · Valid till ${expiryStr}</p>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td class="mob-btn" align="center" style="padding-bottom:20px;">
+          <a href="${CLIENT}/gift-cards"
+            style="display:inline-block;background:linear-gradient(135deg,#be185d,#9333ea);color:#fff;text-decoration:none;padding:14px 36px;border-radius:50px;font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:700;">
+            🛍️ Use My Gift Card
+          </a>
+        </td></tr>
+        <tr><td style="padding-bottom:16px;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+            style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
+            <tr><td style="padding:14px 18px;">
+              <p style="font-family:Inter,Arial,sans-serif;margin:0 0 8px;font-size:12px;font-weight:700;color:#475569;">How to redeem:</p>
+              <p style="font-family:Inter,Arial,sans-serif;margin:0;font-size:12px;color:#64748b;line-height:1.8;">
+                1. Shop on ShopEase &amp; add items to cart<br/>
+                2. At checkout, select <strong>"Gift Card"</strong> as payment<br/>
+                3. Enter code <strong>${gift_card_code}</strong> and enjoy!
+              </p>
+            </td></tr>
+          </table>
+        </td></tr>`;
+    } else if (type === "purchase_confirmation") {
+      subject      = is_active
+        ? `✅ Gift Card Activated — ₹${amount} for ${recipient_name}`
+        : `🎁 Gift Card Purchase Confirmed — Under Review`;
+      heroGradient = is_active
+        ? "linear-gradient(135deg,#16a34a,#15803d)"
+        : "linear-gradient(135deg,#d97706,#b45309)";
+      heroIcon     = is_active ? "✅" : "⏳";
+      heroTitle    = is_active ? "Gift Card Activated!" : "Purchase Confirmed — Under Review";
+      heroSubtext  = is_active
+        ? `Your ₹${amount} gift card for ${recipient_name} is now active`
+        : `Your ₹${amount} gift card for ${recipient_name} is being reviewed`;
+      bodyContent  = `
+        <tr><td style="padding-bottom:20px;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+            style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
+            <tr><td style="padding:16px 20px;">
+              <p style="font-family:Inter,Arial,sans-serif;margin:0 0 12px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;">Order Summary</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                ${[
+                  ["Gift Card Value", fmt(amount)],
+                  ["Recipient", `${recipient_name} (${recipient_email})`],
+                  ["Status", is_active ? "✅ Active" : "⏳ Under Review"],
+                  ["Valid Till", expiryStr],
+                ].map(([k, v]) => `
+                  <tr>
+                    <td style="font-family:Inter,Arial,sans-serif;color:#64748b;font-size:13px;padding:4px 0;">${k}</td>
+                    <td align="right" style="font-family:Inter,Arial,sans-serif;color:#0f172a;font-size:13px;font-weight:600;padding:4px 0;">${v}</td>
+                  </tr>`).join("")}
+              </table>
+            </td></tr>
+          </table>
+        </td></tr>
+        ${is_active ? `
+        <tr><td style="padding-bottom:16px;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+            style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:14px 18px;">
+            <tr><td style="padding:14px 18px;">
+              <p style="font-family:Inter,Arial,sans-serif;margin:0;color:#166534;font-size:13px;line-height:1.7;">
+                🎉 The gift card has been sent to <strong>${recipient_email}</strong>. ${recipient_name} can use code <strong style="font-family:'Courier New',monospace;">${gift_card_code}</strong> at checkout.
+              </p>
+            </td></tr>
+          </table>
+        </td></tr>` : `
+        <tr><td style="padding-bottom:16px;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+            style="background:#fffbeb;border:1px solid #fde047;border-radius:12px;">
+            <tr><td style="padding:14px 18px;">
+              <p style="font-family:Inter,Arial,sans-serif;margin:0;color:#854d0e;font-size:13px;line-height:1.7;">
+                ⏳ Our team is reviewing your purchase. This typically takes <strong>a few hours</strong>. You'll receive an email once the gift card is activated. No additional action needed.
+              </p>
+            </td></tr>
+          </table>
+        </td></tr>`}
+        <tr><td class="mob-btn" align="center" style="padding-bottom:16px;">
+          <a href="${CLIENT}/gift-cards"
+            style="display:inline-block;background:linear-gradient(135deg,#1d4ed8,#4338ca);color:#fff;text-decoration:none;padding:14px 36px;border-radius:50px;font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:700;">
+            View My Gift Cards
+          </a>
+        </td></tr>`;
+    } else if (type === "activated") {
+      subject      = `🎁 Your Gift Card for ${recipient_name} is Now Active!`;
+      heroGradient = "linear-gradient(135deg,#16a34a,#15803d)";
+      heroIcon     = "🎁";
+      heroTitle    = "Gift Card Activated!";
+      heroSubtext  = `Your ₹${amount} gift card has been approved and sent to ${recipient_name}`;
+      bodyContent  = `
+        <tr><td align="center" style="padding-bottom:20px;">
+          <p style="font-family:Inter,Arial,sans-serif;color:#0f172a;font-size:14px;line-height:1.7;margin:0;">
+            Great news! Your ₹${fmt(amount)} gift card for <strong>${recipient_name}</strong> has been approved and activated.<br/>
+            The gift card code has been sent to <strong>${recipient_email}</strong>.
+          </p>
+        </td></tr>
+        <tr><td class="mob-btn" align="center" style="padding-bottom:16px;">
+          <a href="${CLIENT}/gift-cards"
+            style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;text-decoration:none;padding:14px 36px;border-radius:50px;font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:700;">
+            View Gift Cards
+          </a>
+        </td></tr>`;
+    } else if (type === "rejected") {
+      subject      = "Gift Card Request — Update Required";
+      heroGradient = "linear-gradient(135deg,#dc2626,#b91c1c)";
+      heroIcon     = "❌";
+      heroTitle    = "Gift Card Request Rejected";
+      heroSubtext  = `Your ₹${amount} gift card request could not be processed`;
+      bodyContent  = `
+        <tr><td style="padding-bottom:20px;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+            style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;">
+            <tr><td style="padding:16px 20px;">
+              <p style="font-family:Inter,Arial,sans-serif;margin:0 0 8px;font-size:13px;font-weight:700;color:#991b1b;">Reason</p>
+              <p style="font-family:Inter,Arial,sans-serif;margin:0;color:#7f1d1d;font-size:13px;line-height:1.7;">${message || "Your request did not meet our gift card policy requirements."}</p>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding-bottom:16px;">
+          <p style="font-family:Inter,Arial,sans-serif;color:#64748b;font-size:13px;text-align:center;margin:0;line-height:1.7;">
+            A refund of <strong>${fmt(amount)}</strong> will be processed to your original payment method within 5–7 business days.<br/>
+            For queries, contact our support team.
+          </p>
+        </td></tr>
+        <tr><td class="mob-btn" align="center" style="padding-bottom:16px;">
+          <a href="${CLIENT}/help-center"
+            style="display:inline-block;background:#dc2626;color:#fff;text-decoration:none;padding:14px 36px;border-radius:50px;font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:700;">
+            Contact Support
+          </a>
+        </td></tr>`;
+    }
+
+    const body = `
+  <tr><td style="background:${heroGradient};padding:28px 32px;text-align:center;" class="mob-pad">
+    <div style="display:inline-block;background:rgba(255,255,255,0.18);border-radius:50%;width:60px;height:60px;line-height:60px;font-size:28px;text-align:center;">${heroIcon}</div>
+    <h2 style="font-family:Inter,Arial,sans-serif;color:#ffffff;margin:12px 0 4px;font-size:22px;font-weight:900;">${heroTitle}</h2>
+    <p style="font-family:Inter,Arial,sans-serif;color:rgba(255,255,255,0.8);margin:0;font-size:13px;">Dear ${customer_name}, ${heroSubtext}</p>
+  </td></tr>
+  <tr><td style="background:#ffffff;padding:28px 32px 24px;" class="mob-pad">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      ${bodyContent}
+    </table>
+  </td></tr>`;
+
+    await transporter.sendMail({ from: getSender(), to: toEmail, subject, html: wrap(body) });
+    console.log(`[NodeMailer] gift card email (${type}) sent → ${toEmail}`);
+    return true;
+  } catch (err) {
+    console.error("[NodeMailer] sendGiftCardEmail error:", err.message);
+    return false;
+  }
+};
+
 // ── Generic Email ─────────────────────────────────────────────────────────────
 const sendMail = async (to, subject, html) => {
   if (!transporter) return false;
@@ -715,4 +925,4 @@ const sendMail = async (to, subject, html) => {
   }
 };
 
-module.exports = { sendOTPEmail, sendOrderConfirmationEmail, sendAccountDeletionRequestEmail, sendAccountDeletionStatusEmail, sendMail };
+module.exports = { sendOTPEmail, sendOrderConfirmationEmail, sendAccountDeletionRequestEmail, sendAccountDeletionStatusEmail, sendGiftCardEmail, sendMail };

@@ -11,7 +11,6 @@ import {
 } from "../../utils/tokenUtils";
 import { loadServerCart, switchUserCart, clearUserCart } from "./publicCartSlice";
 import { loadServerWishlist, switchUserWishlist, clearUserWishlist } from "./publicWishlistSlice";
-
 // ─── Thunks ───────────────────────────────────────────────────────────────────
 
 /**
@@ -40,6 +39,11 @@ export const verifyCustomerToken = createAsyncThunk(
       const res = await axiosClient.get(APIS.Customer.Profile, {
         skipRedirect: true,   // tell response interceptor: don't redirect on 401
       });
+      // ── Step 3: reload server cart & wishlist after session restore ──
+      // This ensures that after a page refresh, the cart/wishlist counts are
+      // correct immediately without the user having to navigate to /cart.
+      dispatch(loadServerCart([]));
+      dispatch(loadServerWishlist([]));
       return res.data;
     } catch (err) {
       // Server rejected the token (tampered / blacklisted / truly expired)

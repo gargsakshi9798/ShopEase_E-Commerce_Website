@@ -37,4 +37,33 @@ router.get("/settings", async (req, res) => {
   }
 });
 
+// Newsletter subscription (public — stores email, no auth required)
+router.post("/newsletter", async (req, res) => {
+  const Base = require("../../../../helper/exception_handling/index.js");
+  const { HTTPS } = require("../../../../helper/https-status-codes/https-status-codes");
+  const ContactMessage = require("../../../../models/ContactMessage");
+  try {
+    const { email } = req.body;
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return Base.sendError(res, HTTPS.BAD_REQUEST, "Please provide a valid email address");
+    }
+    // Reuse ContactMessage with type "newsletter" to store the email
+    await ContactMessage.create({
+      name: "Newsletter Subscriber",
+      email,
+      subject: "Newsletter Subscription",
+      message: `Newsletter subscription request from ${email}`,
+      department: "general",
+      status: "new",
+    });
+    return Base.sendResponse(res, HTTPS.OK, null, "Subscribed successfully!");
+  } catch (err) {
+    // Ignore duplicate key errors — subscriber already exists
+    if (err.code === 11000) {
+      return Base.sendResponse(res, HTTPS.OK, null, "You are already subscribed!");
+    }
+    return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR, "Failed to subscribe");
+  }
+});
+
 module.exports = router;
