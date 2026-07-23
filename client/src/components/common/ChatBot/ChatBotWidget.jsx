@@ -1,8 +1,7 @@
 /**
- * Aria — ShopEase AI Assistant
- * Advanced · Professional · 3D Girl Avatar
+ * Advanced · Professional · Modern Design
  */
-import { useState, useEffect, useRef, useCallback, memo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { fetchMyOrders, trackOrder }        from "../../../features/public/publicOrderSlice";
@@ -22,14 +21,8 @@ const md = (t = "") =>
   t.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br/>");
 
 /* ─────────────────────────── CONSTANTS ─────────────────────────────────────── */
-const BOT_NAME   = "Aria";
+const BOT_NAME   = "Shivi";
 const TYPING_MS  = 750;
-const STORAGE_KEY = "aria_chat_history";
-const MAX_HISTORY = 50; // Store last 50 messages
-
-// Sentiment keywords for escalation detection
-const FRUSTRATED_WORDS = ["angry", "frustrated", "upset", "disappointed", "terrible", "worst", "useless", "pathetic", "waste", "scam", "fraud", "never", "refund now", "escalate"];
-const URGENT_WORDS = ["urgent", "emergency", "immediately", "asap", "critical", "serious"];
 
 const ORDER_BADGE = {
   pending    : "bg-amber-100 text-amber-700 border border-amber-200",
@@ -63,183 +56,62 @@ const TICKET_CATS = [
 
 /* ─────────────────────────── ICONS ─────────────────────────────────────────── */
 const I = {
+  Chat    : ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
   X       : ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-5 h-5"><path d="M18 6 6 18M6 6l12 12"/></svg>,
   Send    : ()=><svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>,
+  Bot     : ({cls="w-5 h-5"})=>(
+    <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" className={cls}>
+      {/* Background circle */}
+      <circle cx="40" cy="40" r="40" fill="url(#avatarBg)"/>
+      {/* Hair — back layer */}
+      <ellipse cx="40" cy="24" rx="18" ry="19" fill="#4A2C0A"/>
+      {/* Neck */}
+      <rect x="35" y="47" width="10" height="11" rx="3" fill="#FBBF8A"/>
+      {/* Shoulders / blazer */}
+      <path d="M14 80 Q16 58 28 55 L34 57 Q40 60 46 57 L52 55 Q64 58 66 80Z" fill="#4F46E5"/>
+      {/* Shirt collar */}
+      <path d="M34 57 Q40 63 46 57 L48 62 Q40 68 32 62Z" fill="#fff"/>
+      {/* Face */}
+      <ellipse cx="40" cy="36" rx="15" ry="17" fill="#FBBF8A"/>
+      {/* Hair — front top */}
+      <path d="M25 30 Q24 16 40 14 Q56 16 55 30 Q52 20 40 19 Q28 20 25 30Z" fill="#4A2C0A"/>
+      {/* Side hair left */}
+      <path d="M25 30 Q22 38 24 46 Q28 40 28 35Z" fill="#4A2C0A"/>
+      {/* Side hair right */}
+      <path d="M55 30 Q58 38 56 46 Q52 40 52 35Z" fill="#4A2C0A"/>
+      {/* Eyebrows */}
+      <path d="M31 32 Q34 30 37 32" stroke="#7C4A1A" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M43 32 Q46 30 49 32" stroke="#7C4A1A" strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Eyes */}
+      <ellipse cx="34" cy="35" rx="2.8" ry="3" fill="#2D1B0E"/>
+      <ellipse cx="46" cy="35" rx="2.8" ry="3" fill="#2D1B0E"/>
+      {/* Eye shine */}
+      <circle cx="35" cy="34" r="1" fill="white"/>
+      <circle cx="47" cy="34" r="1" fill="white"/>
+      {/* Nose */}
+      <path d="M39 39 Q40 41 41 39" stroke="#D4956A" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Smile */}
+      <path d="M35 43 Q40 47 45 43" stroke="#C0705A" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+      {/* Earrings */}
+      <circle cx="25" cy="42" r="1.8" fill="#818CF8"/>
+      <circle cx="55" cy="42" r="1.8" fill="#818CF8"/>
+      {/* Headset / mic dot */}
+      <circle cx="56" cy="36" r="3.5" fill="#4F46E5" opacity="0.9"/>
+      <path d="M56 33 L56 39" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Gradient def */}
+      <defs>
+        <radialGradient id="avatarBg" cx="50%" cy="40%" r="50%">
+          <stop offset="0%" stopColor="#EDE9FE"/>
+          <stop offset="100%" stopColor="#C7D2FE"/>
+        </radialGradient>
+      </defs>
+    </svg>
+  ),
   Refresh : ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
   Check   : ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5"><path d="M20 6 9 17l-5-5"/></svg>,
   Arrow   : ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><path d="m9 18 6-6-6-6"/></svg>,
   Minimize: ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-4 h-4"><path d="M5 12h14"/></svg>,
   Star    : ()=><svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
-};
-
-/* ─────────────────────────── 3D GIRL AVATAR ────────────────────────────────── */
-/* ── Modern Professional AI Girl — fully SVG, zero dependencies ── */
-const GirlAvatar = ({ size = 40, speaking = false, className = "" }) => {
-  const p = "av"; // gradient id prefix
-  return (
-  <div className={`relative flex-shrink-0 ${className}`} style={{ width: size, height: size }}>
-    {speaking && (
-      <>
-        <span className="absolute inset-0 rounded-full animate-ping opacity-25"
-          style={{ background:"radial-gradient(circle,#818cf8,transparent 70%)" }} />
-        <span className="absolute inset-[-3px] rounded-full animate-ping opacity-15"
-          style={{ background:"radial-gradient(circle,#c084fc,transparent 70%)", animationDelay:"0.4s" }} />
-      </>
-    )}
-    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-full h-full"
-      style={{ filter: speaking ? "drop-shadow(0 0 8px #818cf8bb) drop-shadow(0 2px 8px #0003)" : "drop-shadow(0 3px 10px #0003)" }}>
-      <defs>
-        <radialGradient id={`${p}bg`} cx="50%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="#2d2460"/><stop offset="100%" stopColor="#0f0a2a"/>
-        </radialGradient>
-        <radialGradient id={`${p}sk`} cx="45%" cy="25%" r="75%">
-          <stop offset="0%" stopColor="#fde8d0"/><stop offset="70%" stopColor="#f5c9a0"/><stop offset="100%" stopColor="#e8aa7a"/>
-        </radialGradient>
-        <linearGradient id={`${p}hr`} x1="30%" y1="0%" x2="70%" y2="100%">
-          <stop offset="0%" stopColor="#2c1a0e"/><stop offset="100%" stopColor="#0d0604"/>
-        </linearGradient>
-        <linearGradient id={`${p}hs`} x1="20%" y1="0%" x2="80%" y2="80%">
-          <stop offset="0%" stopColor="#7a4520" stopOpacity="0.6"/><stop offset="100%" stopColor="#2c1a0e" stopOpacity="0"/>
-        </linearGradient>
-        <linearGradient id={`${p}bz`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#1e1b4b"/><stop offset="100%" stopColor="#1a1740"/>
-        </linearGradient>
-        <radialGradient id={`${p}ir`} cx="38%" cy="32%" r="62%">
-          <stop offset="0%" stopColor="#a5b4fc"/><stop offset="50%" stopColor="#4f46e5"/><stop offset="100%" stopColor="#1e1b4b"/>
-        </radialGradient>
-        <linearGradient id={`${p}lp`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#e87070"/><stop offset="100%" stopColor="#c0392b"/>
-        </linearGradient>
-        <linearGradient id={`${p}nc`} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#e8aa7a"/><stop offset="50%" stopColor="#f5c9a0"/><stop offset="100%" stopColor="#e0a070"/>
-        </linearGradient>
-        <linearGradient id={`${p}sh`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#f8fafc"/><stop offset="100%" stopColor="#e2e8f0"/>
-        </linearGradient>
-        <linearGradient id={`${p}cg`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#818cf8" stopOpacity="0.9"/><stop offset="100%" stopColor="#c084fc" stopOpacity="0.5"/>
-        </linearGradient>
-        <clipPath id={`${p}cl`}><circle cx="50" cy="50" r="49"/></clipPath>
-      </defs>
-
-      {/* BG */}
-      <circle cx="50" cy="50" r="50" fill={`url(#${p}bg)`}/>
-
-      {/* AI decorative rings */}
-      <circle cx="50" cy="50" r="48" stroke={`url(#${p}cg)`} strokeWidth={speaking?"1.4":"0.6"} fill="none"
-        opacity={speaking?"0.6":"0.2"} strokeDasharray={speaking?"3 2":"5 5"}/>
-      <g opacity="0.1" stroke="#818cf8" strokeWidth="0.4" fill="none">
-        <path d="M2 50 H16 L20 42 H30"/><path d="M98 50 H84 L80 42 H70"/>
-        <circle cx="16" cy="50" r="1.5" fill="#818cf8" opacity="0.5"/>
-        <circle cx="84" cy="50" r="1.5" fill="#818cf8" opacity="0.5"/>
-      </g>
-
-      <g clipPath={`url(#${p}cl)`}>
-        {/* Shirt */}
-        <path d="M30 100 L32 72 Q41 67 50 69 Q59 67 68 72 L70 100Z" fill={`url(#${p}sh)`}/>
-        {/* Blazer */}
-        <path d="M0 100 L0 80 Q10 65 24 62 L32 72 Q41 66 50 68 Q59 66 68 72 L76 62 Q90 65 100 80 L100 100Z" fill={`url(#${p}bz)`}/>
-        <path d="M32 72 Q37 75 41 81 Q41 73 44 69 Q47 67 50 68" fill="#252266"/>
-        <path d="M68 72 Q63 75 59 81 Q59 73 56 69 Q53 67 50 68" fill="#252266"/>
-        <path d="M32 72 Q37 75 41 81" stroke="#4f46e5" strokeWidth="0.5" fill="none" opacity="0.5"/>
-        <path d="M68 72 Q63 75 59 81" stroke="#4f46e5" strokeWidth="0.5" fill="none" opacity="0.5"/>
-        {/* Neck */}
-        <rect x="38" y="57" width="4" height="7" rx="2" fill={`url(#${p}nc)`}/>
-        {/* Ears */}
-        <ellipse cx="25" cy="49" rx="3" ry="4.5" fill="#f0bc90"/>
-        <ellipse cx="75" cy="49" rx="3" ry="4.5" fill="#f0bc90"/>
-        <ellipse cx="25" cy="49" rx="1.5" ry="2.5" fill="#d4885a" opacity="0.35"/>
-        <ellipse cx="75" cy="49" rx="1.5" ry="2.5" fill="#d4885a" opacity="0.35"/>
-        {/* Earrings */}
-        <circle cx="25" cy="46" r="1.8" fill="#e0e7ff" opacity="0.9"/>
-        <circle cx="25" cy="46" r="0.8" fill="white"/>
-        <circle cx="75" cy="46" r="1.8" fill="#e0e7ff" opacity="0.9"/>
-        <circle cx="75" cy="46" r="0.8" fill="white"/>
-
-        {/* Hair back */}
-        <path d="M27 22 Q20 35 18 56 Q17 70 21 80 Q23 70 24 52 Q25 36 29 26Z" fill={`url(#${p}hr)`}/>
-        <path d="M73 22 Q80 35 82 56 Q83 70 79 80 Q77 70 76 52 Q75 36 71 26Z" fill={`url(#${p}hr)`}/>
-        <path d="M28 20 Q31 12 40 8 Q50 5 60 8 Q69 12 72 20 Q64 14 50 13 Q36 14 28 20Z" fill={`url(#${p}hr)`}/>
-
-        {/* Face */}
-        <ellipse cx="50" cy="44" rx="22" ry="25" fill={`url(#${p}sk)`}/>
-        <path d="M28 46 Q27 56 33 64 Q39 70 44 71 Q50 72 56 71 Q61 70 67 64 Q73 56 72 46" fill={`url(#${p}sk)`}/>
-
-        {/* Blush */}
-        <ellipse cx="34" cy="53" rx="6" ry="3.5" fill="#f87171" opacity="0.1"/>
-        <ellipse cx="66" cy="53" rx="6" ry="3.5" fill="#f87171" opacity="0.1"/>
-
-        {/* Eyebrows */}
-        <path d="M31 33 Q37 29 43 31" stroke="#1a0a06" strokeWidth="2" strokeLinecap="round" fill="none"/>
-        <path d="M57 31 Q63 29 69 33" stroke="#1a0a06" strokeWidth="2" strokeLinecap="round" fill="none"/>
-
-        {/* Eyes */}
-        <path d="M30 41 Q35 36 40 37.5 Q43.5 38.5 43.5 41.5 Q39 45.5 34 44.5 Q30 43 30 41Z" fill="white"/>
-        <circle cx="36.5" cy="41" r="4" fill={`url(#${p}ir)`}/>
-        <circle cx="36.5" cy="41" r="2.4" fill="#0a0820"/>
-        <circle cx="38" cy="39.2" r="1.3" fill="white" opacity="0.95"/>
-        <circle cx="35" cy="42.2" r="0.5" fill="white" opacity="0.35"/>
-
-        <path d="M57 41 Q62 36 67 37.5 Q70.5 38.5 70.5 41.5 Q66 45.5 61 44.5 Q57 43 57 41Z" fill="white"/>
-        <circle cx="63.5" cy="41" r="4" fill={`url(#${p}ir)`}/>
-        <circle cx="63.5" cy="41" r="2.4" fill="#0a0820"/>
-        <circle cx="65" cy="39.2" r="1.3" fill="white" opacity="0.95"/>
-        <circle cx="62" cy="42.2" r="0.5" fill="white" opacity="0.35"/>
-
-        {/* Eyeliner */}
-        <path d="M30 41 Q35 36 40 37.5" stroke="#0d0604" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
-        <path d="M40 37.5 Q43 38 43.5 41" stroke="#0d0604" strokeWidth="0.6" fill="none" strokeLinecap="round"/>
-        <path d="M57 41 Q62 36 67 37.5" stroke="#0d0604" strokeWidth="1.1" fill="none" strokeLinecap="round"/>
-        <path d="M67 37.5 Q70 38 70.5 41" stroke="#0d0604" strokeWidth="0.6" fill="none" strokeLinecap="round"/>
-
-        {/* Eyelashes */}
-        {[[-1,-2],[1,-2.5],[3.5,-2.8],[6,-2.4],[8,-1.6]].map(([dx,dy],i)=>(
-          <line key={i} x1={30+dx} y1={41+dy*0} x2={30+dx+dy*0.3} y2={41+dy}
-            stroke="#0d0604" strokeWidth="0.85" strokeLinecap="round"/>
-        ))}
-        {[[0,-2],[2,-2.5],[4.5,-2.8],[7,-2.4],[9,-1.6]].map(([dx,dy],i)=>(
-          <line key={i} x1={57+dx} y1={41+dy*0} x2={57+dx+dy*0.3} y2={41+dy}
-            stroke="#0d0604" strokeWidth="0.85" strokeLinecap="round"/>
-        ))}
-
-        {/* Nose */}
-        <path d="M48 51 Q47 54 45.5 55 Q47.5 56 50 56 Q52.5 56 54.5 55 Q53 54 52 51"
-          stroke="#c9906a" strokeWidth="0.9" fill="none" opacity="0.65" strokeLinecap="round"/>
-
-        {/* Lips */}
-        <path d="M40 60.5 Q44 58 47 59 Q50 60 53 59 Q56 58 60 60.5 Q56 63 50 63.5 Q44 63 40 60.5Z"
-          fill={`url(#${p}lp)`}/>
-        <path d="M40 60.5 Q45 64.5 50 65 Q55 64.5 60 60.5 Q55 63.5 50 64 Q45 63.5 40 60.5Z"
-          fill="#c0392b" opacity="0.8"/>
-        <path d="M45 59.5 Q47.5 58.5 50 59 Q52.5 58.5 55 59.5"
-          stroke="#f59090" strokeWidth="0.5" fill="none" opacity="0.5"/>
-        <ellipse cx="50" cy="62.5" rx="5" ry="1.2" fill="white" opacity="0.1"/>
-        {speaking && (
-          <>
-            <path d="M42 61 Q50 67.5 58 61 Q54 66 50 66.5 Q46 66 42 61Z" fill="#1a0606" opacity="0.8"/>
-            <path d="M43.5 61.5 Q50 65 56.5 61.5 Q52 64 50 64.5 Q48 64 43.5 61.5Z" fill="white" opacity="0.9"/>
-          </>
-        )}
-
-        {/* Hair front — sleek side part */}
-        <path d="M28 22 Q26 14 33 9 Q41 5 50 6 Q59 5 67 9 Q74 14 72 22 Q67 14 54 12 Q50 11 46 12 Q34 14 28 22Z"
-          fill={`url(#${p}hr)`}/>
-        <path d="M28 22 Q25 30 24.5 40 Q26 22 33 17 Q39 13 45 13 Q34 14 28 22Z" fill={`url(#${p}hr)`}/>
-        <path d="M68 18 Q72 24 73 34 Q70 22 64 16 Q58 12 50 11 Q60 11 68 18Z" fill={`url(#${p}hr)`}/>
-        {/* Sheen */}
-        <path d="M34 9 Q43 7 55 8 Q61 9 66 12 Q56 9 50 9 Q42 9 34 13Z" fill={`url(#${p}hs)`} opacity="0.65"/>
-      </g>
-
-      {/* AI badge */}
-      <g transform="translate(67,73)">
-        <rect x="0" y="0" width="22" height="12" rx="6" fill="#0f0a2a" stroke="#818cf8" strokeWidth="0.8" opacity="0.95"/>
-        <text x="11" y="8.5" textAnchor="middle" fill="#a5b4fc"
-          fontSize="5" fontFamily="Inter,sans-serif" fontWeight="700" letterSpacing="0.8">AI</text>
-      </g>
-
-    </svg>
-  </div>
-  );
 };
 
 /* ─────────────────────────── DESIGN TOKENS ─────────────────────────────────── */
@@ -259,19 +131,17 @@ const T = {
 /* ─────────────────────────── SUB-COMPONENTS ────────────────────────────────── */
 
 /* Chat message bubble */
-const Bubble = memo(({ msg, isSpeaking = false }) => {
+const Bubble = memo(({ msg }) => {
   const isBot = msg.role === "bot";
   return (
-    <div className={`flex gap-2 mb-3 animate-fade-in ${isBot ? "items-end" : "items-end flex-row-reverse"}`}>
+    <div className={`flex gap-2 mb-3 animate-fade-in ${isBot ? "items-start" : "items-end flex-row-reverse"}`}>
       {isBot && (
-        <GirlAvatar
-          size={32}
-          speaking={isSpeaking}
-          className="flex-shrink-0 mb-0.5"
-        />
+        <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5 shadow-md shadow-indigo-200 ring-2 ring-white">
+          <I.Bot cls="w-8 h-8" />
+        </div>
       )}
       <div className="max-w-[80%]">
-        <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${isBot ? `${T.msgBot} rounded-bl-sm` : `${T.msgUser} rounded-br-sm`}`}>
+        <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${isBot ? `${T.msgBot} rounded-tl-sm` : `${T.msgUser} rounded-tr-sm`}`}>
           {isBot
             ? <span dangerouslySetInnerHTML={{ __html: md(msg.text) }} />
             : msg.text
@@ -287,14 +157,16 @@ const Bubble = memo(({ msg, isSpeaking = false }) => {
 });
 Bubble.displayName = "Bubble";
 
-/* Typing dots — girl avatar with bouncing dots */
+/* Typing dots */
 const Dots = () => (
-  <div className="flex gap-2 items-end mb-3 animate-fade-in">
-    <GirlAvatar size={32} speaking={true} className="flex-shrink-0 mb-0.5" />
-    <div className={`${T.msgBot} rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm`}>
+  <div className="flex gap-2 items-start mb-3 animate-fade-in">
+    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 shadow-md shadow-indigo-200 ring-2 ring-white">
+      <I.Bot cls="w-8 h-8" />
+    </div>
+    <div className={`${T.msgBot} rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm`}>
       <div className="flex gap-1 items-center">
         {[0,160,320].map(d => (
-          <span key={d} className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay:`${d}ms` }} />
+          <span key={d} className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay:`${d}ms` }} />
         ))}
       </div>
     </div>
@@ -381,45 +253,12 @@ AddressCard.displayName = "AddressCard";
 const TicketForm = memo(({ onSubmit, onCancel, loading }) => {
   const [form, setForm] = useState({ category:"other", subject:"", description:"" });
   const [errs, setErrs] = useState({});
-  
   const validate = () => {
     const e = {};
-    const subj = form.subject.trim();
-    const desc = form.description.trim();
-    
-    // Subject validation
-    if (!subj) {
-      e.subject = "Subject is required";
-    } else if (subj.length < 10) {
-      e.subject = "Subject must be at least 10 characters (provide meaningful details)";
-    } else if (subj.length > 100) {
-      e.subject = "Subject too long (max 100 characters)";
-    } else if (/^(.)\1{4,}$/.test(subj)) {
-      e.subject = "Please write a proper subject (avoid spam patterns)";
-    }
-    
-    // Description validation
-    if (!desc) {
-      e.description = "Please describe the issue in detail";
-    } else if (desc.length < 20) {
-      e.description = "Description too short (minimum 20 characters). Please provide more context.";
-    } else if (desc.length > 1000) {
-      e.description = "Description too long (max 1000 characters)";
-    } else if (/^(.)\1{9,}$/.test(desc)) {
-      e.description = "Invalid description (avoid repetitive spam patterns)";
-    } else if (desc.split(/\s+/).length < 5) {
-      e.description = "Please write at least 5 words to properly describe your issue";
-    }
-    
-    // Category validation
-    if (!form.category || form.category === "other") {
-      e.category = "Please select a specific category (not 'Other')";
-    }
-    
-    setErrs(e); 
-    return !Object.keys(e).length;
+    if (!form.subject.trim())     e.subject = "Subject is required";
+    if (!form.description.trim()) e.description = "Please describe the issue";
+    setErrs(e); return !Object.keys(e).length;
   };
-  
   return (
     <div className={`mx-1 my-2 rounded-2xl p-4 space-y-3 animate-fade-in ${T.form}`}>
       <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
@@ -428,49 +267,32 @@ const TicketForm = memo(({ onSubmit, onCancel, loading }) => {
         </div>
         <div>
           <p className="text-xs font-bold text-gray-800">Raise a Support Ticket</p>
-          <p className="text-[10px] text-gray-400">We respond within 24 hours · Please provide detailed info</p>
+          <p className="text-[10px] text-gray-400">We respond within 24 hours</p>
         </div>
       </div>
 
       <div>
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1 block">Category *</label>
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1 block">Category</label>
         <select value={form.category} onChange={e => setForm({...form, category:e.target.value})}
-          className={`w-full text-xs border rounded-xl px-3 py-2 outline-none focus:border-indigo-400 bg-gray-50/80 font-medium ${errs.category?"border-red-300":"border-gray-200"}`}>
-          <option value="other" disabled>— Select a category —</option>
-          {TICKET_CATS.filter(c => c.value !== "other").map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-indigo-400 bg-gray-50/80 font-medium">
+          {TICKET_CATS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
-        {errs.category && <p className="text-red-500 text-[10px] mt-0.5">{errs.category}</p>}
       </div>
 
       <div>
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1 flex items-center justify-between">
-          <span>Subject * <span className="text-gray-400 font-normal">(min 10 chars)</span></span>
-          <span className={`text-[9px] ${form.subject.length >= 10 ? "text-green-600" : "text-gray-400"}`}>
-            {form.subject.length}/100
-          </span>
-        </label>
-        <input type="text" placeholder="e.g. Payment deducted but order not placed" value={form.subject}
-          onChange={e => setForm({...form, subject:e.target.value})} maxLength={100}
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1 block">Subject *</label>
+        <input type="text" placeholder="Brief summary…" value={form.subject}
+          onChange={e => setForm({...form, subject:e.target.value})}
           className={`w-full text-xs border rounded-xl px-3 py-2 outline-none focus:border-indigo-400 bg-gray-50/80 ${errs.subject?"border-red-300":"border-gray-200"}`}/>
         {errs.subject && <p className="text-red-500 text-[10px] mt-0.5">{errs.subject}</p>}
       </div>
 
       <div>
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1 flex items-center justify-between">
-          <span>Description * <span className="text-gray-400 font-normal">(min 20 chars)</span></span>
-          <span className={`text-[9px] ${form.description.length >= 20 ? "text-green-600" : "text-gray-400"}`}>
-            {form.description.length}/1000
-          </span>
-        </label>
-        <textarea rows={4} 
-          placeholder="Describe your issue in detail: What happened? When? What did you expect? Any order/product numbers?"
-          value={form.description} maxLength={1000}
+        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1 block">Description *</label>
+        <textarea rows={3} placeholder="Describe your issue in detail…" value={form.description}
           onChange={e => setForm({...form, description:e.target.value})}
           className={`w-full text-xs border rounded-xl px-3 py-2 outline-none focus:border-indigo-400 bg-gray-50/80 resize-none ${errs.description?"border-red-300":"border-gray-200"}`}/>
         {errs.description && <p className="text-red-500 text-[10px] mt-0.5">{errs.description}</p>}
-        <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">
-          💡 <strong>Tip:</strong> Provide order number, date, product name, and what went wrong for faster resolution.
-        </p>
       </div>
 
       <div className="flex gap-2 pt-1">
@@ -595,6 +417,9 @@ const FAQ = {
 };
 
 /* ─────────────────────────── MAIN WIDGET ───────────────────────────────────── */
+const BACK_PILL = { id:"back_menu", label:"↩ Main Menu" };
+const makeRetryPill = (id) => ({ id, label:"🔄 Retry" });
+
 const ChatBotWidget = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -607,7 +432,6 @@ const ChatBotWidget = () => {
   const [unread,       setUnread]       = useState(0);
   const [peeked,       setPeeked]       = useState(false);
   const [isMinimized,  setIsMinimized]  = useState(false);
-  const [sentiment,    setSentiment]    = useState("neutral"); // neutral|frustrated|urgent
 
   /* ── chat state ── */
   const [msgs,         setMsgs]         = useState([]);
@@ -617,48 +441,10 @@ const ChatBotWidget = () => {
   const [menuItems,    setMenuItems]    = useState([]);   // home grid
   const [inlineEl,     setInlineEl]     = useState(null); // "ticket"|"track"
   const [trackLoading, setTrackLoading] = useState(false);
-  const [feedbackMsg,  setFeedbackMsg]  = useState(null); // message awaiting feedback
-  const [sessionContext, setSessionContext] = useState({ viewedProducts: [], lastPage: "" });
 
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
   const peekRef   = useRef(null);
-
-  /* ── Load chat history from localStorage ── */
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.msgs?.length) {
-          setMsgs(parsed.msgs.slice(-MAX_HISTORY));
-        }
-      }
-    } catch (e) { console.warn("Failed to load chat history", e); }
-  }, []);
-
-  /* ── Save chat history to localStorage ── */
-  useEffect(() => {
-    if (msgs.length > 0) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ msgs: msgs.slice(-MAX_HISTORY), timestamp: Date.now() }));
-      } catch (e) { console.warn("Failed to save chat history", e); }
-    }
-  }, [msgs]);
-
-  /* ── Detect sentiment from user input ── */
-  const detectSentiment = useCallback((text) => {
-    const lower = text.toLowerCase();
-    if (FRUSTRATED_WORDS.some(w => lower.includes(w))) return "frustrated";
-    if (URGENT_WORDS.some(w => lower.includes(w))) return "urgent";
-    return "neutral";
-  }, []);
-
-  /* ── Track page context (called from parent layout if available) ── */
-  useEffect(() => {
-    const page = window.location.pathname;
-    setSessionContext(prev => ({ ...prev, lastPage: page }));
-  }, [window.location.pathname]);
 
   /* ── scroll to bottom ── */
   useEffect(() => {
@@ -667,9 +453,9 @@ const ChatBotWidget = () => {
 
   /* ── auto-peek 8 s ── */
   useEffect(() => {
-    if (!sessionStorage.getItem("aria_seen")) {
+    if (!sessionStorage.getItem("shivi_seen")) {
       peekRef.current = setTimeout(() => {
-        if (!peeked) { setPeeked(true); setUnread(1); sessionStorage.setItem("aria_seen","1"); }
+        if (!peeked) { setPeeked(true); setUnread(1); sessionStorage.setItem("shivi_seen","1"); }
       }, 8000);
     }
     return () => clearTimeout(peekRef.current);
@@ -692,15 +478,11 @@ const ChatBotWidget = () => {
   }, []);
 
   const inlineCards = useCallback((cardType, cards) => {
-    setMsgs(p => [...p, { id:uid(), role:"bot", text:"__CARDS__", time:clock(), cardType, cards }]);
+    setMsgs(p => [...p, { id:uid(), role:"bot", time:clock(), type:"cards", cardType, cards }]);
   }, []);
 
-  const backPill  = { id:"back_menu", label:"↩ Main Menu" };
-  const retryPill = (id) => ({ id, label:"🔄 Retry" });
-
   /* ── main menu ── */
-  const mainMenu  = isLogin ? MENU_ITEMS_AUTH : MENU_ITEMS_GUEST;
-  const mainPills = [backPill];
+  const mainMenu = useMemo(() => isLogin ? MENU_ITEMS_AUTH : MENU_ITEMS_GUEST, [isLogin]);
 
   const openMenu = useCallback(() => {
     const name = user?.name?.split(" ")[0];
@@ -714,8 +496,8 @@ const ChatBotWidget = () => {
   const initChat = useCallback(() => {
     const name = user?.name?.split(" ")[0] || "";
     const greet = isLogin
-      ? `Hey **${name}**! 👋 I'm **Aria**, your ShopEase AI assistant.\n\nI can help with orders, tracking, returns, payments, your profile and much more. What do you need?`
-      : "Hey there! 👋 I'm **Aria**, your ShopEase AI assistant.\n\nI can help with orders, tracking, returns, payments and more. What can I do for you?";
+      ? `Hey **${name}**! 👋 I'm **Shivi**, your ShopEase AI assistant.\n\nI can help with orders, tracking, returns, payments, your profile and much more. What do you need?`
+      : "Hey there! 👋 I'm **Shivi**, your ShopEase AI assistant.\n\nI can help with orders, tracking, returns, payments and more. What can I do for you?";
     setMsgs([{ id:uid(), role:"bot", text:greet, time:clock() }]);
     setMenuItems(isLogin ? MENU_ITEMS_AUTH : MENU_ITEMS_GUEST);
     setPills([]); setInlineEl(null);
@@ -727,8 +509,13 @@ const ChatBotWidget = () => {
     setTimeout(() => inputRef.current?.focus(), 200);
   }, [msgs.length, initChat]);
 
-  const handleClose    = ()  => setIsOpen(false);
+  const handleClose    = useCallback(() => setIsOpen(false), []);
   const handleMinimize = ()  => setIsMinimized(v => !v);
+
+  /* ── reinitialize chat on login/logout ── */
+  useEffect(() => {
+    if (isOpen && msgs.length > 0) { initChat(); }
+  }, [isLogin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ════════════════════ FLOW HANDLERS ════════════════════ */
 
@@ -738,36 +525,33 @@ const ChatBotWidget = () => {
     try {
       const res    = await dispatch(fetchMyOrders({ page:1, per_page:5 })).unwrap();
       const orders = res?.data?.data ?? res?.data ?? [];
-      setTimeout(() => {
-        setTyping(false);
-        if (!orders.length) {
-          setMsgs(p => [...p, { id:uid(), role:"bot", text:"You haven't placed any orders yet. Start shopping! 🛍️", time:clock() }]);
-          setPills([{ id:"go_home", label:"🏠 Shop Now" }, backPill]);
-          return;
-        }
-        setMsgs(p => [...p, { id:uid(), role:"bot", text:`Here are your **${orders.length}** most recent orders:`, time:clock() }]);
-        inlineCards("orders", orders);
-        setPills([
-          { id:"track_order",  label:"🚚 Track an Order"  },
-          { id:"return_help",  label:"↩️ Return / Refund" },
-          { id:"go_my_orders", label:"📋 View All Orders" },
-          backPill,
+      if (!orders.length) {
+        botSay("You haven't placed any orders yet. Start shopping! 🛍️", [
+          { id:"go_home", label:"🏠 Shop Now" }, BACK_PILL,
         ]);
-      }, TYPING_MS);
+        return;
+      }
+      botSay(`Here are your **${orders.length}** most recent orders:`, [
+        { id:"track_order",  label:"🚚 Track an Order"  },
+        { id:"return_help",  label:"↩️ Return / Refund" },
+        { id:"go_my_orders", label:"📋 View All Orders" },
+        BACK_PILL,
+      ], [], 300);
+      setTimeout(() => inlineCards("orders", orders), 300 + 120);
     } catch {
-      botSay("Couldn't load your orders right now. Please try again.", [retryPill("my_orders"), backPill]);
+      botSay("Couldn't load your orders right now. Please try again.", [makeRetryPill("my_orders"), BACK_PILL]);
     }
   }, [dispatch, botSay, inlineCards]);
 
   /* ── Track Order ── */
   const doTrackPrompt = useCallback(() => {
     botSay("Please enter your **order number** below 👇", [], [], 350);
-    setTimeout(() => setInlineEl("track"), TYPING_MS + 120);
+    setTimeout(() => setInlineEl("track"), 470);
   }, [botSay]);
 
   const doTrackSubmit = useCallback(async (orderNum) => {
-    setInlineEl(null);
     userSay(`🔍 Track: ${orderNum}`);
+    setInlineEl(null);
     setTrackLoading(true);
     botSay("Looking up your order…", [], [], 300);
     try {
@@ -776,7 +560,7 @@ const ChatBotWidget = () => {
       setTrackLoading(false);
       if (!o) {
         botSay("❌ No order found with that number. Please double-check and try again.", [
-          { id:"track_order", label:"🔄 Try Again" }, backPill,
+          { id:"track_order", label:"🔄 Try Again" }, BACK_PILL,
         ]);
         return;
       }
@@ -788,20 +572,16 @@ const ChatBotWidget = () => {
         o.estimated_delivery ? `**Est. Delivery:** ${fmtDate(o.estimated_delivery)}` : null,
         o.tracking_number    ? `**AWB / Tracking:** ${o.tracking_number}` : null,
       ].filter(Boolean).join("\n");
-      setTimeout(() => {
-        setTyping(false);
-        setMsgs(p => [...p, { id:uid(), role:"bot", text:lines, time:clock() }]);
-        setPills([
-          { id:"my_orders",   label:"📦 All My Orders"  },
-          { id:"return_help", label:"↩️ Request Return" },
-          { id:"new_ticket",  label:"🎫 Raise Ticket"   },
-          backPill,
-        ]);
-      }, TYPING_MS);
+      botSay(lines, [
+        { id:"my_orders",   label:"📦 All My Orders"  },
+        { id:"return_help", label:"↩️ Request Return" },
+        { id:"new_ticket",  label:"🎫 Raise Ticket"   },
+        BACK_PILL,
+      ], [], 300);
     } catch {
       setTrackLoading(false);
       botSay("❌ Order not found. Please check the number and try again.", [
-        { id:"track_order", label:"🔄 Try Again" }, backPill,
+        { id:"track_order", label:"🔄 Try Again" }, BACK_PILL,
       ]);
     }
   }, [dispatch, botSay, userSay]);
@@ -812,25 +592,21 @@ const ChatBotWidget = () => {
     try {
       const res = await dispatch(fetchCustomerProfile()).unwrap();
       const p   = res?.data ?? res;
-      setTimeout(() => {
-        setTyping(false);
-        const lines = [
-          "👤 **Your Profile**",
-          `**Name:** ${p?.name || "—"}`,
-          `**Email:** ${p?.email || "—"}`,
-          `**Phone:** ${p?.contact_no || "Not added yet"}`,
-          p?.created_at ? `**Member Since:** ${fmtDate(p.created_at)}` : null,
-        ].filter(Boolean).join("\n");
-        setMsgs(prev => [...prev, { id:uid(), role:"bot", text:lines, time:clock() }]);
-        setPills([
-          { id:"go_profile",   label:"✏️ Edit Profile"    },
-          { id:"my_addresses", label:"📍 My Addresses"    },
-          { id:"go_settings",  label:"⚙️ Settings"        },
-          backPill,
-        ]);
-      }, TYPING_MS);
+      const lines = [
+        "👤 **Your Profile**",
+        `**Name:** ${p?.name || "—"}`,
+        `**Email:** ${p?.email || "—"}`,
+        `**Phone:** ${p?.contact_no || "Not added yet"}`,
+        p?.created_at ? `**Member Since:** ${fmtDate(p.created_at)}` : null,
+      ].filter(Boolean).join("\n");
+      botSay(lines, [
+        { id:"go_profile",   label:"✏️ Edit Profile"    },
+        { id:"my_addresses", label:"📍 My Addresses"    },
+        { id:"go_settings",  label:"⚙️ Settings"        },
+        BACK_PILL,
+      ], [], 300);
     } catch {
-      botSay("Couldn't load your profile. Please try again.", [retryPill("my_profile"), backPill]);
+      botSay("Couldn't load your profile. Please try again.", [makeRetryPill("my_profile"), BACK_PILL]);
     }
   }, [dispatch, botSay]);
 
@@ -840,27 +616,22 @@ const ChatBotWidget = () => {
     try {
       const res  = await dispatch(fetchAddresses()).unwrap();
       const list = res?.data ?? [];
-      setTimeout(() => {
-        setTyping(false);
-        if (!list.length) {
-          setMsgs(p => [...p, { id:uid(), role:"bot", text:"You have no saved addresses yet. Add one to speed up checkout!", time:clock() }]);
-          setPills([{ id:"go_addresses", label:"➕ Add Address" }, backPill]);
-          return;
-        }
-        setMsgs(p => [...p,
-          { id:uid(), role:"bot", text:`📍 Your **${list.length}** saved address${list.length>1?"es":""}:`, time:clock() },
-          { id:uid(), role:"bot", text:"__CARDS__", time:clock(), cardType:"addresses", cards:list },
+      if (!list.length) {
+        botSay("You have no saved addresses yet. Add one to speed up checkout!", [
+          { id:"go_addresses", label:"➕ Add Address" }, BACK_PILL,
         ]);
-        setPills([
-          { id:"go_addresses", label:"📍 Manage Addresses" },
-          { id:"go_checkout",  label:"🛒 Go to Checkout"   },
-          backPill,
-        ]);
-      }, TYPING_MS);
+        return;
+      }
+      botSay(`📍 Your **${list.length}** saved address${list.length>1?"es":""}:`, [
+        { id:"go_addresses", label:"📍 Manage Addresses" },
+        { id:"go_checkout",  label:"🛒 Go to Checkout"   },
+        BACK_PILL,
+      ], [], 300);
+      setTimeout(() => inlineCards("addresses", list), 300 + 120);
     } catch {
-      botSay("Couldn't fetch addresses right now.", [retryPill("my_addresses"), backPill]);
+      botSay("Couldn't fetch addresses right now.", [makeRetryPill("my_addresses"), BACK_PILL]);
     }
-  }, [dispatch, botSay]);
+  }, [dispatch, botSay, inlineCards]);
 
   /* ── Cart Summary ── */
   const doCartSummary = useCallback(() => {
@@ -869,7 +640,7 @@ const ChatBotWidget = () => {
       botSay("Your cart is currently empty. Browse our collection and add items! 🛍️", [
         { id:"go_home",    label:"🏠 Shop Now"    },
         { id:"go_cart",    label:"🛒 View Cart"   },
-        backPill,
+        BACK_PILL,
       ]);
       return;
     }
@@ -887,7 +658,7 @@ const ChatBotWidget = () => {
       { id:"go_cart",     label:"🛒 View Cart"     },
       { id:"go_checkout", label:"✅ Checkout Now"   },
       { id:"coupon_help", label:"🏷️ Apply Coupon"  },
-      backPill,
+      BACK_PILL,
     ]);
   }, [cartItems, cartCount, botSay]);
 
@@ -897,60 +668,54 @@ const ChatBotWidget = () => {
     try {
       const res     = await dispatch(fetchMyTickets({ page:1, per_page:5 })).unwrap();
       const tickets = res?.data?.data ?? [];
-      setTimeout(() => {
-        setTyping(false);
-        if (!tickets.length) {
-          setMsgs(p => [...p, { id:uid(), role:"bot", text:"You haven't raised any support tickets yet.", time:clock() }]);
-          setPills([{ id:"new_ticket", label:"🆕 Raise a Ticket" }, backPill]);
-          return;
-        }
-        setMsgs(p => [...p,
-          { id:uid(), role:"bot", text:`🎫 Your **${tickets.length}** recent ticket${tickets.length>1?"s":""}:`, time:clock() },
-          { id:uid(), role:"bot", text:"__CARDS__", time:clock(), cardType:"tickets", cards:tickets },
+      if (!tickets.length) {
+        botSay("You haven't raised any support tickets yet.", [
+          { id:"new_ticket", label:"🆕 Raise a Ticket" }, BACK_PILL,
         ]);
-        setPills([
-          { id:"new_ticket",    label:"🆕 New Ticket"         },
-          { id:"go_my_tickets", label:"📋 All Tickets Page"   },
-          backPill,
-        ]);
-      }, TYPING_MS);
+        return;
+      }
+      botSay(`🎫 Your **${tickets.length}** recent ticket${tickets.length>1?"s":""}:`, [
+        { id:"new_ticket",    label:"🆕 New Ticket"         },
+        { id:"go_my_tickets", label:"📋 All Tickets Page"   },
+        BACK_PILL,
+      ], [], 300);
+      setTimeout(() => inlineCards("tickets", tickets), 300 + 120);
     } catch {
-      botSay("Couldn't load your tickets right now.", [retryPill("my_tickets"), backPill]);
+      botSay("Couldn't load your tickets right now.", [makeRetryPill("my_tickets"), BACK_PILL]);
     }
-  }, [dispatch, botSay]);
+  }, [dispatch, botSay, inlineCards]);
 
   /* ── New Ticket ── */
   const doNewTicket = useCallback(() => {
     botSay("Sure! Fill in the form below and I'll create your ticket instantly. 🎫", [], [], 350);
-    setTimeout(() => setInlineEl("ticket"), TYPING_MS + 120);
+    setTimeout(() => setInlineEl("ticket"), 470);
   }, [botSay]);
 
   const doTicketSubmit = useCallback(async (form) => {
-    setInlineEl(null);
     userSay(`📝 Ticket: ${form.subject}`);
+    setInlineEl(null);
     botSay("Creating your support ticket…", [], [], 300);
     try {
       const res = await dispatch(createTicket({
         subject: form.subject, description: form.description, category: form.category,
       })).unwrap();
       if (res?.success) {
-        setTimeout(() => {
-          setTyping(false);
-          setMsgs(p => [...p, { id:uid(), role:"bot", time:clock(), text:
-            `✅ **Ticket Created Successfully!**\n\n🎫 **Ticket #:** ${res.data?.ticket_number||"—"}\n📌 **Subject:** ${form.subject}\n🏷️ **Category:** ${form.category}\n\nOur support team will respond within **24 hours**. You'll get an email notification when we reply.`
-          }]);
-          setPills([
+        botSay(
+          `✅ **Ticket Created Successfully!**\n\n🎫 **Ticket #:** ${res.data?.ticket_number||"—"}\n📌 **Subject:** ${form.subject}\n🏷️ **Category:** ${form.category}\n\nOur support team will respond within **24 hours**. You'll get an email notification when we reply.`,
+          [
             { id:"my_tickets",    label:"🎫 View My Tickets"  },
             { id:"go_my_tickets", label:"📋 Tickets Page"     },
-            backPill,
-          ]);
-        }, TYPING_MS);
+            BACK_PILL,
+          ],
+          [],
+          300
+        );
       } else {
-        botSay(res?.message||"Failed to create ticket. Please try again.", [retryPill("new_ticket"), backPill]);
+        botSay(res?.message||"Failed to create ticket. Please try again.", [makeRetryPill("new_ticket"), BACK_PILL]);
       }
     } catch (err) {
       toast.error(err?.message||"Something went wrong");
-      botSay("Something went wrong. Please try again.", [retryPill("new_ticket"), backPill]);
+      botSay("Something went wrong. Please try again.", [makeRetryPill("new_ticket"), BACK_PILL]);
     }
   }, [dispatch, botSay, userSay]);
 
@@ -959,7 +724,7 @@ const ChatBotWidget = () => {
     botSay(FAQ.return_policy.a, [
       { id:"my_orders",  label:"📦 My Orders"    },
       { id:"new_ticket", label:"🎫 Raise Ticket" },
-      backPill,
+      BACK_PILL,
     ]);
   }, [botSay]);
 
@@ -968,7 +733,7 @@ const ChatBotWidget = () => {
     botSay(FAQ.payment_methods.a + "\n\n**Payment Issue?**\n• Failed payment → auto-refunded in 5–7 days\n• Charged but no order? → Raise a ticket immediately", [
       { id:"new_ticket", label:"🎫 Raise Ticket"    },
       { id:"go_contact", label:"📬 Contact Support" },
-      backPill,
+      BACK_PILL,
     ]);
   }, [botSay]);
 
@@ -983,7 +748,7 @@ const ChatBotWidget = () => {
       { id:"faq_account",   label:"👤 Account"         },
       { id:"faq_warranty",  label:"🛡️ Warranty"        },
       { id:"faq_giftcard",  label:"🎁 Gift Cards"      },
-      backPill,
+      BACK_PILL,
     ]);
   }, [botSay]);
 
@@ -992,7 +757,7 @@ const ChatBotWidget = () => {
     botSay(FAQ.coupon.a, [
       { id:"go_my_coupons", label:"🏷️ My Coupons Page" },
       { id:"go_cart",       label:"🛒 Go to Cart"       },
-      backPill,
+      BACK_PILL,
     ]);
   }, [botSay]);
 
@@ -1004,7 +769,7 @@ const ChatBotWidget = () => {
         { id:"new_ticket",    label:"🆕 Raise a Ticket"  },
         { id:"my_tickets",    label:"🎫 My Tickets"       },
         { id:"go_contact",    label:"📬 Contact Us Page"  },
-        backPill,
+        BACK_PILL,
       ]
     );
   }, [botSay]);
@@ -1015,12 +780,12 @@ const ChatBotWidget = () => {
       botSay("Please **login** first to access this feature.", [
         { id:"go_login",    label:"🔑 Login Now"   },
         { id:"go_register", label:"📝 Register"    },
-        backPill,
+        BACK_PILL,
       ]);
     } else cb();
   }, [isLogin, botSay]);
 
-  const dispatch_action = useCallback((id, label) => {
+  const dispatchAction = useCallback((id, label) => {
     /* ── navigation map ── */
     const navMap = {
       go_home        : "/",
@@ -1061,11 +826,11 @@ const ChatBotWidget = () => {
       case "faq"          : userSay(label); doFAQ();                     break;
       case "coupon_help"  : userSay(label); doCouponHelp();              break;
       case "human"        : userSay(label); doHuman();                   break;
-      case "faq_shipping" : userSay(label); botSay(FAQ.shipping.a,       [backPill]); break;
-      case "faq_cancel"   : userSay(label); botSay(FAQ.cancel_order.a,   [{ id:"my_orders",label:"📦 My Orders" }, backPill]); break;
-      case "faq_account"  : userSay(label); botSay(FAQ.account_help.a,   [{ id:"go_settings",label:"⚙️ Settings" }, backPill]); break;
-      case "faq_warranty" : userSay(label); botSay(FAQ.warranty.a,       [{ id:"new_ticket",label:"🎫 Raise Ticket" }, backPill]); break;
-      case "faq_giftcard" : userSay(label); botSay(FAQ.gift_card.a,      [{ id:"go_home",label:"🎁 Buy Gift Card" }, backPill]); break;
+      case "faq_shipping" : userSay(label); botSay(FAQ.shipping.a,       [BACK_PILL]); break;
+      case "faq_cancel"   : userSay(label); botSay(FAQ.cancel_order.a,   [{ id:"my_orders",label:"📦 My Orders" }, BACK_PILL]); break;
+      case "faq_account"  : userSay(label); botSay(FAQ.account_help.a,   [{ id:"go_settings",label:"⚙️ Settings" }, BACK_PILL]); break;
+      case "faq_warranty" : userSay(label); botSay(FAQ.warranty.a,       [{ id:"new_ticket",label:"🎫 Raise Ticket" }, BACK_PILL]); break;
+      case "faq_giftcard" : userSay(label); botSay(FAQ.gift_card.a,      [{ id:"go_home",label:"🎁 Buy Gift Card" }, BACK_PILL]); break;
       case "back_menu"    :
         userSay("↩ Main Menu");
         setTimeout(() => openMenu(), 150);
@@ -1075,33 +840,15 @@ const ChatBotWidget = () => {
         botSay("I didn't catch that. Here's what I can help you with:", [], mainMenu);
     }
   }, [
-    isLogin, userSay, botSay, navigate, mainMenu,
+    isLogin, userSay, botSay, navigate, mainMenu, handleClose,
     requireLogin, doMyOrders, doTrackPrompt, doMyProfile,
     doMyAddresses, doCartSummary, doMyTickets, doNewTicket,
     doReturnHelp, doPaymentHelp, doFAQ, doCouponHelp, doHuman,
     openMenu,
   ]);
 
-  const handlePill = useCallback((pill) => {
-    // Handle feedback
-    if (pill.id.startsWith("feedback_")) {
-      const rating = pill.id.replace("feedback_", "");
-      userSay(pill.label);
-      if (rating === "good") {
-        botSay("Thank you for the feedback! 🙏 We're glad we could help. Have a great day!");
-      } else if (rating === "okay") {
-        botSay("Thanks for letting us know. We'll keep improving! If you need anything else, I'm here.");
-      } else {
-        botSay("Sorry we couldn't meet your expectations. 😔 Would you like to speak with a human agent for better assistance?", [
-          { id:"human", label:"🧑‍💼 Talk to Agent" },
-          { id:"new_ticket", label:"🎫 Raise Ticket" },
-        ]);
-      }
-      return;
-    }
-    dispatch_action(pill.id, pill.label);
-  }, [dispatch_action, userSay, botSay]);
-  const handleMenu = useCallback((item) => dispatch_action(item.id, `${item.emoji} ${item.label}`), [dispatch_action]);
+  const handlePill = useCallback((pill) => dispatchAction(pill.id, pill.label), [dispatchAction]);
+  const handleMenu = useCallback((item) => dispatchAction(item.id, `${item.emoji} ${item.label}`), [dispatchAction]);
 
   /* ════════════════════ FREE-TEXT NLP ════════════════════ */
   const handleSend = useCallback(() => {
@@ -1110,10 +857,6 @@ const ChatBotWidget = () => {
     setInput("");
 
     const t = text.toLowerCase();
-    
-    // Detect sentiment
-    const detectedSentiment = detectSentiment(text);
-    setSentiment(detectedSentiment);
 
     /* greetings */
     if (/^(hi+|hello|hey|howdy|namaste|hola|sup|yo|good\s?(morning|evening|afternoon|day))/.test(t)) {
@@ -1125,42 +868,7 @@ const ChatBotWidget = () => {
     /* farewells */
     if (/\b(bye|goodbye|see you|cya|thanks|thank you|thx|ok done|that'?s all|no more)\b/.test(t)) {
       userSay(text);
-      botSay("You're welcome! 😊 Happy shopping at ShopEase. See you next time! 🛍️\n\n*Rate this conversation:*", [
-        { id:"feedback_good", label:"👍 Helpful" },
-        { id:"feedback_okay", label:"😐 Okay" },
-        { id:"feedback_bad",  label:"👎 Not Helpful" },
-      ]);
-      return;
-    }
-
-    // Handle frustrated sentiment - escalate immediately
-    if (detectedSentiment === "frustrated") {
-      userSay(text);
-      botSay(
-        "I'm really sorry to hear you're having a frustrating experience. 😔\n\nLet me connect you with our **senior support team** right away — they'll personally handle your issue with priority.\n\n**Your concern matters to us.**",
-        [
-          { id:"new_ticket",  label:"🎫 Raise Priority Ticket" },
-          { id:"human",       label:"🧑‍💼 Talk to Manager" },
-          { id:"go_contact",  label:"📞 Call Support Now" },
-          backPill,
-        ]
-      );
-      return;
-    }
-
-    // Handle urgent requests
-    if (detectedSentiment === "urgent") {
-      userSay(text);
-      botSay(
-        "Got it — this sounds **urgent**. Let me help you immediately. ⚡\n\nWhat specifically do you need urgent help with?",
-        [
-          { id:"track_order",  label:"🚚 Track Order"   },
-          { id:"new_ticket",   label:"🎫 Priority Ticket" },
-          { id:"return_help",  label:"↩️ Return/Refund" },
-          { id:"payment_help", label:"💳 Payment Issue" },
-          { id:"human",        label:"🧑‍💼 Human Agent" },
-        ]
-      );
+      botSay("You're welcome! 😊 Happy shopping at ShopEase. See you next time! 🛍️");
       return;
     }
 
@@ -1180,7 +888,7 @@ const ChatBotWidget = () => {
     }
     /* cancel */
     if (/cancel.*order|order.*cancel/.test(t)) {
-      botSay(FAQ.cancel_order.a, [{ id:"my_orders",label:"📦 My Orders" }, backPill]); return;
+      botSay(FAQ.cancel_order.a, [{ id:"my_orders",label:"📦 My Orders" }, BACK_PILL]); return;
     }
     /* payment */
     if (/pay(ment|ing|ed)?|bill|invoice|charge|debit|credit|upi|emi|failed.*pay|pay.*fail/.test(t)) {
@@ -1188,7 +896,7 @@ const ChatBotWidget = () => {
     }
     /* shipping */
     if (/ship(ping)?|delivery time|how long|when.*deliver|dispatch time/.test(t)) {
-      botSay(FAQ.shipping.a, [backPill]); return;
+      botSay(FAQ.shipping.a, [BACK_PILL]); return;
     }
     /* profile */
     if (/\bprofile\b|my name|my email|my phone|update.*detail|account.*detail/.test(t)) {
@@ -1219,15 +927,15 @@ const ChatBotWidget = () => {
     }
     /* warranty */
     if (/warrant(y|ies)|guarantee|product.*quality/.test(t)) {
-      botSay(FAQ.warranty.a, [{ id:"new_ticket",label:"🎫 Raise Ticket" }, backPill]); return;
+      botSay(FAQ.warranty.a, [{ id:"new_ticket",label:"🎫 Raise Ticket" }, BACK_PILL]); return;
     }
     /* gift card */
     if (/gift.*card|giftcard|gift voucher/.test(t)) {
-      botSay(FAQ.gift_card.a, [{ id:"go_home",label:"🎁 Buy Gift Card" }, backPill]); return;
+      botSay(FAQ.gift_card.a, [{ id:"go_home",label:"🎁 Buy Gift Card" }, BACK_PILL]); return;
     }
     /* account / password */
     if (/password|forgot.*pass|reset.*pass|change.*pass|login.*issue|can'?t.*log/.test(t)) {
-      botSay(FAQ.account_help.a, [{ id:"go_settings",label:"⚙️ Settings" }, backPill]); return;
+      botSay(FAQ.account_help.a, [{ id:"go_settings",label:"⚙️ Settings" }, BACK_PILL]); return;
     }
     /* login / register */
     if (/\blogin\b|sign.?in/.test(t)) {
@@ -1240,34 +948,17 @@ const ChatBotWidget = () => {
     if (/\bhelp\b|faq|question|how to|how do i|what is|explain/.test(t)) {
       doFAQ(); return;
     }
-    
-    /* ── Smart contextual fallback with proactive suggestions ── */
-    const suggestions = [];
-    
-    // Cart has items? Suggest checkout
-    if (cartCount > 0) {
-      suggestions.push({ id:"go_checkout", label:`🛒 Checkout (${cartCount} items)` });
-    }
-    
-    // Has pending orders? Suggest tracking
-    if (isLogin) {
-      suggestions.push({ id:"my_orders", label:"📦 Check My Orders" });
-    }
-    
-    // Always offer help
-    suggestions.push({ id:"faq", label:"❓ Browse FAQs" });
-    suggestions.push(backPill);
-    
+    /* fallback */
     botSay(
       "I'm not entirely sure about that, but here's what I can help you with:",
-      suggestions.length > 0 ? suggestions : [],
+      [],
       mainMenu
     );
   }, [
-    input, user, isLogin, mainMenu, botSay, userSay, navigate,
+    input, user, isLogin, mainMenu, botSay, userSay, navigate, handleClose,
     requireLogin, doMyOrders, doTrackPrompt, doReturnHelp, doPaymentHelp,
     doMyProfile, doMyAddresses, doCartSummary, doCouponHelp,
-    doMyTickets, doNewTicket, doHuman, doFAQ, openMenu,
+    doMyTickets, doNewTicket, doHuman, doFAQ,
   ]);
 
   const handleKey = (e) => {
@@ -1283,50 +974,39 @@ const ChatBotWidget = () => {
         {/* Peek bubble */}
         {!isOpen && unread > 0 && (
           <button onClick={handleOpen}
-            className="flex items-center gap-2.5 bg-white/95 backdrop-blur-md border border-white/60 shadow-2xl shadow-indigo-200/60 rounded-2xl px-3 py-2 hover:shadow-indigo-300/60 transition-all max-w-[240px]"
-            style={{ animation: "slideUpFade 0.5s ease-out" }}>
-            <GirlAvatar size={44} speaking={true} className="flex-shrink-0" />
+            className="flex items-center gap-2.5 bg-white/95 backdrop-blur-md border border-white/60 shadow-2xl shadow-indigo-200/60 rounded-2xl px-4 py-2.5 animate-bounce-once hover:shadow-indigo-300/60 transition-all max-w-[230px]">
+            <div className="w-10 h-10 rounded-full overflow-hidden shadow-md shadow-indigo-300 flex-shrink-0 ring-2 ring-indigo-100">
+              <I.Bot cls="w-10 h-10" />
+            </div>
             <div className="text-left">
-              <p className="text-xs font-bold text-gray-800">Hi! I'm {BOT_NAME} 👋</p>
-              <p className="text-[10px] text-gray-500">How can I help you today?</p>
-              <div className="flex gap-0.5 mt-1">
-                {[0,120,240].map(d=>(
-                  <span key={d} className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{animationDelay:`${d}ms`}} />
-                ))}
-              </div>
+              <p className="text-xs font-bold text-gray-800">Hi! I'm Shivi 👋</p>
+              <p className="text-[10px] text-gray-500">How can I help you?</p>
             </div>
           </button>
         )}
 
-        {/* Main FAB — girl avatar */}
+        {/* Main FAB */}
         <button
           onClick={isOpen ? handleClose : handleOpen}
-          aria-label={isOpen ? `Close ${BOT_NAME}` : `Chat with ${BOT_NAME}`}
-          className={`relative w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 active:scale-90 overflow-visible
-            ${isOpen ? "bg-gray-800 hover:bg-gray-700 shadow-gray-400/40" : "shadow-indigo-400/50 hover:shadow-indigo-500/60"}`}
-          style={!isOpen ? { background:"linear-gradient(135deg,#6366f1 0%,#7c3aed 50%,#9333ea 100%)" } : {}}>
-          {isOpen ? (
-            <span className="text-white"><I.X /></span>
-          ) : (
-            <div className="relative w-full h-full flex items-center justify-center"
-              style={{ animation:"float 3s ease-in-out infinite" }}>
-              <GirlAvatar size={56} speaking={false} />
-            </div>
-          )}
-          {/* Unread badge */}
+          aria-label={isOpen ? "Close Tanne" : "Chat with Tanne"}
+          className={`relative w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 active:scale-90 overflow-hidden
+            ${isOpen
+              ? "bg-gray-800 hover:bg-gray-700 shadow-gray-400/40"
+              : `shadow-indigo-400/50 hover:shadow-indigo-500/60 ring-2 ring-white`
+            }`}>
+          {isOpen
+            ? <span className="text-white"><I.X /></span>
+            : <I.Bot cls="w-14 h-14" />
+          }
+          {/* unread badge */}
           {!isOpen && unread > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse">
+            <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse">
               {unread}
             </span>
           )}
-          {/* Online dot */}
-          {!isOpen && <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full shadow" />}
-          {/* Ripple rings */}
+          {/* online dot */}
           {!isOpen && (
-            <>
-              <span className="absolute inset-0 rounded-full border-2 border-indigo-400/40 animate-ping" style={{animationDuration:"2s"}} />
-              <span className="absolute inset-[-6px] rounded-full border border-indigo-300/20 animate-ping" style={{animationDuration:"2.5s",animationDelay:"0.5s"}} />
-            </>
+            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full shadow" />
           )}
         </button>
       </div>
@@ -1354,9 +1034,11 @@ const ChatBotWidget = () => {
           {/* Decorative glow */}
           <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
 
-          {/* Girl Avatar in header — larger, animated */}
-          <div className="relative z-10 flex-shrink-0" style={{ animation:"float 4s ease-in-out infinite" }}>
-            <GirlAvatar size={44} speaking={typing} />
+          {/* Avatar */}
+          <div className="relative z-10 flex-shrink-0">
+            <div className="w-11 h-11 rounded-full overflow-hidden shadow-lg ring-2 ring-white/50">
+              <I.Bot cls="w-11 h-11" />
+            </div>
             <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full" />
           </div>
 
@@ -1410,7 +1092,7 @@ const ChatBotWidget = () => {
               <div className="relative z-10">
                 {msgs.map(msg => {
                   /* ── card messages ── */
-                  if (msg.text === "__CARDS__" && msg.cards) {
+                  if (msg.type === "cards" && msg.cards) {
                     if (msg.cardType === "orders") {
                       return (
                         <div key={msg.id} className="mb-3 pl-9">
@@ -1435,7 +1117,7 @@ const ChatBotWidget = () => {
                       return (
                         <div key={msg.id} className="mb-3 pl-9">
                           {msg.cards.map((a, i) => (
-                            <AddressCard key={a._id || i} addr={a} index={i} />
+                            <AddressCard key={a._id || (a.address_line1 + a.pincode)} addr={a} index={i} />
                           ))}
                         </div>
                       );
@@ -1525,7 +1207,7 @@ const ChatBotWidget = () => {
               <div className="flex items-center justify-center gap-1.5 mt-1.5">
                 <I.Star />
                 <p className="text-[10px] text-gray-400 font-medium">
-                  Aria by ShopEase · Available 24 × 7
+                  Tanne by ShopEase · Available 24 × 7
                 </p>
               </div>
             </div>
@@ -1536,8 +1218,10 @@ const ChatBotWidget = () => {
         {isMinimized && (
           <div className="relative bg-white/90 backdrop-blur px-4 py-3 flex items-center justify-between cursor-pointer" onClick={handleMinimize}>
             <div className="flex items-center gap-2">
-              <GirlAvatar size={28} speaking={false} />
-              <span className="text-xs font-semibold text-gray-700">{BOT_NAME} — ShopEase Assistant</span>
+              <div className="w-7 h-7 rounded-full overflow-hidden ring-1 ring-indigo-100 flex-shrink-0">
+                <I.Bot cls="w-7 h-7" />
+              </div>
+              <span className="text-xs font-semibold text-gray-700">Tanne — ShopEase Assistant</span>
             </div>
             <span className="text-xs text-indigo-500 font-semibold">Expand ↑</span>
           </div>
