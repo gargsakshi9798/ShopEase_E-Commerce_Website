@@ -80,7 +80,7 @@ axiosClient.interceptors.request.use(
           );
         }
       }
-    } else if (url.includes("/admin/")) {
+    } else if (url.includes("/admin/") || url.includes("/common/auth/admin")) {
       const token = Cookies.get(ADMIN_COOKIE);
       if (token) {
         if (isTokenValid(token)) {
@@ -149,14 +149,16 @@ axiosClient.interceptors.response.use(
             window.location.href = "/login";
           }
         }
-      } else if (url.includes("/admin/")) {
+      } else if (url.includes("/admin/") || url.includes("/common/auth/admin")) {
         clearAdminToken();
         if (_store) {
           _store.dispatch({ type: "auth/logout" });
         }
+        // Only redirect to login if currently inside the admin panel
         if (!skipRedirect && currentPath.startsWith("/admin")) {
           window.location.href = "/login";
         }
+        // If on public store (/), just clear state silently — no redirect
       }
     }
 

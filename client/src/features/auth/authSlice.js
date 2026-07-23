@@ -40,7 +40,7 @@ export const getAdminDetails = createAsyncThunk(
   "auth/getAdminDetails",
   async (_, { rejectWithValue }) => {
     try {
-      return await GET(APIS.Auth.AdminDetails);
+      return await GET(APIS.Auth.AdminDetails, {}, { skipRedirect: true });
     } catch (error) {
       const status = error.response?.status;
       // Only clear the cookie on a definitive auth rejection (401/403).

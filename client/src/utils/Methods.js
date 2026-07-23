@@ -4,8 +4,8 @@ import axiosClient from "./ApiInstance";
 // DO NOT prepend BASE here; doing so causes double-baseURL requests like:
 //   http://localhost:5000/api/v1/http://localhost:5000/api/v1/customer/profile
 
-export const GET = async (url, params = {}) => {
-  const response = await axiosClient.get(url, { params });
+export const GET = async (url, params = {}, config = {}) => {
+  const response = await axiosClient.get(url, { params, ...config });
   return response.data;
 };
 

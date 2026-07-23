@@ -62,8 +62,20 @@ const PublicHeader = () => {
   const cartCount     = useSelector((s) => s.publicCart?.count     ?? 0);
   const wishlistCount = useSelector((s) => s.publicWishlist?.count ?? 0);
   const customer      = useSelector((s) => s.customerAuth?.user    ?? null);
+  const adminAuth     = useSelector((s) => s.auth);
   const { notifications, unread: unreadNotifs } =
     useSelector((s) => s.publicNotification);
+
+  // If no customer is logged in but an admin/employee is, use their data
+  // so the header shows the correct profile instead of "Sign In"
+  const ADMIN_ROLES  = ["super_admin", "admin", "employee"];
+  const isAdminInStore = !customer && adminAuth?.isLogin && ADMIN_ROLES.includes(adminAuth?.role_slug);
+  // Unified display user — customer takes priority, else use admin profile
+  const displayUser  = customer ?? (isAdminInStore ? {
+    name:          adminAuth.data?.name          ?? "Admin",
+    email:         adminAuth.data?.email         ?? "",
+    profile_image: adminAuth.data?.profile_image ?? null,
+  } : null);
 
   // ── Auto-fetch notifications every 60s when logged in ──────────────────
   const loadNotifs = useCallback(() => {
@@ -92,9 +104,14 @@ const PublicHeader = () => {
   useEffect(() => { setMobileMenuOpen(false); setNotifOpen(false); }, [location.pathname]);
 
   const handleLogout = () => {
-    dispatch(customerLogout());
+    if (isAdminInStore) {
+      // Employee/admin in store — go back to admin panel, don't touch customer session
+      navigate("/admin/dashboard");
+    } else {
+      dispatch(customerLogout());
+      navigate("/login");
+    }
     setAccountDropdown(false);
-    navigate("/login");
   };
 
   const handleNotifClick = (n) => {
@@ -209,7 +226,7 @@ const PublicHeader = () => {
             </Link>
 
             {/* ── Notification Bell (only when logged in) ───────────────── */}
-            {customer && (
+            {displayUser && !isAdminInStore && (
               <div className="relative flex flex-col items-center gap-0.5" ref={notifRef}>
                 <button
                   onClick={() => { setNotifOpen((v) => !v); setAccountDropdown(false); }}
@@ -317,17 +334,17 @@ const PublicHeader = () => {
             )}
 
             {/* Account */}
-            {customer ? (
+            {displayUser ? (
               <div className="relative" ref={accountRef}>
                 <button
                   onClick={() => setAccountDropdown((v) => !v)}
                   className="flex flex-col items-center gap-0.5 group"
                 >
                   <div className="w-6 h-6 bg-primary-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                    {customer.name?.[0]?.toUpperCase()}
+                    {displayUser.name?.[0]?.toUpperCase()}
                   </div>
                   <span className="text-[11px] text-gray-600 group-hover:text-primary-600 transition-colors leading-none truncate max-w-[52px]">
-                    {customer.name?.split(" ")[0]}
+                    {displayUser.name?.split(" ")[0]}
                   </span>
                 </button>
 
@@ -337,37 +354,62 @@ const PublicHeader = () => {
                     <div className="bg-gradient-to-br from-primary-600 to-indigo-700 px-4 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-white/20 border-2 border-white/40 rounded-xl flex items-center justify-center text-white text-lg font-extrabold flex-shrink-0">
-                          {customer.name?.[0]?.toUpperCase()}
+                          {displayUser.name?.[0]?.toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-extrabold text-white truncate">{customer.name}</p>
-                          <p className="text-xs text-white/70 truncate">{customer.email}</p>
-                          <span className="inline-flex items-center gap-1 bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full mt-1">🏆 Gold Member</span>
+                          <p className="text-sm font-extrabold text-white truncate">{displayUser.name}</p>
+                          <p className="text-xs text-white/70 truncate">{displayUser.email}</p>
+                          {isAdminInStore ? (
+                            <span className="inline-flex items-center gap-1 bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full mt-1">
+                              🛡️ {adminAuth.data?.role_id?.name ?? adminAuth.role_slug ?? "Admin"}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full mt-1">🏆 Gold Member</span>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Primary links */}
-                    <div className="py-1">
-                      <Link to="/account" onClick={() => setAccountDropdown(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
-                        <MdDashboard size={17} className="text-gray-400 group-hover:text-primary-600"/> My Account Dashboard
-                      </Link>
-                      <Link to="/my-profile" onClick={() => setAccountDropdown(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
-                        <MdAccountCircle size={17} className="text-gray-400 group-hover:text-primary-600"/> My Profile
-                      </Link>
-                      <Link to="/my-orders" onClick={() => setAccountDropdown(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
-                        <MdShoppingBag size={17} className="text-gray-400 group-hover:text-primary-600"/> My Orders
-                      </Link>
-                      <Link to="/wishlist" onClick={() => setAccountDropdown(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
-                        <MdFavoriteBorder size={17} className="text-gray-400 group-hover:text-primary-600"/> My Wishlist
-                      </Link>
-                    </div>
-
-                    {/* Secondary links */}
+                    {/* Admin in store — show back to dashboard link + limited options */}
+                    {isAdminInStore ? (
+                      <div className="py-1">
+                        <Link to="/admin/dashboard" onClick={() => setAccountDropdown(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
+                          <MdDashboard size={17} className="text-gray-400 group-hover:text-primary-600"/> Back to Dashboard
+                        </Link>
+                        <Link to="/admin/profile" onClick={() => setAccountDropdown(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
+                          <MdAccountCircle size={17} className="text-gray-400 group-hover:text-primary-600"/> My Profile
+                        </Link>
+                        <div className="border-t border-gray-100 mt-1 pt-1">
+                          <button onClick={handleLogout}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-primary-600 hover:bg-primary-50 transition-colors">
+                            <MdDashboard size={17}/> Go to Admin Panel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-1">
+                        <Link to="/account" onClick={() => setAccountDropdown(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
+                          <MdDashboard size={17} className="text-gray-400 group-hover:text-primary-600"/> My Account Dashboard
+                        </Link>
+                        <Link to="/my-profile" onClick={() => setAccountDropdown(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
+                          <MdAccountCircle size={17} className="text-gray-400 group-hover:text-primary-600"/> My Profile
+                        </Link>
+                        <Link to="/my-orders" onClick={() => setAccountDropdown(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
+                          <MdShoppingBag size={17} className="text-gray-400 group-hover:text-primary-600"/> My Orders
+                        </Link>
+                        <Link to="/wishlist" onClick={() => setAccountDropdown(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors group">
+                          <MdFavoriteBorder size={17} className="text-gray-400 group-hover:text-primary-600"/> My Wishlist
+                        </Link>
+                      </div>
+                    )}
+                    {!isAdminInStore && (
+                      <>
                     <div className="border-t border-gray-100 py-1">
                       <Link to="/my-addresses" onClick={() => setAccountDropdown(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors group">
@@ -415,6 +457,8 @@ const PublicHeader = () => {
                         <MdLogout size={17}/> Sign Out
                       </button>
                     </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -542,17 +586,30 @@ const PublicHeader = () => {
 
           {/* Mobile account actions */}
           <div className="border-t border-gray-100 px-4 py-3">
-            {customer ? (
+            {displayUser ? (
               <div className="space-y-1">
                 <div className="flex items-center gap-3 px-1 py-2 mb-2">
                   <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center text-white text-sm font-extrabold flex-shrink-0">
-                    {customer.name?.[0]?.toUpperCase()}
+                    {displayUser.name?.[0]?.toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-extrabold text-gray-900 truncate">{customer.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{customer.email}</p>
+                    <p className="text-sm font-extrabold text-gray-900 truncate">{displayUser.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{displayUser.email}</p>
                   </div>
                 </div>
+                {isAdminInStore ? (
+                  <>
+                    <Link to="/admin/dashboard"
+                      className="block px-3 py-2 text-sm text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-colors">
+                      Back to Dashboard
+                    </Link>
+                    <Link to="/admin/profile"
+                      className="block px-3 py-2 text-sm text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-colors">
+                      My Profile
+                    </Link>
+                  </>
+                ) : (
+                  <>
                 {[
                   { to:"/account",      label:"My Account"      },
                   { to:"/my-orders",    label:"My Orders"       },
@@ -571,6 +628,8 @@ const PublicHeader = () => {
                   className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition-colors">
                   <MdLogout size={16}/> Sign Out
                 </button>
+                  </>
+                )}
               </div>
             ) : (
               <div className="flex gap-3">
