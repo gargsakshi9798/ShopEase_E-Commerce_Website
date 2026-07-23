@@ -4,7 +4,11 @@ const heroConfig = {
   bg: "from-[#1a0533] via-[#2d0f5e] to-[#1a0533]",
   accentColor: "text-violet-400",
   accentBtnColor: "bg-violet-600 hover:bg-violet-700",
-  icons: ["📱", "📲", "🔋"],
+  icons: [
+    "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=160&q=80",
+    "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=180&q=80",
+    "https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=160&q=80",
+  ],
   tagline: "Latest smartphones from Apple, Samsung, OnePlus & more. Best prices, guaranteed.",
   offerCode: "MOBILE15",
   offerText: "Extra 15% off",

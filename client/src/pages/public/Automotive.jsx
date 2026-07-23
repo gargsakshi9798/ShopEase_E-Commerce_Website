@@ -4,7 +4,11 @@ const heroConfig = {
   bg: "from-[#0f172a] via-[#1e293b] to-[#0f172a]",
   accentColor: "text-red-400",
   accentBtnColor: "bg-red-600 hover:bg-red-700",
-  icons: ["🚗", "🏍️", "🔧"],
+  icons: [
+    "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=160&q=80",
+    "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=180&q=80",
+    "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=160&q=80",
+  ],
   tagline: "Automotive accessories, tools, care products & more. Up to 35% off on top brands.",
   offerCode: "AUTO15",
   offerText: "Extra 15% off",

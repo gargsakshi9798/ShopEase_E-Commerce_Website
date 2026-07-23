@@ -4,10 +4,12 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "dev":         "vite",
+    "dev:clean":   "node scripts/clear-cache.js && vite --force",
+    "cache:clear": "node scripts/clear-cache.js",
+    "build":       "vite build",
+    "lint":        "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "preview":     "vite preview"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.3.0",

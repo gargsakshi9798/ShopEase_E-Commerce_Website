@@ -4,7 +4,11 @@ const heroConfig = {
   bg: "from-[#7c2d12] via-[#9a3412] to-[#7c2d12]",
   accentColor: "text-orange-300",
   accentBtnColor: "bg-orange-500 hover:bg-orange-600",
-  icons: ["🍳", "🏠", "🫖"],
+  icons: [
+    "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=160&q=80",
+    "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=180&q=80",
+    "https://images.unsplash.com/photo-1565538810643-b5bdb714032a?w=160&q=80",
+  ],
   tagline: "Everything for your home — cookware, decor, furniture & more. Up to 55% off.",
   offerCode: "HOME20",
   offerText: "Extra 20% off",

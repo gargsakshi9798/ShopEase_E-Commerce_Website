@@ -42,9 +42,13 @@ export const getAdminDetails = createAsyncThunk(
     try {
       return await GET(APIS.Auth.AdminDetails);
     } catch (error) {
-      // Clear stale cookie on server rejection
-      clearAdminToken();
-      return rejectWithValue(error.response?.data);
+      const status = error.response?.status;
+      // Only clear the cookie on a definitive auth rejection (401/403).
+      // Network errors, 500s etc. should NOT log the user out.
+      if (status === 401 || status === 403) {
+        clearAdminToken();
+      }
+      return rejectWithValue({ status, message: error.response?.data?.message });
     }
   }
 );
@@ -135,15 +139,20 @@ const authSlice = createSlice({
           state.isLogin     = true;
         }
       })
-      .addCase(getAdminDetails.rejected, (state) => {
-        // Server rejected the token — full reset
-        state.status      = IDS.SLICESTATUS.Failed;
-        state.data        = {};
-        state.token       = null;
-        state.role        = null;
-        state.role_slug   = null;
-        state.permissions = [];
-        state.isLogin     = false;
+      .addCase(getAdminDetails.rejected, (state, action) => {
+        state.status = IDS.SLICESTATUS.Failed;
+        // Only fully reset auth state on a definitive 401/403 — don't log the
+        // user out just because of a network hiccup or a 500 server error.
+        const status = action.payload?.status;
+        if (status === 401 || status === 403) {
+          state.data        = {};
+          state.token       = null;
+          state.role        = null;
+          state.role_slug   = null;
+          state.permissions = [];
+          state.isLogin     = false;
+        }
+        // For all other errors (network, 500, etc.) keep existing auth state intact
       })
 
       // ── logout ───────────────────────────────────────────────────────────

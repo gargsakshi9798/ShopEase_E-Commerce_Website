@@ -4,7 +4,11 @@ const heroConfig = {
   bg: "from-[#14532d] via-[#15803d] to-[#14532d]",
   accentColor: "text-lime-300",
   accentBtnColor: "bg-lime-600 hover:bg-lime-700",
-  icons: ["🛒", "🥦", "🍎"],
+  icons: [
+    "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=160&q=80",
+    "https://images.unsplash.com/photo-1543168256-418811576931?w=180&q=80",
+    "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=160&q=80",
+  ],
   tagline: "Fresh groceries, staples, snacks & beverages delivered to your door. Best prices daily.",
   offerCode: "FRESH10",
   offerText: "10% off on first order",

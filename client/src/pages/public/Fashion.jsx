@@ -4,7 +4,11 @@ const heroConfig = {
   bg: "from-[#1a1a2e] via-[#16213e] to-[#0f3460]",
   accentColor: "text-pink-400",
   accentBtnColor: "bg-pink-500 hover:bg-pink-600",
-  icons: ["👗", "👔", "👟"],
+  icons: [
+    "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?w=160&q=80",
+    "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=180&q=80",
+    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=160&q=80",
+  ],
   tagline: "Discover the latest trends — casuals, ethnic, footwear & more. Up to 70% off on top brands.",
   offerCode: "FASHION30",
   offerText: "Extra 30% off",

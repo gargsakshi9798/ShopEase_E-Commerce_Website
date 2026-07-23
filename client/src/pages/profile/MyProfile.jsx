@@ -41,7 +41,7 @@ const MyProfile = () => {
   const pwdForm     = useForm();
   const newPwd      = pwdForm.watch("new_password");
 
-  useEffect(() => { dispatch(getAdminDetails()); }, [dispatch]);
+  // Data is already in Redux from App.jsx initial load — no need to re-fetch here
 
   useEffect(() => {
     if (user) {

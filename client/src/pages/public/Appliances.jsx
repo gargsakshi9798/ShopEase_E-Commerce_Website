@@ -4,7 +4,11 @@ const heroConfig = {
   bg: "from-[#1e3a5f] via-[#1d4ed8] to-[#1e3a5f]",
   accentColor: "text-sky-300",
   accentBtnColor: "bg-sky-500 hover:bg-sky-600",
-  icons: ["🔌", "❄️", "🫧"],
+  icons: [
+    "https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?w=160&q=80",
+    "https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=180&q=80",
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=160&q=80",
+  ],
   tagline: "Top home appliances — ACs, washing machines, refrigerators & more. Up to 45% off.",
   offerCode: "APPLIANCE10",
   offerText: "Extra 10% off",

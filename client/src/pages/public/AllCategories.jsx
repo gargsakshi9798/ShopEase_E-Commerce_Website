@@ -17,7 +17,7 @@ const allCategories = [
     name: "Fashion",
     path: "/fashion",
     icon: FaTshirt,
-    emoji: "👗",
+    img: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=120&q=80",
     gradient: "from-pink-500 to-rose-600",
     lightBg: "bg-pink-50",
     textColor: "text-pink-600",
@@ -35,7 +35,7 @@ const allCategories = [
     name: "Electronics",
     path: "/electronics",
     icon: MdFlashOn,
-    emoji: "💻",
+    img: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=120&q=80",
     gradient: "from-blue-500 to-indigo-600",
     lightBg: "bg-blue-50",
     textColor: "text-blue-600",
@@ -53,7 +53,7 @@ const allCategories = [
     name: "Mobiles",
     path: "/mobiles",
     icon: FaMobileAlt,
-    emoji: "📱",
+    img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=120&q=80",
     gradient: "from-violet-500 to-purple-700",
     lightBg: "bg-violet-50",
     textColor: "text-violet-600",
@@ -71,7 +71,7 @@ const allCategories = [
     name: "Home & Kitchen",
     path: "/home-kitchen",
     icon: FaHome,
-    emoji: "🏠",
+    img: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=120&q=80",
     gradient: "from-amber-500 to-orange-600",
     lightBg: "bg-amber-50",
     textColor: "text-amber-600",
@@ -89,7 +89,7 @@ const allCategories = [
     name: "Appliances",
     path: "/appliances",
     icon: FaBolt,
-    emoji: "⚡",
+    img: "https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=120&q=80",
     gradient: "from-cyan-500 to-blue-600",
     lightBg: "bg-cyan-50",
     textColor: "text-cyan-600",
@@ -107,7 +107,7 @@ const allCategories = [
     name: "Beauty",
     path: "/beauty",
     icon: FaSpa,
-    emoji: "🌸",
+    img: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=120&q=80",
     gradient: "from-rose-500 to-pink-700",
     lightBg: "bg-rose-50",
     textColor: "text-rose-600",
@@ -125,7 +125,7 @@ const allCategories = [
     name: "Sports",
     path: "/sports",
     icon: FaRunning,
-    emoji: "⚽",
+    img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=120&q=80",
     gradient: "from-green-500 to-emerald-700",
     lightBg: "bg-green-50",
     textColor: "text-green-600",
@@ -143,7 +143,7 @@ const allCategories = [
     name: "Books",
     path: "/books",
     icon: FaBook,
-    emoji: "📚",
+    img: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=120&q=80",
     gradient: "from-orange-500 to-red-600",
     lightBg: "bg-orange-50",
     textColor: "text-orange-600",
@@ -161,7 +161,7 @@ const allCategories = [
     name: "Toys",
     path: "/toys",
     icon: FaGamepad,
-    emoji: "🎲",
+    img: "https://images.pexels.com/photos/163696/toy-car-toy-box-mini-163696.jpeg?auto=compress&cs=tinysrgb&w=120",
     gradient: "from-purple-500 to-fuchsia-700",
     lightBg: "bg-purple-50",
     textColor: "text-purple-600",
@@ -179,7 +179,7 @@ const allCategories = [
     name: "Grocery",
     path: "/grocery",
     icon: FaLeaf,
-    emoji: "🛒",
+    img: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=120&q=80",
     gradient: "from-lime-500 to-green-600",
     lightBg: "bg-lime-50",
     textColor: "text-lime-700",
@@ -197,7 +197,7 @@ const allCategories = [
     name: "Automotive",
     path: "/automotive",
     icon: FaCar,
-    emoji: "🚗",
+    img: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=120&q=80",
     gradient: "from-slate-600 to-zinc-800",
     lightBg: "bg-slate-50",
     textColor: "text-slate-600",
@@ -215,7 +215,7 @@ const allCategories = [
     name: "Health & Wellness",
     path: "/more",
     icon: FaHeart,
-    emoji: "💊",
+    img: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=120&q=80",
     gradient: "from-teal-500 to-cyan-700",
     lightBg: "bg-teal-50",
     textColor: "text-teal-600",
@@ -231,21 +231,21 @@ const allCategories = [
 ];
 
 const featuredDeals = [
-  { label: "Electronics",    discount: "Up to 50% off", emoji: "💻", path: "/electronics", color: "from-blue-600 to-indigo-700" },
-  { label: "Fashion",        discount: "Min 40% off",   emoji: "👗", path: "/fashion",     color: "from-pink-500 to-rose-600"  },
-  { label: "Books",          discount: "Flat 30% off",  emoji: "📚", path: "/books",       color: "from-orange-500 to-red-600" },
-  { label: "Grocery",        discount: "10% off",       emoji: "🛒", path: "/grocery",     color: "from-lime-600 to-green-700" },
+  { label: "Electronics",    discount: "Up to 50% off", img: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=120&q=80", path: "/electronics", color: "from-blue-600 to-indigo-700" },
+  { label: "Fashion",        discount: "Min 40% off",   img: "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?w=120&q=80", path: "/fashion",     color: "from-pink-500 to-rose-600"  },
+  { label: "Books",          discount: "Flat 30% off",  img: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=120&q=80", path: "/books",       color: "from-orange-500 to-red-600" },
+  { label: "Grocery",        discount: "10% off",       img: "https://images.unsplash.com/photo-1543168256-418811576931?w=120&q=80",   path: "/grocery",     color: "from-lime-600 to-green-700" },
 ];
 
 const topBrands = [
-  { name: "Apple",     emoji: "🍎", path: "/mobiles"     },
-  { name: "Samsung",   emoji: "📱", path: "/electronics" },
-  { name: "Nike",      emoji: "👟", path: "/sports"      },
-  { name: "LEGO",      emoji: "🧱", path: "/toys"        },
-  { name: "Prestige",  emoji: "🍳", path: "/home-kitchen"},
-  { name: "Lakme",     emoji: "💄", path: "/beauty"      },
-  { name: "Amul",      emoji: "🥛", path: "/grocery"     },
-  { name: "Michelin",  emoji: "🛞", path: "/automotive"  },
+  { name: "Apple",     img: "https://images.unsplash.com/photo-1611186871525-7d8daa84e5f8?w=80&q=80",  path: "/mobiles"     },
+  { name: "Samsung",   img: "https://images.unsplash.com/photo-1610945264803-c22b62831e6f?w=80&q=80",  path: "/electronics" },
+  { name: "Nike",      img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=80&q=80",     path: "/sports"      },
+  { name: "LEGO",      img: "https://images.pexels.com/photos/163696/toy-car-toy-box-mini-163696.jpeg?auto=compress&cs=tinysrgb&w=80", path: "/toys" },
+  { name: "Prestige",  img: "https://images.unsplash.com/photo-1585515320310-259814833e62?w=80&q=80",  path: "/home-kitchen"},
+  { name: "Lakme",     img: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=80&q=80",  path: "/beauty"      },
+  { name: "Amul",      img: "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=80&q=80",     path: "/grocery"     },
+  { name: "Michelin",  img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=80&q=80",     path: "/automotive"  },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -270,9 +270,6 @@ const AllCategories = () => {
         <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-[1280px] mx-auto px-4 py-14 flex flex-col items-center text-center">
-          <span className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-xs font-semibold mb-5 backdrop-blur">
-            <MdLocalOffer size={14} className="text-yellow-400" /> 12 Categories · 20L+ Products
-          </span>
           <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4 tracking-tight text-white">
             Shop <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">Everything</span><br />You Love
           </h1>
@@ -280,31 +277,6 @@ const AllCategories = () => {
             Explore India's widest selection of categories — from the latest gadgets and fashion to daily essentials. Huge savings, trusted sellers and fast delivery on every order.
           </p>
 
-          {/* Search */}
-          <div className="w-full max-w-lg relative">
-            <MdSearch size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search categories or products…"
-              className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white text-gray-800 text-sm font-medium outline-none shadow-xl focus:ring-2 focus:ring-violet-500 transition-all"
-            />
-            {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-300 transition-colors text-xs font-bold">
-                ✕
-              </button>
-            )}
-          </div>
-
-          {/* Quick filters */}
-          <div className="flex flex-wrap justify-center gap-2 mt-5">
-            {["Electronics", "Fashion", "Mobiles", "Grocery", "Books", "Sports"].map((q) => (
-              <button key={q} onClick={() => setSearch(q)}
-                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full text-xs font-semibold transition-all backdrop-blur">
-                {q}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -344,7 +316,9 @@ const AllCategories = () => {
             {featuredDeals.map((d) => (
               <Link key={d.label} to={d.path}
                 className={`relative bg-gradient-to-br ${d.color} rounded-2xl p-5 text-white overflow-hidden group hover:scale-[1.02] transition-transform`}>
-                <div className="absolute -right-4 -bottom-4 text-7xl opacity-20 group-hover:opacity-30 transition-opacity select-none">{d.emoji}</div>
+                <div className="absolute -right-4 -bottom-4 w-24 h-24 opacity-25 group-hover:opacity-40 transition-opacity select-none overflow-hidden rounded-xl">
+                  <img src={d.img} alt="" onError={(e) => { e.target.style.display="none"; }} className="w-full h-full object-cover" />
+                </div>
                 <p className="text-xs font-semibold text-white/80 mb-1">{d.label}</p>
                 <p className="text-lg font-extrabold leading-tight">{d.discount}</p>
                 <span className="inline-flex items-center gap-1 mt-3 text-xs font-bold bg-white/20 px-2.5 py-1 rounded-full">
@@ -387,13 +361,13 @@ const AllCategories = () => {
                   >
                     {/* Card Header */}
                     <div className={`relative bg-gradient-to-br ${cat.gradient} p-6 flex items-center justify-between overflow-hidden`}>
-                      {/* Background emoji */}
-                      <div className="absolute -right-3 -bottom-3 text-8xl opacity-20 select-none group-hover:opacity-30 transition-opacity">
-                        {cat.emoji}
+                      {/* Background image watermark */}
+                      <div className="absolute -right-3 -bottom-3 w-28 h-28 opacity-20 group-hover:opacity-30 transition-opacity select-none overflow-hidden rounded-xl">
+                        <img src={cat.img} alt="" onError={(e) => { e.target.style.display="none"; }} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex items-center gap-4 relative z-10">
-                        <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center text-3xl border border-white/30 shadow-inner">
-                          {cat.emoji}
+                        <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center border border-white/30 shadow-inner overflow-hidden">
+                          <img src={cat.img} alt={cat.name} onError={(e) => { e.target.style.display="none"; }} className="w-full h-full object-cover" />
                         </div>
                         <div>
                           <h3 className="text-xl font-extrabold text-white leading-tight">{cat.name}</h3>
@@ -452,7 +426,9 @@ const AllCategories = () => {
             {topBrands.map((b) => (
               <Link key={b.name} to={b.path}
                 className="bg-white rounded-2xl p-3 flex flex-col items-center gap-2 shadow-sm border border-gray-100 hover:border-primary-300 hover:shadow-md transition-all group">
-                <span className="text-3xl">{b.emoji}</span>
+                <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center">
+                  <img src={b.img} alt={b.name} onError={(e) => { e.target.style.display="none"; }} className="w-full h-full object-cover" />
+                </div>
                 <span className="text-xs font-bold text-gray-700 group-hover:text-primary-600 text-center">{b.name}</span>
               </Link>
             ))}

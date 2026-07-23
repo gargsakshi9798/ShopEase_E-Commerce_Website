@@ -4,7 +4,11 @@ const heroConfig = {
   bg: "from-[#4c1d95] via-[#6d28d9] to-[#4c1d95]",
   accentColor: "text-yellow-300",
   accentBtnColor: "bg-yellow-500 hover:bg-yellow-600",
-  icons: ["🧸", "🎮", "🪀"],
+  icons: [
+    "https://images.pexels.com/photos/163696/toy-car-toy-box-mini-163696.jpeg?auto=compress&cs=tinysrgb&w=160",
+    "https://images.pexels.com/photos/35537/child-children-girl-happy.jpg?auto=compress&cs=tinysrgb&w=180",
+    "https://images.pexels.com/photos/1148998/pexels-photo-1148998.jpeg?auto=compress&cs=tinysrgb&w=160",
+  ],
   tagline: "Fun toys & games for all ages — educational, outdoor, indoor & collectibles. Up to 50% off.",
   offerCode: "TOYS20",
   offerText: "Extra 20% off",

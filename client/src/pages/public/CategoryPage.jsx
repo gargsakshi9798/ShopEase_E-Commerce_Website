@@ -442,10 +442,23 @@ const CategoryPage = ({
               )}
             </div>
           </div>
-          <div className="hidden md:flex items-end gap-4 text-8xl select-none">
-            {icons.map((ic, i) => (
-              <span key={i} className={i === 1 ? "text-9xl" : "opacity-90"}>{ic}</span>
-            ))}
+          <div className="hidden md:flex items-end gap-4 select-none">
+            {icons.map((ic, i) => {
+              const isUrl = typeof ic === "string" && (ic.startsWith("http") || ic.startsWith("/"));
+              return isUrl ? (
+                <img
+                  key={i}
+                  src={ic}
+                  alt=""
+                  onError={(e) => { e.target.style.display = "none"; }}
+                  className={`object-contain rounded-2xl drop-shadow-xl ${
+                    i === 1 ? "w-44 h-44" : "w-32 h-32 opacity-90"
+                  }`}
+                />
+              ) : (
+                <span key={i} className={i === 1 ? "text-9xl" : "text-8xl opacity-90"}>{ic}</span>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -587,7 +600,13 @@ const CategoryPage = ({
           {/* Empty state */}
           {status !== "loading" && products.length === 0 && (
             <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
-              <span className="text-6xl">{icons[0]}</span>
+              {(() => {
+                const ic = icons[0];
+                const isUrl = typeof ic === "string" && (ic.startsWith("http") || ic.startsWith("/"));
+                return isUrl
+                  ? <img src={ic} alt="" onError={(e) => { e.target.style.display="none"; }} className="w-20 h-20 object-contain mx-auto" />
+                  : <span className="text-6xl">{ic}</span>;
+              })()}
               <p className="text-gray-500 mt-4 font-medium">No products found</p>
               <p className="text-sm text-gray-400 mt-1">Try adjusting filters or search terms</p>
               <button

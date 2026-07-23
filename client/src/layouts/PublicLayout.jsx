@@ -6,6 +6,7 @@ import PublicHeader from "../components/public/layout/PublicHeader";
 import PublicFooter from "../components/public/layout/PublicFooter";
 import ScrollToTop from "../components/common/ScrollToTop";
 import ProtectedCustomerRoute from "../components/public/ProtectedCustomerRoute";
+import ChatBotWidget from "../components/common/ChatBot/ChatBotWidget";
 import publicRoutes from "../routes.public.jsx";
 import { fetchPublicSettings } from "../features/settings/settingsSlice";
 
@@ -36,6 +37,9 @@ const PublicLayout = () => {
         </Suspense>
       </main>
       <PublicFooter />
+
+      {/* Floating ChatBot Widget — fixed bottom-right on all public pages */}
+      <ChatBotWidget />
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   MdShoppingBag, MdFavoriteBorder, MdLocationOn, MdLocalOffer,
   MdStar, MdNotifications, MdSettings, MdArrowForward,
-  MdVerified, MdCardGiftcard, MdSecurity,
+  MdVerified, MdCardGiftcard,
   MdCheckCircle, MdLocalShipping, MdPendingActions,
   MdRefresh, MdCancel, MdEdit, MdHistory, MdThumbUp,
 } from "react-icons/md";
@@ -372,40 +372,8 @@ const MyAccount = () => {
           </section>
         )}
 
-        {/* ── Bottom Row: Security + Loyalty ────────────────────────────── */}
-        <div className="grid sm:grid-cols-2 gap-4">
-
-          {/* Account Security */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 bg-green-50 border border-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <MdSecurity size={18} className="text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm font-extrabold text-gray-900">Account Security</p>
-                <p className="text-[11px] text-gray-400">Keep your account safe</p>
-              </div>
-            </div>
-            <div className="space-y-2.5">
-              {[
-                { label: "Email Verified",    done: true },
-                { label: "Phone Linked",      done: !!(displayUser?.phone || displayUser?.contact_no) },
-                { label: "Two-Factor Auth",   done: false },
-                { label: "Strong Password",   done: true },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">{item.label}</span>
-                  <span className={`font-bold ${item.done ? "text-green-600" : "text-amber-500"}`}>
-                    {item.done ? "✓ Done" : "Set up"}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <Link to="/my-settings"
-              className="mt-4 block text-center text-xs font-bold text-primary-600 hover:underline border-t border-gray-50 pt-3">
-              Manage Security →
-            </Link>
-          </div>
+        {/* ── Bottom Row: Loyalty ────────────────────────────── */}
+        <div className="grid sm:grid-cols-1 gap-4">
 
           {/* Loyalty / Addresses */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">

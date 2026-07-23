@@ -13,29 +13,29 @@ import {
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const categories = [
-  { name: "Fashion",        path: "/fashion",      emoji: "👗", gradient: "from-pink-500 to-rose-600",      count: "2.4L+"  },
-  { name: "Electronics",    path: "/electronics",  emoji: "💻", gradient: "from-blue-500 to-indigo-600",    count: "1.8L+"  },
-  { name: "Mobiles",        path: "/mobiles",      emoji: "📱", gradient: "from-violet-500 to-purple-700",  count: "1.2L+"  },
-  { name: "Home & Kitchen", path: "/home-kitchen", emoji: "🏠", gradient: "from-amber-500 to-orange-600",   count: "3.1L+"  },
-  { name: "Appliances",     path: "/appliances",   emoji: "⚡", gradient: "from-cyan-500 to-blue-600",      count: "85K+"   },
-  { name: "Beauty",         path: "/beauty",       emoji: "🌸", gradient: "from-rose-500 to-pink-700",      count: "1.6L+"  },
-  { name: "Sports",         path: "/sports",       emoji: "⚽", gradient: "from-green-500 to-emerald-700",  count: "95K+"   },
-  { name: "Books",          path: "/books",        emoji: "📚", gradient: "from-orange-500 to-red-600",     count: "5.2L+"  },
-  { name: "Toys",           path: "/toys",         emoji: "🎲", gradient: "from-purple-500 to-fuchsia-700", count: "72K+"   },
-  { name: "Grocery",        path: "/grocery",      emoji: "🛒", gradient: "from-lime-500 to-green-600",     count: "4.8L+"  },
-  { name: "Automotive",     path: "/automotive",   emoji: "🚗", gradient: "from-slate-600 to-zinc-800",     count: "48K+"   },
-  { name: "All Categories", path: "/categories",   emoji: "🗂️", gradient: "from-primary-500 to-indigo-600", count: "20L+"   },
+  { name: "Fashion",        path: "/fashion",      img: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=120&q=80",  gradient: "from-pink-500 to-rose-600",      count: "2.4L+"  },
+  { name: "Electronics",    path: "/electronics",  img: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=120&q=80",  gradient: "from-blue-500 to-indigo-600",    count: "1.8L+"  },
+  { name: "Mobiles",        path: "/mobiles",      img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=120&q=80",  gradient: "from-violet-500 to-purple-700",  count: "1.2L+"  },
+  { name: "Home & Kitchen", path: "/home-kitchen", img: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=120&q=80",  gradient: "from-amber-500 to-orange-600",   count: "3.1L+"  },
+  { name: "Appliances",     path: "/appliances",   img: "https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=120&q=80",  gradient: "from-cyan-500 to-blue-600",      count: "85K+"   },
+  { name: "Beauty",         path: "/beauty",       img: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=120&q=80", gradient: "from-rose-500 to-pink-700",      count: "1.6L+"  },
+  { name: "Sports",         path: "/sports",       img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=120&q=80", gradient: "from-green-500 to-emerald-700",  count: "95K+"   },
+  { name: "Books",          path: "/books",        img: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=120&q=80", gradient: "from-orange-500 to-red-600",     count: "5.2L+"  },
+  { name: "Toys",           path: "/toys",         img: "https://images.pexels.com/photos/163696/toy-car-toy-box-mini-163696.jpeg?auto=compress&cs=tinysrgb&w=120", gradient: "from-purple-500 to-fuchsia-700", count: "72K+" },
+  { name: "Grocery",        path: "/grocery",      img: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=120&q=80", gradient: "from-lime-500 to-green-600",     count: "4.8L+"  },
+  { name: "Automotive",     path: "/automotive",   img: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=120&q=80", gradient: "from-slate-600 to-zinc-800",     count: "48K+"   },
+  { name: "All Categories", path: "/categories",   img: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=120&q=80", gradient: "from-primary-500 to-indigo-600", count: "20L+"   },
 ];
 
 const flashDeals = [
-  { name: "iPhone 15 Pro Max",        category: "Mobiles",     path: "/mobiles",      emoji: "📱", originalPrice: 159900, salePrice: 119900, rating: 4.8, reviews: 12400, badge: "68% off" },
-  { name: "Samsung 55\" QLED 4K TV",  category: "Electronics", path: "/electronics",  emoji: "📺", originalPrice: 89999,  salePrice: 54999,  rating: 4.6, reviews: 6230,  badge: "39% off" },
-  { name: "Adidas Tiro Track Pants",  category: "Sports",      path: "/sports",       emoji: "👟", originalPrice: 2799,   salePrice: 1499,   rating: 4.5, reviews: 7890,  badge: "46% off" },
-  { name: "Atomic Habits",            category: "Books",       path: "/books",        emoji: "📗", originalPrice: 699,    salePrice: 399,    rating: 4.8, reviews: 45200, badge: "43% off" },
-  { name: "Lakme Matte Lipstick",     category: "Beauty",      path: "/beauty",       emoji: "💄", originalPrice: 499,    salePrice: 299,    rating: 4.4, reviews: 15600, badge: "40% off" },
-  { name: "LEGO Classic 900pcs",      category: "Toys",        path: "/toys",         emoji: "🧱", originalPrice: 3999,   salePrice: 2499,   rating: 4.8, reviews: 14300, badge: "38% off" },
-  { name: "Castrol EDGE 5W-30 3.5L",  category: "Automotive",  path: "/automotive",   emoji: "🛢️", originalPrice: 2100,   salePrice: 1499,   rating: 4.6, reviews: 17800, badge: "29% off" },
-  { name: "Tata Salt 1kg x6",         category: "Grocery",     path: "/grocery",      emoji: "🧂", originalPrice: 180,    salePrice: 149,    rating: 4.7, reviews: 89400, badge: "17% off" },
+  { name: "iPhone 15 Pro Max",        category: "Mobiles",     path: "/mobiles",      img: "https://images.unsplash.com/photo-1696426022946-2d5f4a0fd9bf?w=200&q=80", originalPrice: 159900, salePrice: 119900, rating: 4.8, reviews: 12400, badge: "68% off" },
+  { name: "Samsung 55\" QLED 4K TV",  category: "Electronics", path: "/electronics",  img: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=200&q=80", originalPrice: 89999,  salePrice: 54999,  rating: 4.6, reviews: 6230,  badge: "39% off" },
+  { name: "Adidas Tiro Track Pants",  category: "Sports",      path: "/sports",       img: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=200&q=80", originalPrice: 2799,   salePrice: 1499,   rating: 4.5, reviews: 7890,  badge: "46% off" },
+  { name: "Atomic Habits",            category: "Books",       path: "/books",        img: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=200&q=80",     originalPrice: 699,    salePrice: 399,    rating: 4.8, reviews: 45200, badge: "43% off" },
+  { name: "Lakme Matte Lipstick",     category: "Beauty",      path: "/beauty",       img: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=200&q=80",  originalPrice: 499,    salePrice: 299,    rating: 4.4, reviews: 15600, badge: "40% off" },
+  { name: "LEGO Classic 900pcs",      category: "Toys",        path: "/toys",         img: "https://images.pexels.com/photos/163696/toy-car-toy-box-mini-163696.jpeg?auto=compress&cs=tinysrgb&w=200", originalPrice: 3999, salePrice: 2499, rating: 4.8, reviews: 14300, badge: "38% off" },
+  { name: "Castrol EDGE 5W-30 3.5L",  category: "Automotive",  path: "/automotive",   img: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200&q=80",  originalPrice: 2100,   salePrice: 1499,   rating: 4.6, reviews: 17800, badge: "29% off" },
+  { name: "Tata Salt 1kg x6",         category: "Grocery",     path: "/grocery",      img: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=200&q=80",  originalPrice: 180,    salePrice: 149,    rating: 4.7, reviews: 89400, badge: "17% off" },
 ];
 
 const offerZones = [
@@ -45,7 +45,7 @@ const offerZones = [
     offer: "Up to 50% off",
     path: "/electronics",
     gradient: "from-[#0c1445] via-[#1a2980] to-[#26d0ce]",
-    emoji: "💻",
+    img: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=300&q=80",
     cta: "Shop Electronics",
   },
   {
@@ -54,7 +54,7 @@ const offerZones = [
     offer: "Min 40% off",
     path: "/fashion",
     gradient: "from-[#fc5c7d] to-[#6a3093]",
-    emoji: "👗",
+    img: "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?w=300&q=80",
     cta: "Shop Fashion",
   },
   {
@@ -63,7 +63,7 @@ const offerZones = [
     offer: "Up to 40% off",
     path: "/grocery",
     gradient: "from-[#134e5e] to-[#71b280]",
-    emoji: "🛒",
+    img: "https://images.unsplash.com/photo-1543168256-418811576931?w=300&q=80",
     cta: "Shop Grocery",
   },
 ];
@@ -90,8 +90,12 @@ const FlashCard = ({ deal }) => {
   return (
     <Link to={deal.path}
       className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all hover:-translate-y-0.5 group flex flex-col">
-      <div className="relative h-36 bg-gradient-to-br from-gray-50 to-slate-100 flex items-center justify-center text-6xl">
-        {deal.emoji}
+      <div className="relative h-36 bg-gradient-to-br from-gray-50 to-slate-100 flex items-center justify-center overflow-hidden">
+        {deal.img
+          ? <img src={deal.img} alt={deal.name} onError={(e) => { e.target.style.display = "none"; }}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+          : <span className="text-6xl">{deal.emoji}</span>
+        }
         <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-lg">
           {deal.badge}
         </span>
@@ -189,8 +193,8 @@ const More = () => {
             {offerZones.map((zone) => (
               <Link key={zone.title} to={zone.path}
                 className={`relative bg-gradient-to-br ${zone.gradient} rounded-2xl p-7 text-white overflow-hidden group hover:scale-[1.02] hover:shadow-xl transition-all duration-300`}>
-                <div className="absolute -right-6 -bottom-6 text-[120px] opacity-15 group-hover:opacity-25 transition-opacity select-none leading-none">
-                  {zone.emoji}
+                <div className="absolute -right-6 -bottom-6 w-36 h-36 opacity-20 group-hover:opacity-30 transition-opacity select-none overflow-hidden rounded-2xl">
+                  <img src={zone.img} alt="" onError={(e) => { e.target.style.display="none"; }} className="w-full h-full object-cover" />
                 </div>
                 <div className="relative z-10">
                   <span className="inline-flex items-center gap-1.5 bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full mb-4">
@@ -238,9 +242,10 @@ const More = () => {
             {categories.map((cat) => (
               <Link key={cat.name} to={cat.path}
                 className="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col">
-                <div className={`bg-gradient-to-br ${cat.gradient} h-20 flex items-center justify-center text-4xl relative overflow-hidden`}>
-                  <span className="relative z-10 group-hover:scale-110 transition-transform duration-300">{cat.emoji}</span>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+                <div className={`bg-gradient-to-br ${cat.gradient} h-20 flex items-center justify-center relative overflow-hidden`}>
+                  <img src={cat.img} alt={cat.name} onError={(e) => { e.target.style.display="none"; }}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                 </div>
                 <div className="p-2.5 text-center">
                   <p className="text-xs font-bold text-gray-800 group-hover:text-primary-600 transition-colors leading-tight">{cat.name}</p>
@@ -251,25 +256,7 @@ const More = () => {
           </div>
         </section>
 
-        {/* ── Services / Trust Badges ── */}
-        <section>
-          <h2 className="text-xl font-extrabold text-gray-900 mb-5 flex items-center gap-2">
-            <MdVerified className="text-blue-500" size={22} /> Our Services
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {services.map((s) => (
-              <div key={s.title} className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-col items-center text-center gap-3 shadow-sm hover:shadow-md transition-shadow">
-                <div className={`w-12 h-12 ${s.bg} ${s.color} rounded-2xl flex items-center justify-center`}>
-                  {s.icon}
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-800">{s.title}</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">{s.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+
 
         {/* ── Trending Searches ── */}
         <section>
@@ -283,64 +270,6 @@ const More = () => {
                 <MdTrendingUp size={12} className="text-rose-400" /> {term}
               </Link>
             ))}
-          </div>
-        </section>
-
-        {/* ── App Download Banner ── */}
-        <section className="bg-gradient-to-r from-primary-600 via-primary-700 to-indigo-700 rounded-3xl p-8 md:p-10 text-white relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-60 h-60 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -left-10 -bottom-10 w-60 h-60 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-          <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-extrabold mb-2">Get the ShopEase App</h2>
-              <p className="text-white/70 text-sm max-w-md mb-6">
-                Shop smarter on the go. Get exclusive app-only deals, real-time order tracking,
-                and personalised recommendations right in your pocket.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <button className="flex items-center gap-3 bg-black text-white px-5 py-3 rounded-xl hover:bg-gray-900 transition-colors shadow-md">
-                  <span className="text-2xl">🍎</span>
-                  <div className="text-left">
-                    <p className="text-[10px] text-white/70 leading-none">Download on the</p>
-                    <p className="text-sm font-bold leading-tight">App Store</p>
-                  </div>
-                </button>
-                <button className="flex items-center gap-3 bg-black text-white px-5 py-3 rounded-xl hover:bg-gray-900 transition-colors shadow-md">
-                  <span className="text-2xl">🤖</span>
-                  <div className="text-left">
-                    <p className="text-[10px] text-white/70 leading-none">Get it on</p>
-                    <p className="text-sm font-bold leading-tight">Google Play</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center gap-4 flex-shrink-0">
-              {["📱", "💻", "⌚"].map((e, i) => (
-                <div key={i} className={`text-${i === 1 ? "8xl" : "6xl"} opacity-${i === 1 ? "100" : "60"}`}>{e}</div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── Newsletter ── */}
-        <section className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
-          <div className="max-w-xl mx-auto text-center">
-            <span className="text-4xl">📬</span>
-            <h2 className="text-xl font-extrabold text-gray-900 mt-3 mb-2">Stay in the Loop</h2>
-            <p className="text-sm text-gray-500 mb-6">
-              Subscribe to get the latest deals, new arrivals and exclusive offers straight to your inbox.
-            </p>
-            <div className="flex gap-2 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email address"
-                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-              />
-              <button className="bg-primary-600 hover:bg-primary-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors whitespace-nowrap">
-                Subscribe
-              </button>
-            </div>
-            <p className="text-[11px] text-gray-400 mt-3">No spam, unsubscribe anytime.</p>
           </div>
         </section>
 

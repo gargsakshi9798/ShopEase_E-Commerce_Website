@@ -4,7 +4,11 @@ const heroConfig = {
   bg: "from-[#052e16] via-[#166534] to-[#052e16]",
   accentColor: "text-green-300",
   accentBtnColor: "bg-green-600 hover:bg-green-700",
-  icons: ["🏋️", "🏃", "🎽"],
+  icons: [
+    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=160&q=80",
+    "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=180&q=80",
+    "https://images.unsplash.com/photo-1539794830467-1f1755804d13?w=160&q=80",
+  ],
   tagline: "Stay fit with top sports gear — equipment, apparel, shoes & supplements. Up to 40% off.",
   offerCode: "FIT20",
   offerText: "Extra 20% off",

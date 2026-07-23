@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaShoppingBag, FaFacebook, FaInstagram, FaTwitter, FaYoutube, FaWhatsapp,
+  FaGooglePlay, FaApple,
 } from "react-icons/fa";
 import {
   MdEmail, MdLock, MdLanguage, MdPhone, MdLocationOn,
   MdLocalShipping, MdSecurity, MdUndo, MdSupportAgent,
   MdVerified, MdPriceCheck, MdChevronRight, MdArrowForward,
+  MdPeople, MdInventory2, MdStorefront, MdShield, MdCheckCircle,
 } from "react-icons/md";
 import { useSettings } from "../../../hooks/useSettings";
 import { getImgUrl } from "../../../utils/Methods";
@@ -54,10 +56,10 @@ const FEATURES = [
 ];
 
 const DEFAULT_STATS = [
-  { stat: "10M+",  label: "Happy Customers", icon: "😊" },
-  { stat: "20L+",  label: "Products",        icon: "🛍️" },
-  { stat: "50K+",  label: "Trusted Sellers", icon: "🤝" },
-  { stat: "99.9%", label: "Secure Payments", icon: "🛡️" },
+  { stat: "10M+",  label: "Happy Customers", icon: MdPeople    },
+  { stat: "20L+",  label: "Products",        icon: MdInventory2 },
+  { stat: "50K+",  label: "Trusted Sellers", icon: MdStorefront },
+  { stat: "99.9%", label: "Secure Payments", icon: MdShield    },
 ];
 
 const parseStat = (raw, def) => {
@@ -167,7 +169,7 @@ const PublicFooter = () => {
             <div className="flex-1 w-full max-w-lg">
               {subscribed ? (
                 <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl px-5 py-4">
-                  <span className="text-2xl">✅</span>
+                  <MdCheckCircle size={28} className="text-green-500 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-green-700">You're subscribed!</p>
                     <p className="text-xs text-green-600 mt-0.5">Great deals are on their way to your inbox.</p>
@@ -175,8 +177,7 @@ const PublicFooter = () => {
                 </div>
               ) : (
                 <form onSubmit={handleSubscribe}
-                  className="flex rounded-2xl overflow-hidden border border-gray-300 bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-100 transition-all">
-                  <div className="relative flex-1">
+                  className="flex rounded-2xl overflow-hidden border border-gray-300 bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-100 transition-all">                  <div className="relative flex-1">
                     <MdEmail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                       type="email"
@@ -342,7 +343,7 @@ const PublicFooter = () => {
                 <div className="flex gap-3 flex-wrap">
                   <a href={appPlaystore} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-2.5 bg-white text-gray-900 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
-                    <span className="text-xl leading-none">🤖</span>
+                    <FaGooglePlay size={18} className="text-green-600 flex-shrink-0" />
                     <div>
                       <p className="text-[9px] text-gray-500 uppercase font-semibold leading-none">Get it on</p>
                       <p className="text-sm font-bold leading-tight">Google Play</p>
@@ -350,7 +351,7 @@ const PublicFooter = () => {
                   </a>
                   <a href={appAppstore} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-2.5 bg-white text-gray-900 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
-                    <span className="text-xl leading-none">🍎</span>
+                    <FaApple size={20} className="text-gray-800 flex-shrink-0" />
                     <div>
                       <p className="text-[9px] text-gray-500 uppercase font-semibold leading-none">Download on the</p>
                       <p className="text-sm font-bold leading-tight">App Store</p>
@@ -358,21 +359,45 @@ const PublicFooter = () => {
                   </a>
                 </div>
               </div>
+              {/* Phone mockup */}
               <div className="hidden sm:flex w-24 flex-shrink-0 items-center justify-center">
-                <div className="w-20 h-36 bg-white/20 border border-white/30 rounded-2xl shadow-xl flex items-center justify-center text-4xl">📱</div>
+                <div className="relative w-[68px] h-[120px] bg-gray-900 rounded-[18px] border-4 border-white/30 shadow-2xl overflow-hidden flex flex-col">
+                  {/* Notch */}
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1.5 bg-black/60 rounded-full z-10" />
+                  {/* Screen content */}
+                  <div className="flex-1 bg-gradient-to-b from-primary-500 to-primary-700 pt-5 px-1.5 pb-1 flex flex-col gap-1">
+                    <div className="w-full h-2 bg-white/30 rounded-full" />
+                    <div className="grid grid-cols-2 gap-1 mt-1">
+                      {[...Array(4)].map((_, i) => (
+                        <div key={i} className="h-5 bg-white/20 rounded-md" />
+                      ))}
+                    </div>
+                    <div className="w-3/4 h-1.5 bg-white/20 rounded-full mt-1" />
+                    <div className="w-full h-8 bg-white/15 rounded-lg mt-1" />
+                  </div>
+                  {/* Home bar */}
+                  <div className="h-3 bg-gray-800 flex items-center justify-center">
+                    <div className="w-6 h-0.5 bg-white/40 rounded-full" />
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Stats */}
             <div className="w-full lg:w-auto grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-4">
-              {footerStats.map((st) => (
-                <div key={st.label}
-                  className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm min-w-[110px]">
-                  <span className="text-2xl mb-1.5">{st.icon}</span>
-                  <p className="text-xl font-extrabold text-gray-900 leading-none">{st.stat}</p>
-                  <p className="text-xs font-semibold text-gray-600 mt-1 leading-snug">{st.label}</p>
-                </div>
-              ))}
+              {footerStats.map((st) => {
+                const Icon = st.icon;
+                return (
+                  <div key={st.label}
+                    className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm min-w-[110px]">
+                    <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center mb-2">
+                      <Icon size={20} className="text-primary-600" />
+                    </div>
+                    <p className="text-xl font-extrabold text-gray-900 leading-none">{st.stat}</p>
+                    <p className="text-xs font-semibold text-gray-600 mt-1 leading-snug">{st.label}</p>
+                  </div>
+                );
+              })}
             </div>
 
           </div>
