@@ -59,4 +59,30 @@ router.patch("/read-all", async (req, res) => {
   }
 });
 
+// Delete a single notification
+router.delete("/:id", async (req, res) => {
+  try {
+    const deleted = await Notification.findOneAndDelete({
+      _id: req.params.id,
+      user_id: req.user.user,   // customers can only delete their own
+    });
+    if (!deleted) {
+      return Base.sendError(res, HTTPS.NOT_FOUND, "Notification not found");
+    }
+    return Base.sendResponse(res, HTTPS.OK, null, "Notification deleted");
+  } catch (error) {
+    return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
+  }
+});
+
+// Clear all notifications for this customer
+router.delete("/", async (req, res) => {
+  try {
+    await Notification.deleteMany({ user_id: req.user.user });
+    return Base.sendResponse(res, HTTPS.OK, null, "All notifications cleared");
+  } catch (error) {
+    return Base.sendError(res, HTTPS.INTERNAL_SERVER_ERROR);
+  }
+});
+
 module.exports = router;
